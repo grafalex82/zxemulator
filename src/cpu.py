@@ -376,6 +376,17 @@ class CPU:
     def enable_registers_logging(self, value):
         self._registers_logging = value
 
+    def _get_cpu_state_str(self):
+        res = f"A={self._a:02x} BC={self.bc:04x} DE={self.de:04x} "
+        res += f"HL={self.hl:04x} SP={self._sp:04x} IX={self.ix:04x} IY={self.iy:04x} "
+        # res += f"{'Z' if self._zero else '-'}"
+        # res += f"{'S' if self._sign else '-'}"
+        # res += f"{'C' if self._carry else '-'}"
+        # res += f"{'A' if self._half_carry else '-'}"
+        # res += f"{'P' if self._parity else '-'}"
+        # res += f"{'I' if self._enable_interrupts else '-'}"
+        return res
+
 
     def _log_1b_instruction(self, mnemonic):
         if logger.level > logging.DEBUG:
