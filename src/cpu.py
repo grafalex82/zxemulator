@@ -619,6 +619,14 @@ class CPU:
 
         self._log_1b_instruction(f"LD {self._reg_symb(dst)}, {self._reg_symb(src)}")
 
+    def _load_8b_immediate_to_register(self):
+        """ Move immediate to register or memory """
+        reg = (self._current_inst & 0x38) >> 3
+        value = self._fetch_next_byte()
+        self._set_register(reg, value)
+        self._cycles += (7 if reg != 6 else 10)
+
+        self._log_2b_instruction(f"LD {self._reg_symb(reg)}, {value:02x}")
 
 
     # Execution flow instructions
@@ -753,7 +761,7 @@ class CPU:
         self._instructions[0x03] = None
         self._instructions[0x04] = None
         self._instructions[0x05] = None
-        self._instructions[0x06] = None
+        self._instructions[0x06] = self._load_8b_immediate_to_register
         self._instructions[0x07] = None
         self._instructions[0x08] = None
         self._instructions[0x09] = None
@@ -761,7 +769,7 @@ class CPU:
         self._instructions[0x0b] = None
         self._instructions[0x0c] = None
         self._instructions[0x0d] = None
-        self._instructions[0x0e] = None
+        self._instructions[0x0e] = self._load_8b_immediate_to_register
         self._instructions[0x0f] = None
 
         self._instructions[0x10] = None
@@ -770,7 +778,7 @@ class CPU:
         self._instructions[0x13] = None
         self._instructions[0x14] = None
         self._instructions[0x15] = None
-        self._instructions[0x16] = None
+        self._instructions[0x16] = self._load_8b_immediate_to_register
         self._instructions[0x17] = None
         self._instructions[0x18] = None
         self._instructions[0x19] = None
@@ -778,7 +786,7 @@ class CPU:
         self._instructions[0x1b] = None
         self._instructions[0x1c] = None
         self._instructions[0x1d] = None
-        self._instructions[0x1e] = None
+        self._instructions[0x1e] = self._load_8b_immediate_to_register
         self._instructions[0x1f] = None
 
         self._instructions[0x20] = None
@@ -787,7 +795,7 @@ class CPU:
         self._instructions[0x23] = None
         self._instructions[0x24] = None
         self._instructions[0x25] = None
-        self._instructions[0x26] = None
+        self._instructions[0x26] = self._load_8b_immediate_to_register
         self._instructions[0x27] = None
         self._instructions[0x28] = None
         self._instructions[0x29] = None
@@ -795,7 +803,7 @@ class CPU:
         self._instructions[0x2b] = None
         self._instructions[0x2c] = None
         self._instructions[0x2d] = None
-        self._instructions[0x2e] = None
+        self._instructions[0x2e] = self._load_8b_immediate_to_register
         self._instructions[0x2f] = None
 
         self._instructions[0x30] = None
@@ -804,7 +812,7 @@ class CPU:
         self._instructions[0x33] = None
         self._instructions[0x34] = None
         self._instructions[0x35] = None
-        self._instructions[0x36] = None
+        self._instructions[0x36] = self._load_8b_immediate_to_register
         self._instructions[0x37] = None
         self._instructions[0x38] = None
         self._instructions[0x39] = None
@@ -812,7 +820,7 @@ class CPU:
         self._instructions[0x3b] = None
         self._instructions[0x3c] = None
         self._instructions[0x3d] = None
-        self._instructions[0x3e] = None
+        self._instructions[0x3e] = self._load_8b_immediate_to_register
         self._instructions[0x3f] = None
 
         self._instructions[0x40] = self._load_register_to_register
