@@ -27,7 +27,6 @@ def cpu():
 
 def test_reset_values(cpu):
     assert cpu.a == 0x00
-    assert cpu.f == 0x00
     assert cpu.b == 0x00
     assert cpu.c == 0x00
     assert cpu.d == 0x00
@@ -51,6 +50,15 @@ def test_reset_values(cpu):
 
     assert cpu.iff1 == False
     assert cpu.iff2 == False    
+
+    assert cpu.sign == False
+    assert cpu.zero == False
+    assert cpu.half_carry == False
+    assert cpu.parity == False
+    assert cpu.add_subtract == False
+    assert cpu.carry == False
+
+    assert cpu._cycles == 0
 
 
 def test_machine_reset(cpu):

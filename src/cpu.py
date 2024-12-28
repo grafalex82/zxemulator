@@ -41,7 +41,6 @@ class CPU:
 
         # Registers
         self._a = 0     # Accumulator
-        self._f = 0     # Flags register
         self._b = 0
         self._c = 0
         self._d = 0
@@ -66,6 +65,15 @@ class CPU:
         # Interrupt flags
         self._iff1 = False
         self._iff2 = False
+
+        # ALU Flags
+        self._sign = False                      # Bit 7
+        self._zero = False                      # Bit 6
+        self._half_carry = False                # Bit 4
+        self._parity = False  # odd or even     # Bit 2
+        self._add_subtract = False              # Bit 1
+        self._carry = False                     # Bit 0
+
 
 
     # Registers
@@ -98,11 +106,23 @@ class CPU:
         self._a = value
 
     def get_f(self):
-        return self._f
+        flags = 2 # bit1 is always 1 (at least in i8080)
+        if self._sign: flags = set_bit(flags, 7)
+        if self._zero: flags = set_bit(flags, 6)
+        if self._half_carry: flags = set_bit(flags, 4)
+        if self._parity: flags = set_bit(flags, 2)
+        if self._add_subtract: flags = set_bit(flags, 1)
+        if self._carry: flags = set_bit(flags, 0)
+        return flags
 
     def set_f(self, value):
         self._validate_byte_value(value)
-        self._f = value
+        self._sign = is_bit_set(value, 7)
+        self._zero = is_bit_set(value, 6)
+        self._half_carry = is_bit_set(value, 4)
+        self._parity = is_bit_set(value, 2)
+        self._add_subtract = is_bit_set(value, 1)
+        self._carry = is_bit_set(value, 0)
 
     def get_b(self):
         return self._b
@@ -314,7 +334,52 @@ class CPU:
     pc = property(get_pc, set_pc)
 
 
-    # Flags
+    # ALU flags
+
+    def get_sign(self):
+        return self._sign
+        
+    def set_sign(self, value):
+        self._sign = value
+
+    def get_zero(self):
+        return self._zero
+    
+    def set_zero(self, value):
+        self._zero = value
+
+    def get_half_carry(self):
+        return self._half_carry
+    
+    def set_half_carry(self, value):
+        self._half_carry = value
+
+    def get_parity(self):
+        return self._parity
+
+    def set_parity(self, value):
+        self._parity = value
+
+    def get_add_subtract(self):
+        return self._add_subtract
+    
+    def set_add_subtract(self, value):
+        self._add_subtract = value
+
+    def get_carry(self):
+        return self._carry
+
+    def set_carry(self, value):
+        self._carry = value
+
+    sign = property(get_sign, set_sign)
+    zero = property(get_zero, set_zero)
+    half_carry = property(get_half_carry, set_half_carry)
+    parity = property(get_parity, set_parity)
+    add_subtract = property(get_add_subtract, set_add_subtract)
+    carry = property(get_carry, set_carry)
+
+    # Interrupt Flags
 
     def get_iff1(self):
         return self._iff1
@@ -379,12 +444,13 @@ class CPU:
     def _get_cpu_state_str(self):
         res = f"A={self._a:02x} BC={self.bc:04x} DE={self.de:04x} "
         res += f"HL={self.hl:04x} SP={self._sp:04x} IX={self.ix:04x} IY={self.iy:04x} "
-        # res += f"{'Z' if self._zero else '-'}"
-        # res += f"{'S' if self._sign else '-'}"
-        # res += f"{'C' if self._carry else '-'}"
-        # res += f"{'A' if self._half_carry else '-'}"
-        # res += f"{'P' if self._parity else '-'}"
-        # res += f"{'I' if self._enable_interrupts else '-'}"
+        res += f"{'Z' if self._zero else '-'}"
+        res += f"{'S' if self._sign else '-'}"
+        res += f"{'C' if self._carry else '-'}"
+        res += f"{'A' if self._half_carry else '-'}"
+        res += f"{'P' if self._parity else '-'}"
+        res += f"{'N' if self._add_subtract else '-'}"
+        res += f"{'I' if self._enable_interrupts else '-'}"
         return res
 
 
