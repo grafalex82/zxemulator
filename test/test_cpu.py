@@ -398,3 +398,43 @@ def test_sbc_zero(cpu):
     assert cpu.overflow == False
     assert cpu.carry == False
     assert cpu.half_carry == True
+
+def test_and(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xa5)    # AND A, L Instruction Opcode
+    cpu.a = 0xfc
+    cpu.l = 0x0f
+    cpu.step()
+    assert cpu.a == 0x0c
+    assert cpu._cycles == 4
+    assert cpu.zero == False
+    assert cpu.sign == False
+    assert cpu.parity == True
+    assert cpu.carry == False
+    assert cpu.half_carry == False
+
+def test_and_memory(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xa6)    # AND A, (HL) Instruction Opcode
+    cpu._machine.write_memory_byte(0xbeef, 0x14)    # Operand at (HL)
+    cpu.a = 0x73
+    cpu.hl = 0xbeef
+    cpu.step()
+    assert cpu.a == 0x10
+    assert cpu._cycles == 7    # Accessing (HL) takes additional 3 cycles
+    assert cpu.zero == False
+    assert cpu.sign == False
+    assert cpu.parity == False
+    assert cpu.carry == False
+    assert cpu.half_carry == False
+
+def test_and_zero(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xe6)    # AND A, #13 Instruction Opcode
+    cpu._machine.write_memory_byte(0x0001, 0x13)    # Immediate operand
+    cpu.a = 0xec
+    cpu.step()
+    assert cpu.a == 0x00
+    assert cpu._cycles == 7     # Immediate value takes additional 3 cycles
+    assert cpu.zero == True
+    assert cpu.sign == False
+    assert cpu.parity == True
+    assert cpu.carry == False
+    assert cpu.half_carry == False
