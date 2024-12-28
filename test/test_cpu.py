@@ -145,7 +145,7 @@ def test_add_overflow(cpu):
     assert cpu.a == 0x9b        # Adding 2 positive integers resulting a negative number
     assert cpu._cycles == 7     # Immediate value takes additional 3 cycles
     assert cpu.zero == False
-    assert cpu.sign == True     # Result is ne
+    assert cpu.sign == True     # Result is negative
     assert cpu.overflow == True # Overflow is set since the result is negative
     assert cpu.carry == False
     assert cpu.half_carry == True
@@ -175,4 +175,89 @@ def test_add_negative_no_overflow(cpu):
     assert cpu.sign == True     # Result is still negative
     assert cpu.overflow == False    # No overflow
     assert cpu.carry == False   # No carry
+    assert cpu.half_carry == False
+
+def test_adc_no_carry(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0x89)    # ADC A, C Instruction Opcode
+    cpu.a = 0x3d
+    cpu.c = 0x42
+    cpu._carry = False      # No carry
+    cpu.step()
+    assert cpu.a == 0x7f
+    assert cpu._cycles == 4
+    assert cpu.zero == False
+    assert cpu.sign == False
+    assert cpu.overflow == False
+    assert cpu.carry == False
+    assert cpu.half_carry == False
+
+def test_adc_with_carry(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0x8a)    # ADC A, D Instruction Opcode
+    cpu.a = 0x3d
+    cpu.d = 0x42
+    cpu._carry = True       # Carry
+    cpu.step()
+    assert cpu.a == 0x80
+    assert cpu._cycles == 4
+    assert cpu.zero == False
+    assert cpu.sign == True
+    assert cpu.overflow == True
+    assert cpu.carry == False
+    assert cpu.half_carry == True
+
+def test_adc_negative_overflow(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0x8e)    # ADC A, (HL) Instruction Opcode
+    cpu._machine.write_memory_byte(0xbeef, 0xcd)    # Argument at (HL)
+    cpu.a = 0xab
+    cpu.hl = 0xbeef
+    cpu._carry = True       # Carry
+    cpu.step()
+    assert cpu.a == 0x79
+    assert cpu._cycles == 7         # Accessing (HL) takes additional 3 cycles
+    assert cpu.zero == False
+    assert cpu.sign == False
+    assert cpu.overflow == True
+    assert cpu.carry == True
+    assert cpu.half_carry == True
+
+def test_adc_negative_no_overflow(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0x88)    # ADC A, B Instruction Opcode
+    cpu.a = 0x42
+    cpu.b = 0x9a
+    cpu._carry = True       # Carry
+    cpu.step()
+    assert cpu.a == 0xdd
+    assert cpu._cycles == 4
+    assert cpu.zero == False
+    assert cpu.sign == True
+    assert cpu.overflow == False    # Result is still negative, no overflow
+    assert cpu.carry == False
+    assert cpu.half_carry == False
+
+def test_adc_zero(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0x88)    # ADC A, B Instruction Opcode
+    cpu.a = 0x54
+    cpu.b = 0xab
+    cpu._carry = True       # Carry
+    cpu.step()
+    assert cpu.a == 0x00
+    assert cpu._cycles == 4
+    assert cpu.zero == True
+    assert cpu.sign == False
+    assert cpu.overflow == False     # ??? Not really sure whether this is correct
+    assert cpu.carry == True
+    assert cpu.half_carry == True
+
+def test_adc_immediate(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xce)    # ADC A, #42 Instruction Opcode
+    cpu._machine.write_memory_byte(0x0001, 0x42)    # value
+    cpu.a = 0x14
+    cpu._carry = True
+    cpu.step()
+    assert cpu.a == 0x57
+    assert cpu._cycles == 7
+    assert cpu.zero == False
+    assert cpu.sign == False
+    assert cpu.overflow == False
+    assert cpu.carry == False
     assert cpu.half_carry == False

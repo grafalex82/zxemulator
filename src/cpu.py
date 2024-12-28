@@ -595,7 +595,7 @@ class CPU:
             self._carry = res > 0xff
             self._half_carry = ((self._a & 0x0f) + (value & 0x0f) + carry) > 0x0f
             self._add_subtract = False
-            self._parity_overflow = ((self._a ^ value) < 0x80) and ((self._a ^ res) > 0x7f) and (self._a != 0) and (value != 0)
+            self._parity_overflow = ((self._a ^ (value + carry)) < 0x80) and ((self._a ^ res) > 0x7f) and (self._a != 0) and (value + carry != 0)
         if op == 2 or op == 7: # SUB and CMP
             res = self._a - value
             self._carry = res < 0
@@ -824,14 +824,14 @@ class CPU:
         self._instructions[0x85] = self._alu
         self._instructions[0x86] = self._alu
         self._instructions[0x87] = self._alu
-        self._instructions[0x88] = None
-        self._instructions[0x89] = None
-        self._instructions[0x8a] = None
-        self._instructions[0x8b] = None
-        self._instructions[0x8c] = None
-        self._instructions[0x8d] = None
-        self._instructions[0x8e] = None
-        self._instructions[0x8f] = None
+        self._instructions[0x88] = self._alu
+        self._instructions[0x89] = self._alu
+        self._instructions[0x8a] = self._alu
+        self._instructions[0x8b] = self._alu
+        self._instructions[0x8c] = self._alu
+        self._instructions[0x8d] = self._alu
+        self._instructions[0x8e] = self._alu
+        self._instructions[0x8f] = self._alu
 
         self._instructions[0x90] = None
         self._instructions[0x91] = None
@@ -898,7 +898,7 @@ class CPU:
         self._instructions[0xcb] = None
         self._instructions[0xcc] = None
         self._instructions[0xcd] = None
-        self._instructions[0xce] = None
+        self._instructions[0xce] = self._alu_immediate
         self._instructions[0xcf] = None
 
         self._instructions[0xd0] = None
