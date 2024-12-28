@@ -517,3 +517,43 @@ def test_or_all_ones(cpu):
     assert cpu.parity == True
     assert cpu.carry == False
     assert cpu.half_carry == False
+
+def test_cmp_1(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xb8)    # CP A, B Instruction Opcode
+    cpu.a = 0x0a
+    cpu.b = 0x05
+    cpu.step()
+    assert cpu.a == 0x0a # Does not change
+    assert cpu._cycles == 4
+    assert cpu.zero == False
+    assert cpu.sign == False
+    assert cpu.overflow == False
+    assert cpu.carry == False
+    assert cpu.half_carry == True
+
+def test_cmp_2(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xfe)    # CP a, #5 Instruction Opcode
+    cpu._machine.write_memory_byte(0x0001, 0xb8)    # Immediate operand
+    cpu.a = 0x02
+    cpu.step()
+    assert cpu.a == 0x02        # Does not change
+    assert cpu._cycles == 7     # Immediate value takes additional 3 cycles
+    assert cpu.zero == False
+    assert cpu.sign == False
+    assert cpu.overflow == False
+    assert cpu.carry == True
+    assert cpu.half_carry == False
+
+def test_cmp_zero(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xbe)    # CP A, (HL) Instruction Opcode
+    cpu._machine.write_memory_byte(0x1234, 0x42)    # CP A, (HL) Instruction Opcode
+    cpu.a = 0x42
+    cpu.hl = 0x1234
+    cpu.step()
+    assert cpu.a == 0x42        # Does not change
+    assert cpu._cycles == 7     # Accessing (HL) takes additional 3 cycles
+    assert cpu.zero == True     # Operands are equal
+    assert cpu.sign == False
+    assert cpu.overflow == False
+    assert cpu.carry == False
+    assert cpu.half_carry == True

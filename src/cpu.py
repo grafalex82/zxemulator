@@ -629,6 +629,7 @@ class CPU:
             self._carry = False
             self._half_carry = False
             self._parity_overflow = self._count_bits(res) % 2 == 0
+            self._add_subtract = False
         self._zero = res == 0        
         self._sign = (res & 0x80) != 0
 
@@ -877,14 +878,14 @@ class CPU:
         self._instructions[0xb5] = self._alu
         self._instructions[0xb6] = self._alu
         self._instructions[0xb7] = self._alu
-        self._instructions[0xb8] = None
-        self._instructions[0xb9] = None
-        self._instructions[0xba] = None
-        self._instructions[0xbb] = None
-        self._instructions[0xbc] = None
-        self._instructions[0xbd] = None
-        self._instructions[0xbe] = None
-        self._instructions[0xbf] = None
+        self._instructions[0xb8] = self._alu
+        self._instructions[0xb9] = self._alu
+        self._instructions[0xba] = self._alu
+        self._instructions[0xbb] = self._alu
+        self._instructions[0xbc] = self._alu
+        self._instructions[0xbd] = self._alu
+        self._instructions[0xbe] = self._alu
+        self._instructions[0xbf] = self._alu
 
         self._instructions[0xc0] = None
         self._instructions[0xc1] = None
@@ -951,5 +952,5 @@ class CPU:
         self._instructions[0xfb] = self._ei
         self._instructions[0xfc] = None
         self._instructions[0xfd] = None
-        self._instructions[0xfe] = None
+        self._instructions[0xfe] = self._alu_immediate
         self._instructions[0xff] = None
