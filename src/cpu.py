@@ -610,6 +610,7 @@ class CPU:
             neg_value = ~value + 1
             self._half_carry = ((self._a & 0x0f) + ((neg_value - carry) & 0x0f)) > 0x0f
             self._add_subtract = True
+            self._parity_overflow = ((self._a ^ (neg_value - carry)) < 0x80) and ((self._a ^ res) > 0x7f) and (self._a != 0) and ((neg_value - carry) != 0)
         if op == 4: # AND
             res = self._a & value
         if op == 5: # XOR
@@ -638,14 +639,14 @@ class CPU:
             - ADD - add a register to the accumulator
             - ADC - add a register to the accumulator with carry
             - SUB - subtract a register from the accumulator
-            - SBB - subtract a register from the accumulator with carry
-            - ANA - logical AND a register with the accumulator
-            - XRA - logical XOR a register with the accumulator
-            - ORA - logical OR a register with the accumulator
-            - CMP - compare a register with the accumulator (set flags, but not change accumulator)
+            - SBC - subtract a register from the accumulator with carry
+            - AND - logical AND a register with the accumulator
+            - XOR - logical XOR a register with the accumulator
+            - OR  - logical OR a register with the accumulator
+            - CP  - compare a register with the accumulator (set flags, but not change accumulator)
         """
         op = (self._current_inst & 0x38) >> 3
-        op_name = ["ADD", "ADC", "SUB", "SBB", "ANA", "XRA", "ORA", "CMP"][op]
+        op_name = ["ADD", "ADC", "SUB", "SBC", "AND", "XOR", "OR ", "CP "][op]
         reg = self._current_inst & 0x07
         value = self._get_register(reg)
 
@@ -659,17 +660,17 @@ class CPU:
         """ 
         Implementation of ALU instructions between the accumulator register and 
         immediate operand:
-            - ADI - add the operand to the accumulator
-            - ACI - add the operand to the accumulator with carry
-            - SUI - subtract the operand from the accumulator
-            - SBI - subtract the operand from the accumulator with carry
-            - ANI - logical AND the operand with the accumulator
-            - XRI - logical XOR the operand with the accumulator
-            - ORI - logical OR the operand with the accumulator
-            - CPI - compare the operand with the accumulator (set flags, but not change accumulator)
+            - ADD - add the operand to the accumulator
+            - ADC - add the operand to the accumulator with carry
+            - SUB - subtract the operand from the accumulator
+            - SBC - subtract the operand from the accumulator with carry
+            - AND - logical AND the operand with the accumulator
+            - XOR - logical XOR the operand with the accumulator
+            - OR  - logical OR the operand with the accumulator
+            - CP  - compare the operand with the accumulator (set flags, but not change accumulator)
         """
         op = (self._current_inst & 0x38) >> 3
-        op_name = ["ADI", "ACI", "SUI", "SBI", "ANI", "XRI", "ORI", "CPI"][op]
+        op_name = ["ADD", "ADC", "SUB", "SBC", "AND", "XOR", "OR ", "CP "][op]
         value = self._fetch_next_byte()
 
         self._alu_op(op, value)
@@ -842,14 +843,14 @@ class CPU:
         self._instructions[0x95] = self._alu
         self._instructions[0x96] = self._alu
         self._instructions[0x97] = self._alu
-        self._instructions[0x98] = None
-        self._instructions[0x99] = None
-        self._instructions[0x9a] = None
-        self._instructions[0x9b] = None
-        self._instructions[0x9c] = None
-        self._instructions[0x9d] = None
-        self._instructions[0x9e] = None
-        self._instructions[0x9f] = None
+        self._instructions[0x98] = self._alu
+        self._instructions[0x99] = self._alu
+        self._instructions[0x9a] = self._alu
+        self._instructions[0x9b] = self._alu
+        self._instructions[0x9c] = self._alu
+        self._instructions[0x9d] = self._alu
+        self._instructions[0x9e] = self._alu
+        self._instructions[0x9f] = self._alu
 
         self._instructions[0xa0] = None
         self._instructions[0xa1] = None
@@ -916,7 +917,7 @@ class CPU:
         self._instructions[0xdb] = None
         self._instructions[0xdc] = None
         self._instructions[0xdd] = None
-        self._instructions[0xde] = None
+        self._instructions[0xde] = self._alu_immediate
         self._instructions[0xdf] = None
 
         self._instructions[0xe0] = None

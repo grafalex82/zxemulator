@@ -328,3 +328,73 @@ def test_sub_negative_overflow(cpu):
     assert cpu.carry == False
     assert cpu.half_carry == True
 
+def test_sbc_no_carry(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0x9b)    # SBC A, E Instruction Opcode
+    cpu.a = 0x04
+    cpu.e = 0x02
+    cpu._carry = False
+    cpu.step()
+    assert cpu.a == 0x02
+    assert cpu._cycles == 4
+    assert cpu.zero == False
+    assert cpu.sign == False
+    assert cpu.overflow == False
+    assert cpu.carry == False
+    assert cpu.half_carry == True
+
+def test_sbc_with_carry(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0x9c)    # SBC A, H Instruction Opcode
+    cpu.a = 0x04
+    cpu.h = 0x02
+    cpu._carry = True
+    cpu.step()
+    assert cpu.a == 0x01
+    assert cpu._cycles == 4
+    assert cpu.zero == False
+    assert cpu.sign == False
+    assert cpu.overflow == False
+    assert cpu.carry == False
+    assert cpu.half_carry == True
+
+def test_sbc_negative_no_overflow(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xde)    # SBC A, #24 Instruction Opcode
+    cpu._machine.write_memory_byte(0x0001, 0x24)    # Immadiate operand
+    cpu.a = 0xbc
+    cpu._carry = True
+    cpu.step()
+    assert cpu.a == 0x97
+    assert cpu._cycles == 7        # Immediate value takes additional 3 cycles
+    assert cpu.zero == False
+    assert cpu.sign == True
+    assert cpu.overflow == False
+    assert cpu.carry == False
+    assert cpu.half_carry == True
+
+def test_sbc_negative_overflow(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0x9e)    # SBC A, (HL) Instruction Opcode
+    cpu._machine.write_memory_byte(0xbeef, 0x42)    # data operand
+    cpu.a = 0xbc
+    cpu.hl = 0xbeef
+    cpu._carry = True
+    cpu.step()
+    assert cpu.a == 0x79
+    assert cpu._cycles == 7         # Fetching (HL) takes additional 3 cycles
+    assert cpu.zero == False
+    assert cpu.sign == False
+    assert cpu.overflow == True
+    assert cpu.carry == False
+    assert cpu.half_carry == True
+
+def test_sbc_zero(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0x9c)    # SBC A, H Instruction Opcode
+    cpu.a = 0x42
+    cpu.h = 0x41
+    cpu._carry = True
+    cpu.step()
+    assert cpu.a == 0x00
+    assert cpu._cycles == 4
+    assert cpu.zero == True
+    assert cpu.sign == False
+    assert cpu.overflow == False
+    assert cpu.carry == False
+    assert cpu.half_carry == True
