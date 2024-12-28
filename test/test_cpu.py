@@ -135,8 +135,8 @@ def test_ld_sp(cpu):
 # Execution flow instruction tests
 
 def test_jp(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xc3)    # Instruction Opcode
-    cpu._machine.write_memory_word(0x0001, 0xbeef)  # Address
+    cpu._machine.write_memory_byte(0x0000, 0xc3)    # JP #beef Instruction Opcode
+    cpu._machine.write_memory_word(0x0001, 0xbeef)  # Target Address
     cpu.step()
     assert cpu.pc == 0xbeef
     assert cpu._cycles == 10

@@ -592,7 +592,7 @@ class CPU:
         self._log_1b_instruction("DI")
 
 
-    # Data load instructions
+    # Data transfer instructions
 
     def _load_immediate_16b(self):
         """ Load register pair with immediate value"""
@@ -605,6 +605,18 @@ class CPU:
         self._cycles += 10
 
         self._log_3b_instruction(f"LXI {self._reg_pair_symb(reg_pair)}, {value:04x}")
+
+
+    # Execution flow instructions
+
+    def _jp(self):
+        """ Unconditional jump """
+        addr = self._fetch_next_word()
+
+        self._log_3b_instruction(f"JP {addr:04x}")
+
+        self._pc = addr
+        self._cycles += 10
 
 
     # ALU instructions
@@ -928,7 +940,7 @@ class CPU:
         self._instructions[0xc0] = None
         self._instructions[0xc1] = None
         self._instructions[0xc2] = None
-        self._instructions[0xc3] = None
+        self._instructions[0xc3] = self._jp
         self._instructions[0xc4] = None
         self._instructions[0xc5] = None
         self._instructions[0xc6] = self._alu_immediate
