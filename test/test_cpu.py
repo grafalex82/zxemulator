@@ -95,6 +95,7 @@ def test_ei_di(cpu):
 
 
 # ALU instructions tests
+
 # Below pairwise testing is used - assuming the same ALU engine is used for all instructions, various tests
 # use different instruction types to cover all possible cases, as well as different argument values to test
 # resulting flags
@@ -261,3 +262,69 @@ def test_adc_immediate(cpu):
     assert cpu.overflow == False
     assert cpu.carry == False
     assert cpu.half_carry == False
+
+def test_sub(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0x90)    # SUB A, B Instruction Opcode
+    cpu.a = 0x56
+    cpu.b = 0x42
+    cpu.step()
+    assert cpu.a == 0x14
+    assert cpu._cycles == 4
+    assert cpu.zero == False
+    assert cpu.sign == False
+    assert cpu.overflow == False
+    assert cpu.carry == False
+    assert cpu.half_carry == True
+
+def test_sub_zero(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0x97)    # SUB A, A Instruction Opcode
+    cpu.a = 0x42
+    cpu.step()
+    assert cpu.a == 0x00
+    assert cpu._cycles == 4
+    assert cpu.zero == True
+    assert cpu.sign == False
+    assert cpu.overflow == False
+    assert cpu.carry == False        
+    assert cpu.half_carry == True   # ??? Not really sure whether this is correct
+
+def test_sub_zero_2(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0x95)    # SUB A, E Instruction Opcode
+    cpu.a = 0x00
+    cpu.e = 0x00
+    cpu.step()
+    assert cpu.a == 0x00
+    assert cpu._cycles == 4
+    assert cpu.zero == True
+    assert cpu.sign == False
+    assert cpu.overflow == False
+    assert cpu.carry == False
+    assert cpu.half_carry == False
+
+def test_sub_negative_no_overflow(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0x96)    # SUB A, (HL) Instruction Opcode
+    cpu._machine.write_memory_byte(0xbeef, 0x14)    # second operand at (HL)
+    cpu.a = 0xab
+    cpu.hl = 0xbeef
+    cpu.step()
+    assert cpu.a == 0x97
+    assert cpu._cycles == 7         # Accessing (HL) takes additional 3 cycles
+    assert cpu.zero == False
+    assert cpu.sign == True
+    assert cpu.overflow == False
+    assert cpu.carry == False        
+    assert cpu.half_carry == True
+
+def test_sub_negative_overflow(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xd6)    # SUB A, #42 Instruction Opcode
+    cpu._machine.write_memory_byte(0x0001, 0x42)    # Immediate operand
+    cpu.a = 0xab
+    cpu.step()
+    assert cpu.a == 0x69
+    assert cpu._cycles == 7         # Immediate value takes additional 3 cycles
+    assert cpu.zero == False
+    assert cpu.sign == False
+    assert cpu.overflow == True
+    assert cpu.carry == False
+    assert cpu.half_carry == True
+

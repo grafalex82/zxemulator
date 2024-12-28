@@ -602,6 +602,7 @@ class CPU:
             neg_value = ~value + 1
             self._half_carry = ((self._a & 0x0f) + (neg_value & 0x0f)) > 0x0f
             self._add_subtract = True
+            self._parity_overflow = ((self._a ^ neg_value) < 0x80) and ((self._a ^ res) > 0x7f) and (self._a != 0) and (neg_value != 0)
         if op == 3: # SBB
             carry = 1 if self._carry else 0
             res = self._a - value - carry
@@ -833,14 +834,14 @@ class CPU:
         self._instructions[0x8e] = self._alu
         self._instructions[0x8f] = self._alu
 
-        self._instructions[0x90] = None
-        self._instructions[0x91] = None
-        self._instructions[0x92] = None
-        self._instructions[0x93] = None
-        self._instructions[0x94] = None
-        self._instructions[0x95] = None
-        self._instructions[0x96] = None
-        self._instructions[0x97] = None
+        self._instructions[0x90] = self._alu
+        self._instructions[0x91] = self._alu
+        self._instructions[0x92] = self._alu
+        self._instructions[0x93] = self._alu
+        self._instructions[0x94] = self._alu
+        self._instructions[0x95] = self._alu
+        self._instructions[0x96] = self._alu
+        self._instructions[0x97] = self._alu
         self._instructions[0x98] = None
         self._instructions[0x99] = None
         self._instructions[0x9a] = None
@@ -907,7 +908,7 @@ class CPU:
         self._instructions[0xd3] = None
         self._instructions[0xd4] = None
         self._instructions[0xd5] = None
-        self._instructions[0xd6] = None
+        self._instructions[0xd6] = self._alu_immediate
         self._instructions[0xd7] = None
         self._instructions[0xd8] = None
         self._instructions[0xd9] = None
