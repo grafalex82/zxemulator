@@ -376,6 +376,29 @@ class CPU:
     def _reg_symb(self, reg_idx):
         return ["B", "C", "D", "E", "H", "L", "(HL)", "A"][reg_idx]
 
+    def _set_register_pair(self, reg_pair, value):
+        if reg_pair == 0:
+            self.bc = value
+        if reg_pair == 1:
+            self.de = value
+        if reg_pair == 2:
+            self.hl = value
+        if reg_pair == 3:
+            self.sp = value
+
+    def _get_register_pair(self, reg_pair):
+        if reg_pair == 0:
+            return self.bc
+        if reg_pair == 1:
+            return self.de
+        if reg_pair == 2:
+            return self.hl
+        if reg_pair == 3:
+            return self.sp
+
+    def _reg_pair_symb(self, reg_pair):
+        return ["BC", "DE", "HL", "SP"][reg_pair]
+
 
     # ALU flags
 
@@ -494,7 +517,7 @@ class CPU:
         res += f"{'A' if self._half_carry else '-'}"
         res += f"{'P' if self._parity_overflow else '-'}"
         res += f"{'N' if self._add_subtract else '-'}"
-        res += f"{'I' if self._enable_interrupts else '-'}"
+        res += f"{'I' if self._iff1 else '-'}"
         return res
 
 
@@ -567,6 +590,21 @@ class CPU:
         self._cycles += 4
 
         self._log_1b_instruction("DI")
+
+
+    # Data load instructions
+
+    def _load_immediate_16b(self):
+        """ Load register pair with immediate value"""
+        reg_pair = (self._current_inst & 0x30) >> 4
+        value = self._fetch_next_word()
+        if reg_pair == 3:
+            self._sp = value
+        else: 
+            self._set_register_pair(reg_pair, value)
+        self._cycles += 10
+
+        self._log_3b_instruction(f"LXI {self._reg_pair_symb(reg_pair)}, {value:04x}")
 
 
     # ALU instructions
@@ -684,7 +722,7 @@ class CPU:
 
     def init_instruction_table(self):
         self._instructions[0x00] = self._nop
-        self._instructions[0x01] = None
+        self._instructions[0x01] = self._load_immediate_16b
         self._instructions[0x02] = None
         self._instructions[0x03] = None
         self._instructions[0x04] = None
@@ -701,7 +739,7 @@ class CPU:
         self._instructions[0x0f] = None
 
         self._instructions[0x10] = None
-        self._instructions[0x11] = None
+        self._instructions[0x11] = self._load_immediate_16b
         self._instructions[0x12] = None
         self._instructions[0x13] = None
         self._instructions[0x14] = None
@@ -718,7 +756,7 @@ class CPU:
         self._instructions[0x1f] = None
 
         self._instructions[0x20] = None
-        self._instructions[0x21] = None
+        self._instructions[0x21] = self._load_immediate_16b
         self._instructions[0x22] = None
         self._instructions[0x23] = None
         self._instructions[0x24] = None
@@ -735,7 +773,7 @@ class CPU:
         self._instructions[0x2f] = None
 
         self._instructions[0x30] = None
-        self._instructions[0x31] = None
+        self._instructions[0x31] = self._load_immediate_16b
         self._instructions[0x32] = None
         self._instructions[0x33] = None
         self._instructions[0x34] = None

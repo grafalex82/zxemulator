@@ -94,6 +94,54 @@ def test_ei_di(cpu):
     assert cpu._cycles == 8     # 4 more cycles
 
 
+# Data transfer instructions tests
+
+def test_ld_bc(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0x01)    # LD BC, #beef Instruction Opcode
+    cpu._machine.write_memory_word(0x0001, 0xbeef)  # Immediate argument
+    cpu.step() 
+    assert cpu.pc == 0x0003
+    assert cpu.b == 0xbe
+    assert cpu.c == 0xef
+    assert cpu._cycles == 10
+
+def test_ld_de(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0x11)    # LD DE, #beef Instruction Opcode
+    cpu._machine.write_memory_word(0x0001, 0xbeef)  # Immediate argument
+    cpu.step() 
+    assert cpu.pc == 0x0003
+    assert cpu.d == 0xbe
+    assert cpu.e == 0xef
+    assert cpu._cycles == 10
+    
+def test_ld_hl(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0x21)    # LD HL, #beef Instruction Opcode
+    cpu._machine.write_memory_word(0x0001, 0xbeef)  # Immediate argument
+    cpu.step() 
+    assert cpu.pc == 0x0003
+    assert cpu.h == 0xbe
+    assert cpu.l == 0xef
+    assert cpu._cycles == 10
+    
+def test_ld_sp(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0x31)    # LD SP, #beef Instruction Opcode
+    cpu._machine.write_memory_word(0x0001, 0xbeef)  # Immediate argument
+    cpu.step() 
+    assert cpu.pc == 0x0003
+    assert cpu.sp == 0xbeef
+    assert cpu._cycles == 10
+
+
+# Execution flow instruction tests
+
+def test_jp(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xc3)    # Instruction Opcode
+    cpu._machine.write_memory_word(0x0001, 0xbeef)  # Address
+    cpu.step()
+    assert cpu.pc == 0xbeef
+    assert cpu._cycles == 10
+
+
 # ALU instructions tests
 
 # Below pairwise testing is used - assuming the same ALU engine is used for all instructions, various tests
