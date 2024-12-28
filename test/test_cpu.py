@@ -478,3 +478,42 @@ def test_xor_zero(cpu):
     assert cpu.parity == True
     assert cpu.carry == False
     assert cpu.half_carry == False
+
+def test_or(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xb6)    # OR A, (HL) Instruction Opcode
+    cpu._machine.write_memory_byte(0x1234, 0x0f)    # Operand at (HL)
+    cpu.a = 0x33
+    cpu.hl = 0x1234
+    cpu.step()
+    assert cpu.a == 0x3f
+    assert cpu._cycles == 7   # Accessing (HL) takes additional 3 cycles
+    assert cpu.zero == False
+    assert cpu.sign == False
+    assert cpu.parity == True
+    assert cpu.carry == False
+    assert cpu.half_carry == False
+
+def test_or_zero(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xb7)    # OR A, A Instruction Opcode
+    cpu.a = 0x00
+    cpu.step()
+    assert cpu.a == 0x00
+    assert cpu._cycles == 4
+    assert cpu.zero == True
+    assert cpu.sign == False
+    assert cpu.parity == True
+    assert cpu.carry == False
+    assert cpu.half_carry == False
+
+def test_or_all_ones(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xf6)    # OR A, #55 Instruction Opcode
+    cpu._machine.write_memory_byte(0x0001, 0x55)    # Immediate operand
+    cpu.a = 0xaa
+    cpu.step()
+    assert cpu.a == 0xff
+    assert cpu._cycles == 7    # Immediate value takes additional 3 cycles
+    assert cpu.zero == False
+    assert cpu.sign == True
+    assert cpu.parity == True
+    assert cpu.carry == False
+    assert cpu.half_carry == False
