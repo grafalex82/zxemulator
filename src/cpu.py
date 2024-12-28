@@ -860,14 +860,14 @@ class CPU:
         self._instructions[0xa5] = self._alu
         self._instructions[0xa6] = self._alu
         self._instructions[0xa7] = self._alu
-        self._instructions[0xa8] = None
-        self._instructions[0xa9] = None
-        self._instructions[0xaa] = None
-        self._instructions[0xab] = None
-        self._instructions[0xac] = None
-        self._instructions[0xad] = None
-        self._instructions[0xae] = None
-        self._instructions[0xaf] = None
+        self._instructions[0xa8] = self._alu
+        self._instructions[0xa9] = self._alu
+        self._instructions[0xaa] = self._alu
+        self._instructions[0xab] = self._alu
+        self._instructions[0xac] = self._alu
+        self._instructions[0xad] = self._alu
+        self._instructions[0xae] = self._alu
+        self._instructions[0xaf] = self._alu
 
         self._instructions[0xb0] = None
         self._instructions[0xb1] = None
@@ -934,7 +934,7 @@ class CPU:
         self._instructions[0xeb] = None
         self._instructions[0xec] = None
         self._instructions[0xed] = None
-        self._instructions[0xee] = None
+        self._instructions[0xee] = self._alu_immediate
         self._instructions[0xef] = None
 
         self._instructions[0xf0] = None
