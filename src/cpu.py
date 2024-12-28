@@ -70,7 +70,7 @@ class CPU:
         self._sign = False                      # Bit 7
         self._zero = False                      # Bit 6
         self._half_carry = False                # Bit 4
-        self._parity = False  # odd or even     # Bit 2
+        self._parity_overflow = False           # Bit 2
         self._add_subtract = False              # Bit 1
         self._carry = False                     # Bit 0
 
@@ -110,7 +110,7 @@ class CPU:
         if self._sign: flags = set_bit(flags, 7)
         if self._zero: flags = set_bit(flags, 6)
         if self._half_carry: flags = set_bit(flags, 4)
-        if self._parity: flags = set_bit(flags, 2)
+        if self._parity_overflow: flags = set_bit(flags, 2)
         if self._add_subtract: flags = set_bit(flags, 1)
         if self._carry: flags = set_bit(flags, 0)
         return flags
@@ -120,7 +120,7 @@ class CPU:
         self._sign = is_bit_set(value, 7)
         self._zero = is_bit_set(value, 6)
         self._half_carry = is_bit_set(value, 4)
-        self._parity = is_bit_set(value, 2)
+        self._parity_overflow = is_bit_set(value, 2)
         self._add_subtract = is_bit_set(value, 1)
         self._carry = is_bit_set(value, 0)
 
@@ -334,6 +334,49 @@ class CPU:
     pc = property(get_pc, set_pc)
 
 
+    # Register internal access
+
+    def _get_register(self, reg_idx):
+        if reg_idx == 0:
+            return self._b
+        if reg_idx == 1:
+            return self._c
+        if reg_idx == 2:
+            return self._d
+        if reg_idx == 3:
+            return self._e
+        if reg_idx == 4:
+            return self._h
+        if reg_idx == 5:
+            return self._l
+        if reg_idx == 6:
+            return self._machine.read_memory_byte(self.hl)
+        if reg_idx == 7:
+            return self._a
+
+    def _set_register(self, reg_idx, value):
+        assert value >= 0x00 and value <= 0xff
+        if reg_idx == 0:
+            self._b = value
+        if reg_idx == 1:
+            self._c = value
+        if reg_idx == 2:
+            self._d = value
+        if reg_idx == 3:
+            self._e = value
+        if reg_idx == 4:
+            self._h = value
+        if reg_idx == 5:
+            self._l = value
+        if reg_idx == 6:
+            self._machine.write_memory_byte(self.hl, value)
+        if reg_idx == 7:
+            self._a = value
+
+    def _reg_symb(self, reg_idx):
+        return ["B", "C", "D", "E", "H", "L", "(HL)", "A"][reg_idx]
+
+
     # ALU flags
 
     def get_sign(self):
@@ -355,10 +398,10 @@ class CPU:
         self._half_carry = value
 
     def get_parity(self):
-        return self._parity
+        return self._parity_overflow
 
     def set_parity(self, value):
-        self._parity = value
+        self._parity_overflow = value
 
     def get_add_subtract(self):
         return self._add_subtract
@@ -376,6 +419,7 @@ class CPU:
     zero = property(get_zero, set_zero)
     half_carry = property(get_half_carry, set_half_carry)
     parity = property(get_parity, set_parity)
+    overflow = property(get_parity, set_parity)     # Overflow flag shares the same bit as parity
     add_subtract = property(get_add_subtract, set_add_subtract)
     carry = property(get_carry, set_carry)
 
@@ -448,7 +492,7 @@ class CPU:
         res += f"{'S' if self._sign else '-'}"
         res += f"{'C' if self._carry else '-'}"
         res += f"{'A' if self._half_carry else '-'}"
-        res += f"{'P' if self._parity else '-'}"
+        res += f"{'P' if self._parity_overflow else '-'}"
         res += f"{'N' if self._add_subtract else '-'}"
         res += f"{'I' if self._enable_interrupts else '-'}"
         return res
@@ -498,7 +542,7 @@ class CPU:
 
 
 
-    # Instructions
+    # CPU control instructions
 
     def _nop(self):
         """ Do nothing """
@@ -506,8 +550,6 @@ class CPU:
 
         self._log_1b_instruction("NOP")
 
-
-    # Flags and modes instructions
 
     def _ei(self):
         """ Enable interrupts """
@@ -525,6 +567,114 @@ class CPU:
         self._cycles += 4
 
         self._log_1b_instruction("DI")
+
+
+    # ALU instructions
+
+    def _count_bits(self, n):
+        """ Return number of set bits """
+        if (n == 0):
+            return 0
+        else:
+            return 1 + self._count_bits(n & (n - 1))
+
+    def _alu_op(self, op, value):
+        """ Internal implementation of an ALU operation between the accumulator and value.
+        The function updates flags as a result of the operation """
+
+        # Perform the operation
+        if op == 0: # ADD
+            res = self._a + value
+            self._carry = res > 0xff
+            self._half_carry = ((self._a & 0x0f) + (value & 0x0f)) > 0x0f
+            self._add_subtract = False
+            self._parity_overflow = ((self._a ^ value) < 0x80) and ((self._a ^ res) > 0x7f) and (self._a != 0) and (value != 0)
+        if op == 1: # ADC
+            carry = 1 if self._carry else 0
+            res = self._a + value + carry
+            self._carry = res > 0xff
+            self._half_carry = ((self._a & 0x0f) + (value & 0x0f) + carry) > 0x0f
+            self._add_subtract = False
+            self._parity_overflow = ((self._a ^ value) < 0x80) and ((self._a ^ res) > 0x7f) and (self._a != 0) and (value != 0)
+        if op == 2 or op == 7: # SUB and CMP
+            res = self._a - value
+            self._carry = res < 0
+            neg_value = ~value + 1
+            self._half_carry = ((self._a & 0x0f) + (neg_value & 0x0f)) > 0x0f
+            self._add_subtract = True
+        if op == 3: # SBB
+            carry = 1 if self._carry else 0
+            res = self._a - value - carry
+            self._carry = res < 0 
+            neg_value = ~value + 1
+            self._half_carry = ((self._a & 0x0f) + ((neg_value - carry) & 0x0f)) > 0x0f
+            self._add_subtract = True
+        if op == 4: # AND
+            res = self._a & value
+        if op == 5: # XOR
+            res = self._a ^ value
+        if op == 6: # OR
+            res = self._a | value
+
+        res &= 0xff
+
+        # Store result for all operations, except for CMP
+        if op != 7:
+            self._a = res
+
+        # Update common flags
+        if op >= 4 and op < 7: 
+            self._carry = False
+            self._half_carry = False
+            self._parity_overflow = self._count_bits(res) % 2 == 0
+        self._zero = res == 0        
+        self._sign = (res & 0x80) != 0
+
+
+    def _alu(self):
+        """ 
+        Implementation of the following instructions:
+            - ADD - add a register to the accumulator
+            - ADC - add a register to the accumulator with carry
+            - SUB - subtract a register from the accumulator
+            - SBB - subtract a register from the accumulator with carry
+            - ANA - logical AND a register with the accumulator
+            - XRA - logical XOR a register with the accumulator
+            - ORA - logical OR a register with the accumulator
+            - CMP - compare a register with the accumulator (set flags, but not change accumulator)
+        """
+        op = (self._current_inst & 0x38) >> 3
+        op_name = ["ADD", "ADC", "SUB", "SBB", "ANA", "XRA", "ORA", "CMP"][op]
+        reg = self._current_inst & 0x07
+        value = self._get_register(reg)
+
+        self._alu_op(op, value)
+        self._cycles += 4 if reg != 6 else 7
+
+        self._log_1b_instruction(f"{op_name} {self._reg_symb(reg)}")
+
+
+    def _alu_immediate(self):
+        """ 
+        Implementation of ALU instructions between the accumulator register and 
+        immediate operand:
+            - ADI - add the operand to the accumulator
+            - ACI - add the operand to the accumulator with carry
+            - SUI - subtract the operand from the accumulator
+            - SBI - subtract the operand from the accumulator with carry
+            - ANI - logical AND the operand with the accumulator
+            - XRI - logical XOR the operand with the accumulator
+            - ORI - logical OR the operand with the accumulator
+            - CPI - compare the operand with the accumulator (set flags, but not change accumulator)
+        """
+        op = (self._current_inst & 0x38) >> 3
+        op_name = ["ADI", "ACI", "SUI", "SBI", "ANI", "XRI", "ORI", "CPI"][op]
+        value = self._fetch_next_byte()
+
+        self._alu_op(op, value)
+        self._cycles += 7
+
+        self._log_2b_instruction(f"{op_name} {value:02x}")
 
 
     # Instruction table
@@ -666,14 +816,14 @@ class CPU:
         self._instructions[0x7e] = None
         self._instructions[0x7f] = None
 
-        self._instructions[0x80] = None
-        self._instructions[0x81] = None
-        self._instructions[0x82] = None
-        self._instructions[0x83] = None
-        self._instructions[0x84] = None
-        self._instructions[0x85] = None
-        self._instructions[0x86] = None
-        self._instructions[0x87] = None
+        self._instructions[0x80] = self._alu
+        self._instructions[0x81] = self._alu
+        self._instructions[0x82] = self._alu
+        self._instructions[0x83] = self._alu
+        self._instructions[0x84] = self._alu
+        self._instructions[0x85] = self._alu
+        self._instructions[0x86] = self._alu
+        self._instructions[0x87] = self._alu
         self._instructions[0x88] = None
         self._instructions[0x89] = None
         self._instructions[0x8a] = None
@@ -740,7 +890,7 @@ class CPU:
         self._instructions[0xc3] = None
         self._instructions[0xc4] = None
         self._instructions[0xc5] = None
-        self._instructions[0xc6] = None
+        self._instructions[0xc6] = self._alu_immediate
         self._instructions[0xc7] = None
         self._instructions[0xc8] = None
         self._instructions[0xc9] = None

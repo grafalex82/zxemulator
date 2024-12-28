@@ -70,7 +70,7 @@ def test_machine_reset(cpu):
 
 
 
-# Instructions tests
+# CPU Control instructions tests
 
 def test_nop(cpu):
     cpu._machine.write_memory_byte(0x0000, 0x00)    # NOP Instruction Opcode
@@ -92,3 +92,87 @@ def test_ei_di(cpu):
     assert cpu.iff1 == False
     assert cpu.iff2 == False
     assert cpu._cycles == 8     # 4 more cycles
+
+
+# ALU instructions tests
+# Below pairwise testing is used - assuming the same ALU engine is used for all instructions, various tests
+# use different instruction types to cover all possible cases, as well as different argument values to test
+# resulting flags
+
+def test_add(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0x80)    # ADD A, B Instruction Opcode
+    cpu.a = 0x1c
+    cpu.b = 0x2e
+    cpu.step()
+    assert cpu.a == 0x4a        # Adding 2 positive integers resulting a positive number
+    assert cpu._cycles == 4
+    assert cpu.zero == False
+    assert cpu.sign == False
+    assert cpu.overflow == False
+    assert cpu.carry == False
+    assert cpu.half_carry == True
+
+def test_add_zero(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0x87)    # ADD A, A Instruction Opcode
+    cpu.a = 0x00
+    cpu.step()
+    assert cpu.a == 0x00        # Adding 2 zeroes results a zero
+    assert cpu._cycles == 4
+    assert cpu.zero == True
+    assert cpu.sign == False
+    assert cpu.overflow == False
+    assert cpu.carry == False
+    assert cpu.half_carry == False
+
+def test_add_zero2(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0x82)    # ADD A, D Instruction Opcode
+    cpu.a = 0x42
+    cpu.d = 0xbe
+    cpu.step()
+    assert cpu.a == 0x00        # Adding 0x42 and 0xbe results a zero
+    assert cpu._cycles == 4
+    assert cpu.zero == True
+    assert cpu.sign == False
+    assert cpu.overflow == False
+    assert cpu.carry == True
+    assert cpu.half_carry == True
+
+def test_add_overflow(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xc6)    # ADD A, #2F Instruction Opcode
+    cpu._machine.write_memory_byte(0x0001, 0x2f)    # argument
+    cpu.a = 0x6c
+    cpu.step()
+    assert cpu.a == 0x9b        # Adding 2 positive integers resulting a negative number
+    assert cpu._cycles == 7     # Immediate value takes additional 3 cycles
+    assert cpu.zero == False
+    assert cpu.sign == True     # Result is ne
+    assert cpu.overflow == True # Overflow is set since the result is negative
+    assert cpu.carry == False
+    assert cpu.half_carry == True
+
+def test_add_negative_overflow(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0x84)    # ADD A, H Instruction Opcode
+    cpu.a = 0x9a
+    cpu.h = 0xbc
+    cpu.step()
+    assert cpu.a == 0x56        # Adding 2 negative integers resulting a positive number
+    assert cpu._cycles == 4
+    assert cpu.zero == False
+    assert cpu.sign == False
+    assert cpu.overflow == True # Overflow is set since the result is positive
+    assert cpu.carry == True    # Carry is set since the result exceeds 8 bits
+    assert cpu.half_carry == True
+
+def test_add_negative_no_overflow(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0x86)    # ADD A, (HL) Instruction Opcode
+    cpu._machine.write_memory_byte(0xbeef, 0x42)    # operand at (HL)
+    cpu.a = 0x9c
+    cpu.hl = 0xbeef
+    cpu.step()
+    assert cpu.a == 0xde        # Adding negative and positive integer does not result an overflow
+    assert cpu._cycles == 7     # Accessing (HL) takes additional 3 cycles
+    assert cpu.zero == False
+    assert cpu.sign == True     # Result is still negative
+    assert cpu.overflow == False    # No overflow
+    assert cpu.carry == False   # No carry
+    assert cpu.half_carry == False
