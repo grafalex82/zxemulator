@@ -604,7 +604,21 @@ class CPU:
             self._set_register_pair(reg_pair, value)
         self._cycles += 10
 
-        self._log_3b_instruction(f"LXI {self._reg_pair_symb(reg_pair)}, {value:04x}")
+        self._log_3b_instruction(f"LD {self._reg_pair_symb(reg_pair)}, {value:04x}")
+
+    def _load_register_to_register(self):
+        """ Move a byte between 2 registers """
+        dst = (self._current_inst & 0x38) >> 3
+        src = self._current_inst & 0x07
+        value = self._get_register(src)
+        self._set_register(dst, value)
+
+        self._cycles += 4
+        if src == 6 or dst == 6:
+            self._cycles += 3
+
+        self._log_1b_instruction(f"LD {self._reg_symb(dst)}, {self._reg_symb(src)}")
+
 
 
     # Execution flow instructions
@@ -801,73 +815,73 @@ class CPU:
         self._instructions[0x3e] = None
         self._instructions[0x3f] = None
 
-        self._instructions[0x40] = None
-        self._instructions[0x41] = None
-        self._instructions[0x42] = None
-        self._instructions[0x43] = None
-        self._instructions[0x44] = None
-        self._instructions[0x45] = None
-        self._instructions[0x46] = None
-        self._instructions[0x47] = None
-        self._instructions[0x48] = None
-        self._instructions[0x49] = None
-        self._instructions[0x4a] = None
-        self._instructions[0x4b] = None
-        self._instructions[0x4c] = None
-        self._instructions[0x4d] = None
-        self._instructions[0x4e] = None
-        self._instructions[0x4f] = None
+        self._instructions[0x40] = self._load_register_to_register
+        self._instructions[0x41] = self._load_register_to_register
+        self._instructions[0x42] = self._load_register_to_register
+        self._instructions[0x43] = self._load_register_to_register
+        self._instructions[0x44] = self._load_register_to_register
+        self._instructions[0x45] = self._load_register_to_register
+        self._instructions[0x46] = self._load_register_to_register
+        self._instructions[0x47] = self._load_register_to_register
+        self._instructions[0x48] = self._load_register_to_register
+        self._instructions[0x49] = self._load_register_to_register
+        self._instructions[0x4a] = self._load_register_to_register
+        self._instructions[0x4b] = self._load_register_to_register
+        self._instructions[0x4c] = self._load_register_to_register
+        self._instructions[0x4d] = self._load_register_to_register
+        self._instructions[0x4e] = self._load_register_to_register
+        self._instructions[0x4f] = self._load_register_to_register
 
-        self._instructions[0x50] = None
-        self._instructions[0x51] = None
-        self._instructions[0x52] = None
-        self._instructions[0x53] = None
-        self._instructions[0x54] = None
-        self._instructions[0x55] = None
-        self._instructions[0x56] = None
-        self._instructions[0x57] = None
-        self._instructions[0x58] = None
-        self._instructions[0x59] = None
-        self._instructions[0x5a] = None
-        self._instructions[0x5b] = None
-        self._instructions[0x5c] = None
-        self._instructions[0x5d] = None
-        self._instructions[0x5e] = None
-        self._instructions[0x5f] = None
+        self._instructions[0x50] = self._load_register_to_register
+        self._instructions[0x51] = self._load_register_to_register
+        self._instructions[0x52] = self._load_register_to_register
+        self._instructions[0x53] = self._load_register_to_register
+        self._instructions[0x54] = self._load_register_to_register
+        self._instructions[0x55] = self._load_register_to_register
+        self._instructions[0x56] = self._load_register_to_register
+        self._instructions[0x57] = self._load_register_to_register
+        self._instructions[0x58] = self._load_register_to_register
+        self._instructions[0x59] = self._load_register_to_register
+        self._instructions[0x5a] = self._load_register_to_register
+        self._instructions[0x5b] = self._load_register_to_register
+        self._instructions[0x5c] = self._load_register_to_register
+        self._instructions[0x5d] = self._load_register_to_register
+        self._instructions[0x5e] = self._load_register_to_register
+        self._instructions[0x5f] = self._load_register_to_register
 
-        self._instructions[0x60] = None
-        self._instructions[0x61] = None
-        self._instructions[0x62] = None
-        self._instructions[0x63] = None
-        self._instructions[0x64] = None
-        self._instructions[0x65] = None
-        self._instructions[0x66] = None
-        self._instructions[0x67] = None
-        self._instructions[0x68] = None
-        self._instructions[0x69] = None
-        self._instructions[0x6a] = None
-        self._instructions[0x6b] = None
-        self._instructions[0x6c] = None
-        self._instructions[0x6d] = None
-        self._instructions[0x6e] = None
-        self._instructions[0x6f] = None
+        self._instructions[0x60] = self._load_register_to_register
+        self._instructions[0x61] = self._load_register_to_register
+        self._instructions[0x62] = self._load_register_to_register
+        self._instructions[0x63] = self._load_register_to_register
+        self._instructions[0x64] = self._load_register_to_register
+        self._instructions[0x65] = self._load_register_to_register
+        self._instructions[0x66] = self._load_register_to_register
+        self._instructions[0x67] = self._load_register_to_register
+        self._instructions[0x68] = self._load_register_to_register
+        self._instructions[0x69] = self._load_register_to_register
+        self._instructions[0x6a] = self._load_register_to_register
+        self._instructions[0x6b] = self._load_register_to_register
+        self._instructions[0x6c] = self._load_register_to_register
+        self._instructions[0x6d] = self._load_register_to_register
+        self._instructions[0x6e] = self._load_register_to_register
+        self._instructions[0x6f] = self._load_register_to_register
 
-        self._instructions[0x70] = None
-        self._instructions[0x71] = None
-        self._instructions[0x72] = None
-        self._instructions[0x73] = None
-        self._instructions[0x74] = None
-        self._instructions[0x75] = None
+        self._instructions[0x70] = self._load_register_to_register
+        self._instructions[0x71] = self._load_register_to_register
+        self._instructions[0x72] = self._load_register_to_register
+        self._instructions[0x73] = self._load_register_to_register
+        self._instructions[0x74] = self._load_register_to_register
+        self._instructions[0x75] = self._load_register_to_register
         self._instructions[0x76] = None
-        self._instructions[0x77] = None
-        self._instructions[0x78] = None
-        self._instructions[0x79] = None
-        self._instructions[0x7a] = None
-        self._instructions[0x7b] = None
-        self._instructions[0x7c] = None
-        self._instructions[0x7d] = None
-        self._instructions[0x7e] = None
-        self._instructions[0x7f] = None
+        self._instructions[0x77] = self._load_register_to_register
+        self._instructions[0x78] = self._load_register_to_register
+        self._instructions[0x79] = self._load_register_to_register
+        self._instructions[0x7a] = self._load_register_to_register
+        self._instructions[0x7b] = self._load_register_to_register
+        self._instructions[0x7c] = self._load_register_to_register
+        self._instructions[0x7d] = self._load_register_to_register
+        self._instructions[0x7e] = self._load_register_to_register
+        self._instructions[0x7f] = self._load_register_to_register
 
         self._instructions[0x80] = self._alu
         self._instructions[0x81] = self._alu

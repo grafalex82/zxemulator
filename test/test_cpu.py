@@ -131,6 +131,36 @@ def test_ld_sp(cpu):
     assert cpu.sp == 0xbeef
     assert cpu._cycles == 10
 
+def test_ld_a_h(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0x7c)    # Instruction Opcode
+    cpu.h = 0x42
+    cpu.step()
+    assert cpu._cycles == 4
+    assert cpu.a == 0x42
+
+def test_ld_b_e(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0x43)    # Instruction Opcode
+    cpu.e = 0x42
+    cpu.step()
+    assert cpu._cycles == 4
+    assert cpu.b == 0x42
+
+def test_ld_mem_d(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0x72)    # Instruction Opcode
+    cpu.d = 0x42
+    cpu.hl = 0x1234
+    cpu.step()
+    assert cpu._cycles == 7    # Accessing (HL) takes additional 3 cycles
+    assert cpu._machine.read_memory_byte(0x1234) == 0x42
+
+def test_ld_l_mem(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0x6e)    # Instruction Opcode
+    cpu._machine.write_memory_byte(0x1234, 0x42)    # Data
+    cpu.hl = 0x1234
+    cpu.step()
+    assert cpu._cycles == 7   # Accessing (HL) takes additional 3 cycles
+    assert cpu.l == 0x42
+
 
 # Execution flow instruction tests
 
