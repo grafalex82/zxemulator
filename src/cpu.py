@@ -556,7 +556,7 @@ class CPU:
         res += f"{'Z' if self._zero else '-'}"
         res += f"{'S' if self._sign else '-'}"
         res += f"{'C' if self._carry else '-'}"
-        res += f"{'A' if self._half_carry else '-'}"
+        res += f"{'H' if self._half_carry else '-'}"
         res += f"{'P' if self._parity_overflow else '-'}"
         res += f"{'N' if self._add_subtract else '-'}"
         res += f"{'I' if self._iff1 else '-'}"
@@ -898,6 +898,20 @@ class CPU:
         self._log_1b_instruction(f"INC {self._reg_pair_symb(reg_pair)}")
 
 
+    def _add_hl(self):
+        """ Add register pairs """
+        reg_pair = (self._current_inst & 0x30) >> 4
+        value = self._get_register_pair(reg_pair)
+        res = self.hl + value
+        self._carry = (res >= 0x10000)
+        self._half_carry = ((self.hl & 0x0fff) + (value & 0x0fff)) >= 0x1000
+        self._add_subtract = False
+        self.hl = res & 0xffff
+
+        self._cycles += 11
+
+        self._log_1b_instruction(f"ADD HL, {self._reg_pair_symb(reg_pair)}")
+
 
     # Instruction table
 
@@ -911,7 +925,7 @@ class CPU:
         self._instructions[0x06] = self._load_8b_immediate_to_register
         self._instructions[0x07] = None
         self._instructions[0x08] = None
-        self._instructions[0x09] = None
+        self._instructions[0x09] = self._add_hl
         self._instructions[0x0a] = None
         self._instructions[0x0b] = self._dec16
         self._instructions[0x0c] = None
@@ -928,7 +942,7 @@ class CPU:
         self._instructions[0x16] = self._load_8b_immediate_to_register
         self._instructions[0x17] = None
         self._instructions[0x18] = self._jr
-        self._instructions[0x19] = None
+        self._instructions[0x19] = self._add_hl
         self._instructions[0x1a] = None
         self._instructions[0x1b] = self._dec16
         self._instructions[0x1c] = None
@@ -945,7 +959,7 @@ class CPU:
         self._instructions[0x26] = self._load_8b_immediate_to_register
         self._instructions[0x27] = None
         self._instructions[0x28] = self._jr_cond
-        self._instructions[0x29] = None
+        self._instructions[0x29] = self._add_hl
         self._instructions[0x2a] = None
         self._instructions[0x2b] = self._dec16
         self._instructions[0x2c] = None
@@ -962,7 +976,7 @@ class CPU:
         self._instructions[0x36] = self._load_8b_immediate_to_register
         self._instructions[0x37] = None
         self._instructions[0x38] = self._jr_cond
-        self._instructions[0x39] = None
+        self._instructions[0x39] = self._add_hl
         self._instructions[0x3a] = None
         self._instructions[0x3b] = self._dec16
         self._instructions[0x3c] = None

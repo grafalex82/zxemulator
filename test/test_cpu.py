@@ -866,3 +866,50 @@ def test_inc_sp(cpu):
     cpu.step()
     assert cpu._cycles == 6
     assert cpu.sp == 0xbef0
+
+def test_add_hl_bc(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0x09)    # ADD HL, BC Instruction Opcode
+    cpu.hl = 0xa17b
+    cpu.bc = 0x339f
+    cpu.carry = True    # Shall be ignored
+    cpu.step()
+    assert cpu.hl == 0xd51a
+    assert cpu._cycles == 11
+    assert cpu.carry == False
+    assert cpu.half_carry == False
+    assert cpu.add_subtract == False
+
+def test_add_hl_de(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0x19)    # ADD HL, DE Instruction Opcode
+    cpu.hl = 0xa17b
+    cpu.de = 0xbeef
+    cpu.carry = True    # Shall be ignored
+    cpu.step()
+    assert cpu.hl == 0x606a
+    assert cpu._cycles == 11
+    assert cpu.carry == True
+    assert cpu.half_carry == True
+    assert cpu.add_subtract == False
+
+def test_add_hl_hl(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0x29)    # ADD HL, HL Instruction Opcode
+    cpu.hl = 0xbeef
+    cpu.carry = True    # Shall be ignored
+    cpu.step()
+    assert cpu.hl == 0x7dde
+    assert cpu._cycles == 11
+    assert cpu.carry == True
+    assert cpu.half_carry == True
+    assert cpu.add_subtract == False
+
+def test_add_hl_sp(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0x39)    # ADD HL, SP Instruction Opcode
+    cpu.hl = 0x1234
+    cpu.sp = 0xbeef
+    cpu.carry = True    # Shall be ignored
+    cpu.step()
+    assert cpu.hl == 0xd123
+    assert cpu._cycles == 11
+    assert cpu.carry == False
+    assert cpu.half_carry == True
+    assert cpu.add_subtract == False
