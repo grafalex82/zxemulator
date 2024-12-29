@@ -129,7 +129,7 @@ class Spectrum48K(Configuration):
  
 
     def create_memories(self):
-        self._machine.add_memory(MemoryDevice(RAM(), 0x8000, 0xffff))
+        self._machine.add_memory(MemoryDevice(RAM(), 0x4000, 0xffff))
         self._machine.add_memory(MemoryDevice(ROM(f"{resources_dir}/spectrum48.rom"), 0x0000))
 
 
