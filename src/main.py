@@ -139,7 +139,7 @@ class Spectrum48K(Configuration):
 
 
     def configure_logging(self):
-        # TODO
+        self.suppress_logging(0x11db, 0x11e2, "Init RAM cleanup")
         pass
 
     def get_screen_size(self):
