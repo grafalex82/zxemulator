@@ -913,3 +913,91 @@ def test_add_hl_sp(cpu):
     assert cpu.carry == False
     assert cpu.half_carry == True
     assert cpu.add_subtract == False
+
+def test_adc_hl_bc(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xed)    # ADC HL, BC Instruction Opcode
+    cpu._machine.write_memory_byte(0x0001, 0x4a)
+    cpu.hl = 0xa17b     # Negative + Positive result no overflow
+    cpu.bc = 0x339f
+    cpu.carry = True    # Shall be processed
+    cpu.step()
+    assert cpu.hl == 0xd51b
+    assert cpu._cycles == 15
+    assert cpu.carry == False
+    assert cpu.half_carry == False
+    assert cpu.add_subtract == False
+    assert cpu.overflow == False
+    assert cpu.zero == False
+
+def test_adc_hl_de(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xed)    # ADC HL, DE Instruction Opcode
+    cpu._machine.write_memory_byte(0x0001, 0x5a)
+    cpu.hl = 0xabcd     # Negative + negative result an overflow
+    cpu.de = 0xef12
+    cpu.carry = True    # Shall be processed
+    cpu.step()
+    assert cpu.hl == 0x9ae0
+    assert cpu._cycles == 15
+    assert cpu.carry == True
+    assert cpu.half_carry == True
+    assert cpu.add_subtract == False
+    assert cpu.overflow == True
+    assert cpu.zero == False
+
+def test_adc_hl_hl(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xed)    # ADC HL, HL Instruction Opcode
+    cpu._machine.write_memory_byte(0x0001, 0x6a)
+    cpu.hl = 0x4567     # Positive + positive result an overflow
+    cpu.carry = True    # Shall be processed
+    cpu.step()
+    assert cpu.hl == 0x8acf
+    assert cpu._cycles == 15
+    assert cpu.carry == False
+    assert cpu.half_carry == False
+    assert cpu.add_subtract == False
+    assert cpu.overflow == True
+    assert cpu.zero == False
+
+def test_adc_hl_hl_zero(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xed)    # ADC HL, HL Instruction Opcode
+    cpu._machine.write_memory_byte(0x0001, 0x6a)
+    cpu.hl = 0x0000     # Zero + zero result no overflow
+    cpu.carry = False   # No carry
+    cpu.step()
+    assert cpu.hl == 0x0000
+    assert cpu._cycles == 15
+    assert cpu.carry == False
+    assert cpu.half_carry == False
+    assert cpu.add_subtract == False
+    assert cpu.overflow == False
+    assert cpu.zero == True
+
+def test_adc_hl_sp(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xed)    # ADC HL, SP Instruction Opcode
+    cpu._machine.write_memory_byte(0x0001, 0x7a)
+    cpu.hl = 0x4567     # Positive + negative result no overflow
+    cpu.sp = 0x89ab
+    cpu.carry = True    # Shall be processed
+    cpu.step()
+    assert cpu.hl == 0xcf13
+    assert cpu._cycles == 15
+    assert cpu.carry == False
+    assert cpu.half_carry == False
+    assert cpu.add_subtract == False
+    assert cpu.overflow == False
+    assert cpu.zero == False
+
+def test_adc_hl_sp_zero(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xed)    # ADC HL, SP Instruction Opcode
+    cpu._machine.write_memory_byte(0x0001, 0x7a)
+    cpu.hl = 0x4567     # Positive + negative result no overflow
+    cpu.sp = 0xba98
+    cpu.carry = True    # Shall be processed
+    cpu.step()
+    assert cpu.hl == 0x0000
+    assert cpu._cycles == 15
+    assert cpu.carry == True
+    assert cpu.half_carry == True
+    assert cpu.add_subtract == False
+    assert cpu.overflow == False
+    assert cpu.zero == True

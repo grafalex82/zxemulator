@@ -913,6 +913,27 @@ class CPU:
         self._log_1b_instruction(f"ADD HL, {self._reg_pair_symb(reg_pair)}")
 
 
+    def _adc_hl(self):
+        """ Add register pairs with carry """
+        reg_pair = (self._current_inst & 0x30) >> 4
+        hl = self.hl
+        value = self._get_register_pair(reg_pair)
+        carry = 1 if self._carry else 0
+        res = hl + value + carry
+        self._sign = (res & 0x8000) != 0
+        self._zero = (res & 0xffff) == 0
+        self._parity_overflow = ((hl ^ value) < 0x8000) and ((hl ^ res) > 0x7fff) and (hl != 0) and (value != 0)
+        self._carry = (res >= 0x10000)
+        self._half_carry = ((self.hl & 0x0fff) + (value & 0x0fff) + carry) >= 0x1000
+        self._add_subtract = False
+        self.hl = res & 0xffff
+
+        self._cycles += 15
+
+        self._log_1b_instruction(f"ADC HL, {self._reg_pair_symb(reg_pair)}")
+
+
+
     # Instruction table
 
     def init_instruction_table(self):
@@ -1269,7 +1290,7 @@ class CPU:
         self._instructions_0xed[0x47] = self._load_i_r_register_from_a
         self._instructions_0xed[0x48] = None
         self._instructions_0xed[0x49] = None
-        self._instructions_0xed[0x4a] = None
+        self._instructions_0xed[0x4a] = self._adc_hl
         self._instructions_0xed[0x4b] = None
         self._instructions_0xed[0x4c] = None
         self._instructions_0xed[0x4d] = None
@@ -1286,7 +1307,7 @@ class CPU:
         self._instructions_0xed[0x57] = self._load_a_from_i_r_registers
         self._instructions_0xed[0x58] = None
         self._instructions_0xed[0x59] = None
-        self._instructions_0xed[0x5a] = None
+        self._instructions_0xed[0x5a] = self._adc_hl
         self._instructions_0xed[0x5b] = None
         self._instructions_0xed[0x5c] = None
         self._instructions_0xed[0x5d] = None
@@ -1303,7 +1324,7 @@ class CPU:
         self._instructions_0xed[0x67] = None
         self._instructions_0xed[0x68] = None
         self._instructions_0xed[0x69] = None
-        self._instructions_0xed[0x6a] = None
+        self._instructions_0xed[0x6a] = self._adc_hl
         self._instructions_0xed[0x6b] = None
         self._instructions_0xed[0x6c] = None
         self._instructions_0xed[0x6d] = None
@@ -1320,7 +1341,7 @@ class CPU:
         self._instructions_0xed[0x77] = None
         self._instructions_0xed[0x78] = None
         self._instructions_0xed[0x79] = None
-        self._instructions_0xed[0x7a] = None
+        self._instructions_0xed[0x7a] = self._adc_hl
         self._instructions_0xed[0x7b] = None
         self._instructions_0xed[0x7c] = None
         self._instructions_0xed[0x7d] = None
