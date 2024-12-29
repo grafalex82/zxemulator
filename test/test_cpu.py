@@ -96,6 +96,27 @@ def test_ei_di(cpu):
     assert cpu.iff2 == False
     assert cpu._cycles == 8     # 4 more cycles
 
+def test_im_0(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xed)    # IM 0 Instruction Opcode
+    cpu._machine.write_memory_byte(0x0001, 0x46)
+    cpu.step()
+    assert cpu._cycles == 8
+    assert cpu._interrupt_mode == 0
+
+def test_im_1(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xed)    # IM 1 Instruction Opcode
+    cpu._machine.write_memory_byte(0x0001, 0x56)
+    cpu.step()
+    assert cpu._cycles == 8
+    assert cpu._interrupt_mode == 1
+
+def test_im_2(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xed)    # IM 2 Instruction Opcode
+    cpu._machine.write_memory_byte(0x0001, 0x5e)
+    cpu.step()
+    assert cpu._cycles == 8
+    assert cpu._interrupt_mode == 2
+
 def test_in(cpu):
     mock = MockIO()
     mock.read_byte = MagicMock(return_value=0x55)

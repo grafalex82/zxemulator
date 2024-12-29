@@ -71,6 +71,7 @@ class CPU:
         # Interrupt flags
         self._iff1 = False
         self._iff2 = False
+        self._interrupt_mode = 0    # Not really a register, but rather a selected interrupt mode
 
         # ALU Flags
         self._sign = False                      # Bit 7
@@ -634,6 +635,16 @@ class CPU:
         self._cycles += 4
 
         self._log_1b_instruction("DI")
+
+
+    def _im(self):
+        """ Set Interrupt Mode """
+        mode = (self._current_inst & 0x18) >> 3
+        self._interrupt_mode = mode - 1 if mode != 0 else 0     # Opcode 0x46 -> mode 0, 0x56 -> mode 1, 0x5e -> mode 2
+
+        self._cycles += 8
+
+        self._log_1b_instruction(f"IM {self._interrupt_mode}")
 
 
     def _in(self):
@@ -1521,7 +1532,7 @@ class CPU:
         self._instructions_0xed[0x43] = self._store_reg16_to_memory
         self._instructions_0xed[0x44] = None
         self._instructions_0xed[0x45] = None
-        self._instructions_0xed[0x46] = None
+        self._instructions_0xed[0x46] = self._im
         self._instructions_0xed[0x47] = self._load_i_r_register_from_a
         self._instructions_0xed[0x48] = None
         self._instructions_0xed[0x49] = None
@@ -1538,7 +1549,7 @@ class CPU:
         self._instructions_0xed[0x53] = self._store_reg16_to_memory
         self._instructions_0xed[0x54] = None
         self._instructions_0xed[0x55] = None
-        self._instructions_0xed[0x56] = None
+        self._instructions_0xed[0x56] = self._im
         self._instructions_0xed[0x57] = self._load_a_from_i_r_registers
         self._instructions_0xed[0x58] = None
         self._instructions_0xed[0x59] = None
@@ -1546,7 +1557,7 @@ class CPU:
         self._instructions_0xed[0x5b] = self._load_reg16_from_memory
         self._instructions_0xed[0x5c] = None
         self._instructions_0xed[0x5d] = None
-        self._instructions_0xed[0x5e] = None
+        self._instructions_0xed[0x5e] = self._im
         self._instructions_0xed[0x5f] = self._load_a_from_i_r_registers
 
         self._instructions_0xed[0x60] = None
