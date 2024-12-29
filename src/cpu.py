@@ -823,6 +823,26 @@ class CPU:
         self._cycles += 16
         self._log_1b_instruction("LDD")
 
+    def _lddr(self):
+        """ Copy byte from (HL) to (DE) and decrement HL and DE. Repeat until BC is zero"""
+        value = self._machine.read_memory_byte(self.hl)
+        self._machine.write_memory_byte(self.de, value)
+        self.hl = (self.hl - 1) & 0xffff
+        self.de = (self.de - 1) & 0xffff
+        self.bc = (self.bc - 1) & 0xffff
+
+        self._half_carry = False
+        self._parity_overflow = self.bc != 0x0000
+        self._add_subtract = False
+
+        if self.bc != 0:
+            self._pc -= 2
+            self._cycles += 21
+        else:
+            self._cycles += 16
+
+        self._log_1b_instruction("LDDR")
+
     def _ldi(self):
         """ Copy byte from (HL) to (DE) and increment HL and DE, decrement BC """
         value = self._machine.read_memory_byte(self.hl)
@@ -837,6 +857,26 @@ class CPU:
 
         self._cycles += 16
         self._log_1b_instruction("LDI")
+
+    def _ldir(self):
+        """ Copy byte from (HL) to (DE) and increment HL and DE. Repeat until BC is zero"""
+        value = self._machine.read_memory_byte(self.hl)
+        self._machine.write_memory_byte(self.de, value)
+        self.hl = (self.hl + 1) & 0xffff
+        self.de = (self.de + 1) & 0xffff
+        self.bc = (self.bc - 1) & 0xffff
+
+        self._half_carry = False
+        self._parity_overflow = self.bc != 0x0000
+        self._add_subtract = False
+
+        if self.bc != 0:
+            self._pc -= 2
+            self._cycles += 21
+        else:
+            self._cycles += 16
+
+        self._log_1b_instruction("LDIR")
 
 
     # Execution flow instructions
@@ -1581,7 +1621,7 @@ class CPU:
         self._instructions_0xed[0xae] = None
         self._instructions_0xed[0xaf] = None
 
-        self._instructions_0xed[0xb0] = None
+        self._instructions_0xed[0xb0] = self._ldir
         self._instructions_0xed[0xb1] = None
         self._instructions_0xed[0xb2] = None
         self._instructions_0xed[0xb3] = None
@@ -1589,7 +1629,7 @@ class CPU:
         self._instructions_0xed[0xb5] = None
         self._instructions_0xed[0xb6] = None
         self._instructions_0xed[0xb7] = None
-        self._instructions_0xed[0xb8] = None
+        self._instructions_0xed[0xb8] = self._lddr
         self._instructions_0xed[0xb9] = None
         self._instructions_0xed[0xba] = None
         self._instructions_0xed[0xbb] = None

@@ -389,6 +389,59 @@ def test_ldd_last(cpu):
     assert cpu._cycles == 16
     assert cpu.overflow == False    # Reached last byte to copy
 
+def test_ldir(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xed)    # LDIR Instruction Opcode
+    cpu._machine.write_memory_byte(0x0001, 0xb0)
+    cpu.hl = 0x1234     # Source address
+    cpu.de = 0x4321     # Destination address
+    cpu.bc = 0x0003     # Number of bytes to transfer
+    cpu._machine.write_memory_byte(0x1234, 0x42)    # Data to transfer
+    cpu._machine.write_memory_byte(0x1235, 0x43)
+    cpu._machine.write_memory_byte(0x1236, 0x44)
+
+    cpu.step()                  # Repeat command 3 times
+    assert cpu.pc == 0x0000     # PC does not advance to the next instruction
+    cpu.step()
+    assert cpu.pc == 0x0000     # PC does not advance to the next instruction
+    cpu.step()
+
+    assert cpu.pc == 0x0002     # PC finally advanced to the next instruction
+    assert cpu.hl == 0x1237     # Incremented address
+    assert cpu.de == 0x4324     # Incremented address
+    assert cpu.bc == 0x0000     # Decremented count
+    assert cpu._machine.read_memory_byte(0x4321) == 0x42
+    assert cpu._machine.read_memory_byte(0x4322) == 0x43
+    assert cpu._machine.read_memory_byte(0x4323) == 0x44
+    assert cpu._cycles == 21 + 21 + 16
+    assert cpu.overflow == False    # No more bytes to copy
+
+def test_lddr(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xed)    # LDDR Instruction Opcode
+    cpu._machine.write_memory_byte(0x0001, 0xb8)
+    cpu.hl = 0x1234     # Source address
+    cpu.de = 0x4321     # Destination address
+    cpu.bc = 0x0003     # Number of bytes to transfer
+    cpu._machine.write_memory_byte(0x1234, 0x42)    # Data to transfer
+    cpu._machine.write_memory_byte(0x1233, 0x43)
+    cpu._machine.write_memory_byte(0x1232, 0x44)
+
+    cpu.step()                  # Repeat command 3 times
+    assert cpu.pc == 0x0000     # PC does not advance to the next instruction
+    cpu.step()
+    assert cpu.pc == 0x0000     # PC does not advance to the next instruction
+    cpu.step()
+
+    assert cpu.pc == 0x0002     # PC finally advanced to the next instruction
+    assert cpu.hl == 0x1231     # Decremented address
+    assert cpu.de == 0x431e     # Decremented address
+    assert cpu.bc == 0x0000     # Decremented count
+    assert cpu._machine.read_memory_byte(0x4321) == 0x42
+    assert cpu._machine.read_memory_byte(0x4320) == 0x43
+    assert cpu._machine.read_memory_byte(0x431f) == 0x44
+    assert cpu._cycles == 21 + 21 + 16
+    assert cpu.overflow == False    # No more bytes to copy
+
+
 # Execution flow instruction tests
 
 def test_jp(cpu):
