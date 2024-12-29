@@ -62,6 +62,10 @@ class CPU:
         self._ix = 0
         self._iy = 0
 
+        # Special purpose registers
+        self._i = 0
+        self._r = 0
+
         # Interrupt flags
         self._iff1 = False
         self._iff2 = False
@@ -301,6 +305,21 @@ class CPU:
         self._validate_word_value(value)
         self._iy = value
 
+    def get_i(self):
+        return self._i
+    
+    def set_i(self, value):
+        self._validate_byte_value(value)
+        self._i = value
+
+    def get_r(self):
+        return self._r
+    
+    def set_r(self, value):
+        self._validate_byte_value(value)
+        self._r = value
+
+
     a = property(get_a, set_a)
     f = property(get_f, set_f)
     b = property(get_b, set_b)
@@ -329,6 +348,9 @@ class CPU:
 
     ix = property(get_ix, set_ix)
     iy = property(get_iy, set_iy)
+
+    i = property(get_i, set_i)
+    r = property(get_r, set_r)
 
     sp = property(get_sp, set_sp)
     pc = property(get_pc, set_pc)
@@ -511,6 +533,8 @@ class CPU:
     def _get_cpu_state_str(self):
         res = f"A={self._a:02x} BC={self.bc:04x} DE={self.de:04x} "
         res += f"HL={self.hl:04x} SP={self._sp:04x} IX={self.ix:04x} IY={self.iy:04x} "
+        res += f"AFx={self.afx:04x} BCx={self.bcx:04x} DEx={self.dex:04x} HLx={self.hlx:04x} "
+        res += f"I={self._i:02x} R={self._r:02x} "
         res += f"{'Z' if self._zero else '-'}"
         res += f"{'S' if self._sign else '-'}"
         res += f"{'C' if self._carry else '-'}"

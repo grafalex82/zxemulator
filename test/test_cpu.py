@@ -48,6 +48,9 @@ def test_reset_values(cpu):
     assert cpu.pc == 0x0000
     assert cpu.sp == 0x0000
 
+    assert cpu.i == 0x00
+    assert cpu.r == 0x00
+
     assert cpu.iff1 == False
     assert cpu.iff2 == False    
 
