@@ -716,6 +716,45 @@ class CPU:
         self._log_1b_instruction(f"LD {reg_symb}, A")
 
 
+    def _store_hl_to_memory(self):
+        """ Store H and L to memory at immediate address """
+        addr = self._fetch_next_word()
+        self._machine.write_memory_word(addr, self.hl)
+        self._cycles += 16
+
+        self._log_3b_instruction(f"LD ({addr:04x}), HL")
+
+
+    def _store_reg16_to_memory(self):
+        """ Store register pair to memory at immediate address """
+        reg_pair = (self._current_inst & 0x30) >> 4
+        addr = self._fetch_next_word()
+        self._machine.write_memory_word(addr, self._get_register_pair(reg_pair))
+        self._cycles += 20
+
+        self._log_3b_instruction(f"LD ({addr:04x}), {self._reg_pair_symb(reg_pair)}")
+
+
+    def _load_hl_from_memory(self):
+        """ Load H and L from memory at immediate address """
+        addr = self._fetch_next_word()
+        self.hl = self._machine.read_memory_word(addr)
+        self._cycles += 16
+
+        self._log_3b_instruction(f"LD HL, ({addr:04x})")
+
+
+    def _load_reg16_from_memory(self):
+        """ Load register pair from memory at immediate address """
+        reg_pair = (self._current_inst & 0x30) >> 4
+        addr = self._fetch_next_word()
+        value = self._machine.read_memory_word(addr)
+        self._set_register_pair(reg_pair, value)
+        self._cycles += 20
+
+        self._log_3b_instruction(f"LD {self._reg_pair_symb(reg_pair)}, ({addr:04x})")
+
+
     def _exchange_de_hl(self):
         """ Exchange DE and HL register pairs """
         tmp = self.de
@@ -1081,7 +1120,7 @@ class CPU:
 
         self._instructions[0x20] = self._jr_cond
         self._instructions[0x21] = self._load_immediate_16b
-        self._instructions[0x22] = None
+        self._instructions[0x22] = self._store_hl_to_memory
         self._instructions[0x23] = self._inc16
         self._instructions[0x24] = self._inc8
         self._instructions[0x25] = self._dec8
@@ -1089,7 +1128,7 @@ class CPU:
         self._instructions[0x27] = None
         self._instructions[0x28] = self._jr_cond
         self._instructions[0x29] = self._add_hl
-        self._instructions[0x2a] = None
+        self._instructions[0x2a] = self._load_hl_from_memory
         self._instructions[0x2b] = self._dec16
         self._instructions[0x2c] = self._inc8
         self._instructions[0x2d] = self._dec8
@@ -1391,7 +1430,7 @@ class CPU:
         self._instructions_0xed[0x40] = None
         self._instructions_0xed[0x41] = None
         self._instructions_0xed[0x42] = self._sbc_hl
-        self._instructions_0xed[0x43] = None
+        self._instructions_0xed[0x43] = self._store_reg16_to_memory
         self._instructions_0xed[0x44] = None
         self._instructions_0xed[0x45] = None
         self._instructions_0xed[0x46] = None
@@ -1399,7 +1438,7 @@ class CPU:
         self._instructions_0xed[0x48] = None
         self._instructions_0xed[0x49] = None
         self._instructions_0xed[0x4a] = self._adc_hl
-        self._instructions_0xed[0x4b] = None
+        self._instructions_0xed[0x4b] = self._load_reg16_from_memory
         self._instructions_0xed[0x4c] = None
         self._instructions_0xed[0x4d] = None
         self._instructions_0xed[0x4e] = None
@@ -1408,7 +1447,7 @@ class CPU:
         self._instructions_0xed[0x50] = None
         self._instructions_0xed[0x51] = None
         self._instructions_0xed[0x52] = self._sbc_hl
-        self._instructions_0xed[0x53] = None
+        self._instructions_0xed[0x53] = self._store_reg16_to_memory
         self._instructions_0xed[0x54] = None
         self._instructions_0xed[0x55] = None
         self._instructions_0xed[0x56] = None
@@ -1416,7 +1455,7 @@ class CPU:
         self._instructions_0xed[0x58] = None
         self._instructions_0xed[0x59] = None
         self._instructions_0xed[0x5a] = self._adc_hl
-        self._instructions_0xed[0x5b] = None
+        self._instructions_0xed[0x5b] = self._load_reg16_from_memory
         self._instructions_0xed[0x5c] = None
         self._instructions_0xed[0x5d] = None
         self._instructions_0xed[0x5e] = None
@@ -1425,7 +1464,7 @@ class CPU:
         self._instructions_0xed[0x60] = None
         self._instructions_0xed[0x61] = None
         self._instructions_0xed[0x62] = self._sbc_hl
-        self._instructions_0xed[0x63] = None
+        self._instructions_0xed[0x63] = self._store_reg16_to_memory
         self._instructions_0xed[0x64] = None
         self._instructions_0xed[0x65] = None
         self._instructions_0xed[0x66] = None
@@ -1433,7 +1472,7 @@ class CPU:
         self._instructions_0xed[0x68] = None
         self._instructions_0xed[0x69] = None
         self._instructions_0xed[0x6a] = self._adc_hl
-        self._instructions_0xed[0x6b] = None
+        self._instructions_0xed[0x6b] = self._load_reg16_from_memory
         self._instructions_0xed[0x6c] = None
         self._instructions_0xed[0x6d] = None
         self._instructions_0xed[0x6e] = None
@@ -1442,7 +1481,7 @@ class CPU:
         self._instructions_0xed[0x70] = None
         self._instructions_0xed[0x71] = None
         self._instructions_0xed[0x72] = self._sbc_hl
-        self._instructions_0xed[0x73] = None
+        self._instructions_0xed[0x73] = self._store_reg16_to_memory
         self._instructions_0xed[0x74] = None
         self._instructions_0xed[0x75] = None
         self._instructions_0xed[0x76] = None
@@ -1450,7 +1489,7 @@ class CPU:
         self._instructions_0xed[0x78] = None
         self._instructions_0xed[0x79] = None
         self._instructions_0xed[0x7a] = self._adc_hl
-        self._instructions_0xed[0x7b] = None
+        self._instructions_0xed[0x7b] = self._load_reg16_from_memory
         self._instructions_0xed[0x7c] = None
         self._instructions_0xed[0x7d] = None
         self._instructions_0xed[0x7e] = None

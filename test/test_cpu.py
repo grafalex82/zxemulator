@@ -242,6 +242,40 @@ def test_ld_a_r(cpu):
     assert cpu.a == 0x42
     assert cpu._cycles == 9
 
+def test_ld_mem_hl(cpu):
+    cpu.hl = 0x1234   # Value to write
+    cpu._machine.write_memory_byte(0x0000, 0x22)    # LD (beef), HL Instruction Opcode
+    cpu._machine.write_memory_word(0x0001, 0xbeef)  # Address
+    cpu.step()
+    assert cpu._machine.read_memory_word(0xbeef) == 0x1234
+    assert cpu._cycles == 16
+
+def test_ld_mem_reg16(cpu):
+    cpu.de = 0x1234   # Value to write
+    cpu._machine.write_memory_byte(0x0000, 0xed)    # LD (beef), DE Instruction Opcode
+    cpu._machine.write_memory_byte(0x0001, 0x53)    
+    cpu._machine.write_memory_word(0x0002, 0xbeef)  # Address
+    cpu.step()
+    assert cpu._machine.read_memory_word(0xbeef) == 0x1234
+    assert cpu._cycles == 20
+
+def test_ld_hl_mem(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0x2a)    # LD HL, (beef) Instruction Opcode
+    cpu._machine.write_memory_word(0x0001, 0xbeef)  # Address
+    cpu._machine.write_memory_word(0xbeef, 0x1234)  # Value to read
+    cpu.step()
+    assert cpu.hl == 0x1234
+    assert cpu._cycles == 16
+
+def test_ld_reg16_mem(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xed)    # LD BC, (beef) Instruction Opcode
+    cpu._machine.write_memory_byte(0x0001, 0x4b)    
+    cpu._machine.write_memory_word(0x0002, 0xbeef)  # Address
+    cpu._machine.write_memory_word(0xbeef, 0x1234)  # Value to read
+    cpu.step()
+    assert cpu.bc == 0x1234
+    assert cpu._cycles == 20
+
 def test_ex_de_hl(cpu):
     cpu._machine.write_memory_byte(0x0000, 0xeb)    # EX DE, HL Instruction Opcode
     cpu.hl = 0x1234
