@@ -732,6 +732,15 @@ class CPU:
         self._log_3b_instruction(f"LD {self._reg_pair_symb(reg_pair)}, {value:04x}")
 
 
+    def _load_iy_immediate(self):
+        """ Load IY register with immediate value"""
+        value = self._fetch_next_word()
+        self._iy = value
+        self._cycles += 14
+
+        self._log_3b_instruction(f"LD IY, {value:04x}")
+
+
     def _store_hl_to_memory(self):
         """ Store H and L to memory at immediate address """
         addr = self._fetch_next_word()
@@ -1771,7 +1780,7 @@ class CPU:
         self._instructions_0xfd[0x1f] = None
 
         self._instructions_0xfd[0x20] = None
-        self._instructions_0xfd[0x21] = None
+        self._instructions_0xfd[0x21] = self._load_iy_immediate
         self._instructions_0xfd[0x22] = None
         self._instructions_0xfd[0x23] = None
         self._instructions_0xfd[0x24] = None

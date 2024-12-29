@@ -144,41 +144,6 @@ def test_out(cpu):
 
 # 8-bit data transfer instructions tests
 
-def test_ld_bc(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0x01)    # LD BC, #beef Instruction Opcode
-    cpu._machine.write_memory_word(0x0001, 0xbeef)  # Immediate argument
-    cpu.step() 
-    assert cpu.pc == 0x0003
-    assert cpu.b == 0xbe
-    assert cpu.c == 0xef
-    assert cpu._cycles == 10
-
-def test_ld_de(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0x11)    # LD DE, #beef Instruction Opcode
-    cpu._machine.write_memory_word(0x0001, 0xbeef)  # Immediate argument
-    cpu.step() 
-    assert cpu.pc == 0x0003
-    assert cpu.d == 0xbe
-    assert cpu.e == 0xef
-    assert cpu._cycles == 10
-    
-def test_ld_hl(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0x21)    # LD HL, #beef Instruction Opcode
-    cpu._machine.write_memory_word(0x0001, 0xbeef)  # Immediate argument
-    cpu.step() 
-    assert cpu.pc == 0x0003
-    assert cpu.h == 0xbe
-    assert cpu.l == 0xef
-    assert cpu._cycles == 10
-    
-def test_ld_sp(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0x31)    # LD SP, #beef Instruction Opcode
-    cpu._machine.write_memory_word(0x0001, 0xbeef)  # Immediate argument
-    cpu.step() 
-    assert cpu.pc == 0x0003
-    assert cpu.sp == 0xbeef
-    assert cpu._cycles == 10
-
 def test_ld_a_h(cpu):
     cpu._machine.write_memory_byte(0x0000, 0x7c)    # LD A, H Instruction Opcode
     cpu.h = 0x42
@@ -265,6 +230,50 @@ def test_ld_a_r(cpu):
 
 
 # 16-bit data transfer instructions tests
+
+def test_ld_bc(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0x01)    # LD BC, #beef Instruction Opcode
+    cpu._machine.write_memory_word(0x0001, 0xbeef)  # Immediate argument
+    cpu.step() 
+    assert cpu.pc == 0x0003
+    assert cpu.b == 0xbe
+    assert cpu.c == 0xef
+    assert cpu._cycles == 10
+
+def test_ld_de(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0x11)    # LD DE, #beef Instruction Opcode
+    cpu._machine.write_memory_word(0x0001, 0xbeef)  # Immediate argument
+    cpu.step() 
+    assert cpu.pc == 0x0003
+    assert cpu.d == 0xbe
+    assert cpu.e == 0xef
+    assert cpu._cycles == 10
+    
+def test_ld_hl(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0x21)    # LD HL, #beef Instruction Opcode
+    cpu._machine.write_memory_word(0x0001, 0xbeef)  # Immediate argument
+    cpu.step() 
+    assert cpu.pc == 0x0003
+    assert cpu.h == 0xbe
+    assert cpu.l == 0xef
+    assert cpu._cycles == 10
+    
+def test_ld_sp(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0x31)    # LD SP, #beef Instruction Opcode
+    cpu._machine.write_memory_word(0x0001, 0xbeef)  # Immediate argument
+    cpu.step() 
+    assert cpu.pc == 0x0003
+    assert cpu.sp == 0xbeef
+    assert cpu._cycles == 10
+
+def test_ld_iy(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xfd)    # LD IY, #beef Instruction Opcode
+    cpu._machine.write_memory_byte(0x0001, 0x21)
+    cpu._machine.write_memory_word(0x0002, 0xbeef)  # Immediate argument
+    cpu.step() 
+    assert cpu.pc == 0x0004
+    assert cpu.iy == 0xbeef
+    assert cpu._cycles == 14
 
 def test_ld_mem_hl(cpu):
     cpu.hl = 0x1234   # Value to write
