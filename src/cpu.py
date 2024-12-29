@@ -572,7 +572,7 @@ class CPU:
         log_str = f' {addr:04x}  {prefix} {self._current_inst:02x}         {mnemonic}'
 
         if self._registers_logging:
-            log_str = f"{log_str:38} {self._get_cpu_state_str()}"
+            log_str = f"{log_str:40} {self._get_cpu_state_str()}"
             
         logger.debug(log_str)
 
@@ -587,7 +587,7 @@ class CPU:
         log_str = f' {addr:04x}  {prefix} {self._current_inst:02x} {param:02x}      {mnemonic}'
 
         if self._registers_logging:
-            log_str = f"{log_str:38} {self._get_cpu_state_str()}"
+            log_str = f"{log_str:40} {self._get_cpu_state_str()}"
             
         logger.debug(log_str)
 
@@ -603,7 +603,7 @@ class CPU:
         log_str = f' {addr:04x}  {prefix} {self._current_inst:02x} {param1:02x} {param2:02x}   {mnemonic}'
 
         if self._registers_logging:
-            log_str = f"{log_str:38} {self._get_cpu_state_str()}"
+            log_str = f"{log_str:40} {self._get_cpu_state_str()}"
             
         logger.debug(log_str)
 
@@ -715,13 +715,56 @@ class CPU:
     # Execution flow instructions
 
     def _jp(self):
-        """ Unconditional jump """
+        """ Unconditional jump to an absolute address """
         addr = self._fetch_next_word()
 
         self._log_3b_instruction(f"JP {addr:04x}")
 
         self._pc = addr
         self._cycles += 10
+
+    def _jr(self):
+        """ Unconditional relative jump """
+        displacement = self._fetch_next_byte()
+        if displacement > 0x7f:
+            displacement = -(0x100 - displacement)
+        self._pc += displacement
+
+        log_displacement = displacement+2
+        displacement_str = f"${'+' if log_displacement >= 0 else '-'}{abs(log_displacement):02x}"
+        self._log_2b_instruction(f"JR {displacement_str} ({self._pc:04x})")
+
+        self._cycles += 12
+
+    def _jr_cond(self):
+        """ Conditional relative jump """
+        displacement = self._fetch_next_byte()
+        if displacement > 0x7f:
+            displacement = -(0x100 - displacement)
+
+        condition_code = (self._current_inst & 0x18)
+        if condition_code == 0x00:
+            condition = not self._zero
+            condition_code = "NZ"
+        elif condition_code == 0x08:
+            condition = self._zero
+            condition_code = "Z"
+        elif condition_code == 0x10:
+            condition = not self._carry
+            condition_code = "NC"
+        elif condition_code == 0x18:
+            condition = self._carry
+            condition_code = "C"
+
+        log_displacement = displacement + 2
+        displacement_str = f"${'+' if log_displacement >= 0 else '-'}{abs(log_displacement):02x}"
+        self._log_2b_instruction(f"JR {condition_code}, {displacement_str} ({(self._pc + displacement):04x})")
+
+        if condition:
+            self._pc += displacement
+            self._cycles += 12
+        else:
+            self._cycles += 7
 
 
     # ALU instructions
@@ -884,7 +927,7 @@ class CPU:
         self._instructions[0x15] = None
         self._instructions[0x16] = self._load_8b_immediate_to_register
         self._instructions[0x17] = None
-        self._instructions[0x18] = None
+        self._instructions[0x18] = self._jr
         self._instructions[0x19] = None
         self._instructions[0x1a] = None
         self._instructions[0x1b] = self._dec16
@@ -893,7 +936,7 @@ class CPU:
         self._instructions[0x1e] = self._load_8b_immediate_to_register
         self._instructions[0x1f] = None
 
-        self._instructions[0x20] = None
+        self._instructions[0x20] = self._jr_cond
         self._instructions[0x21] = self._load_immediate_16b
         self._instructions[0x22] = None
         self._instructions[0x23] = self._inc16
@@ -901,7 +944,7 @@ class CPU:
         self._instructions[0x25] = None
         self._instructions[0x26] = self._load_8b_immediate_to_register
         self._instructions[0x27] = None
-        self._instructions[0x28] = None
+        self._instructions[0x28] = self._jr_cond
         self._instructions[0x29] = None
         self._instructions[0x2a] = None
         self._instructions[0x2b] = self._dec16
@@ -910,7 +953,7 @@ class CPU:
         self._instructions[0x2e] = self._load_8b_immediate_to_register
         self._instructions[0x2f] = None
 
-        self._instructions[0x30] = None
+        self._instructions[0x30] = self._jr_cond
         self._instructions[0x31] = self._load_immediate_16b
         self._instructions[0x32] = None
         self._instructions[0x33] = self._inc16
@@ -918,7 +961,7 @@ class CPU:
         self._instructions[0x35] = None
         self._instructions[0x36] = self._load_8b_immediate_to_register
         self._instructions[0x37] = None
-        self._instructions[0x38] = None
+        self._instructions[0x38] = self._jr_cond
         self._instructions[0x39] = None
         self._instructions[0x3a] = None
         self._instructions[0x3b] = self._dec16

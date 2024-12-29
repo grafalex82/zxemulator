@@ -252,6 +252,94 @@ def test_jp(cpu):
     assert cpu.pc == 0xbeef
     assert cpu._cycles == 10
 
+def test_jr(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0x18)    # JR $+5 Instruction Opcode
+    cpu._machine.write_memory_byte(0x0001, 0x03)    # relative offset
+    cpu.step()
+    assert cpu.pc == 0x0005
+    assert cpu._cycles == 12
+
+def test_jr_negative_offset(cpu):
+    cpu._machine.write_memory_byte(0x1234, 0x18)    # JR $-66 Instruction Opcode
+    cpu._machine.write_memory_byte(0x1235, 0x9a)    # relative offset
+    cpu.pc = 0x1234
+    cpu.step()
+    assert cpu.pc == 0x11d0
+    assert cpu._cycles == 12
+
+def test_jr_nz_positive(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0x20)    # JR NZ, $+5 Instruction Opcode
+    cpu._machine.write_memory_byte(0x0001, 0x03)    # relative offset
+    cpu.zero = False
+    cpu.step()
+    assert cpu.pc == 0x0005  # Jump
+    assert cpu._cycles == 12
+
+def test_jr_nz_negative(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0x20)    # JR NZ, $+5 Instruction Opcode
+    cpu._machine.write_memory_byte(0x0001, 0x03)    # relative offset
+    cpu.zero = True
+    cpu.step()
+    assert cpu.pc == 0x0002   # No jump
+    assert cpu._cycles == 7
+
+def test_jr_z_positive(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0x28)    # JR Z, $+5 Instruction Opcode
+    cpu._machine.write_memory_byte(0x0001, 0x03)    # relative offset
+    cpu.zero = True
+    cpu.step()
+    assert cpu.pc == 0x0005  # Jump
+    assert cpu._cycles == 12
+
+def test_jr_z_negative(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0x28)    # JR Z, $+5 Instruction Opcode
+    cpu._machine.write_memory_byte(0x0001, 0x03)    # relative offset
+    cpu.zero = False
+    cpu.step()
+    assert cpu.pc == 0x0002   # No jump
+    assert cpu._cycles == 7
+
+def test_jr_z_negative_offset(cpu):
+    cpu._machine.write_memory_byte(0x1234, 0x28)    # JR Z, $-66 Instruction Opcode
+    cpu._machine.write_memory_byte(0x1235, 0x9a)    # relative offset
+    cpu.zero = True
+    cpu.pc = 0x1234
+    cpu.step()
+    assert cpu.pc == 0x11d0   
+    assert cpu._cycles == 12
+
+def test_jr_nc_positive(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0x30)    # JR NC, $+5 Instruction Opcode
+    cpu._machine.write_memory_byte(0x0001, 0x03)    # relative offset
+    cpu.carry = False
+    cpu.step()
+    assert cpu.pc == 0x0005  # Jump
+    assert cpu._cycles == 12
+
+def test_jr_nc_negative(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0x30)    # JR NC, $+5 Instruction Opcode
+    cpu._machine.write_memory_byte(0x0001, 0x03)    # relative offset
+    cpu.carry = True
+    cpu.step()
+    assert cpu.pc == 0x0002   # No jump
+    assert cpu._cycles == 7
+
+def test_jr_c_positive(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0x38)    # JR C, $+5 Instruction Opcode
+    cpu._machine.write_memory_byte(0x0001, 0x03)    # relative offset
+    cpu.carry = True
+    cpu.step()
+    assert cpu.pc == 0x0005  # Jump
+    assert cpu._cycles == 12
+
+def test_jr_c_negative(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0x38)    # JR C, $+5 Instruction Opcode
+    cpu._machine.write_memory_byte(0x0001, 0x03)    # relative offset
+    cpu.carry = False
+    cpu.step()
+    assert cpu.pc == 0x0002   # No jump
+    assert cpu._cycles == 7
+
 
 # ALU instructions tests
 
