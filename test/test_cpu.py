@@ -93,6 +93,30 @@ def test_ei_di(cpu):
     assert cpu.iff2 == False
     assert cpu._cycles == 8     # 4 more cycles
 
+def test_in(cpu):
+    mock = MockIO()
+    mock.read_byte = MagicMock(return_value=0x55)
+
+    cpu._machine.add_io(IODevice(mock, 0x42))
+    cpu._machine.write_memory_byte(0x0000, 0xdb)    # IN A, $42 Instruction Opcode
+    cpu._machine.write_memory_byte(0x0001, 0x42)    # Operand (IO port address)
+    cpu.step()
+    assert cpu.a == 0x55
+    assert cpu._cycles == 11
+
+def test_out(cpu):
+    mock = MockIO()
+    mock.write_byte = MagicMock()
+
+    cpu._machine.add_io(IODevice(mock, 0x42))
+    cpu._machine.write_memory_byte(0x0000, 0xd3)    # OUT #42, A Instruction Opcode
+    cpu._machine.write_memory_byte(0x0001, 0x42)    # Operand (IO port address)
+    cpu.a = 0x55
+    cpu.step()
+
+    mock.write_byte.assert_called_once_with(0, 0x55)
+    assert cpu._cycles == 11
+
 
 # Data transfer instructions tests
 

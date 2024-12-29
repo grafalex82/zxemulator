@@ -592,6 +592,26 @@ class CPU:
         self._log_1b_instruction("DI")
 
 
+    def _in(self):
+        """ IO Input """
+        addr = self._fetch_next_byte()
+
+        self._a = self._machine.read_io(addr)
+        self._cycles += 11
+
+        self._log_2b_instruction(f"IN A, {addr:02x}")
+
+
+    def _out(self):
+        """ IO Output """
+        addr = self._fetch_next_byte()
+        self._log_2b_instruction(f"OUT {addr:02x}, A")
+
+        self._machine.write_io(addr, self._a)
+        self._cycles += 11
+
+
+
     # Data transfer instructions
 
     def _load_immediate_16b(self):
@@ -979,7 +999,7 @@ class CPU:
         self._instructions[0xd0] = None
         self._instructions[0xd1] = None
         self._instructions[0xd2] = None
-        self._instructions[0xd3] = None
+        self._instructions[0xd3] = self._out
         self._instructions[0xd4] = None
         self._instructions[0xd5] = None
         self._instructions[0xd6] = self._alu_immediate
@@ -987,7 +1007,7 @@ class CPU:
         self._instructions[0xd8] = None
         self._instructions[0xd9] = None
         self._instructions[0xda] = None
-        self._instructions[0xdb] = None
+        self._instructions[0xdb] = self._in
         self._instructions[0xdc] = None
         self._instructions[0xdd] = None
         self._instructions[0xde] = self._alu_immediate
