@@ -458,6 +458,13 @@ def test_jp(cpu):
     assert cpu.pc == 0xbeef
     assert cpu._cycles == 10
 
+def test_jp_hl(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xe9)    # JP (HL) Instruction Opcode
+    cpu.hl = 0x1234
+    cpu.step()
+    assert cpu.pc == 0x1234
+    assert cpu._cycles == 4
+
 def test_jr(cpu):
     cpu._machine.write_memory_byte(0x0000, 0x18)    # JR $+5 Instruction Opcode
     cpu._machine.write_memory_byte(0x0001, 0x03)    # relative offset

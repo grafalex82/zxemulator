@@ -896,6 +896,13 @@ class CPU:
         self._pc = addr
         self._cycles += 10
 
+    def _jp_hl(self):
+        """ Jump to address in HL """
+        self._log_3b_instruction(f"JP (HL)")
+
+        self._pc = self.hl
+        self._cycles += 4
+
     def _jr(self):
         """ Unconditional relative jump """
         displacement = self._fetch_next_byte()
@@ -1412,7 +1419,7 @@ class CPU:
         self._instructions[0xe6] = self._alu_immediate
         self._instructions[0xe7] = None
         self._instructions[0xe8] = None
-        self._instructions[0xe9] = None
+        self._instructions[0xe9] = self._jp_hl
         self._instructions[0xea] = None
         self._instructions[0xeb] = self._exchange_de_hl
         self._instructions[0xec] = None
