@@ -210,6 +210,38 @@ def test_ld_mem_val(cpu):
     assert cpu._machine.read_memory_byte(0x1234) == 0x42
     assert cpu._cycles == 10
 
+def test_ld_i_a(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xed)    # LD I, A Instruction Opcode
+    cpu._machine.write_memory_byte(0x0001, 0x47)
+    cpu.a = 0x42
+    cpu.step()
+    assert cpu.i == 0x42
+    assert cpu._cycles == 9
+
+def test_ld_r_a(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xed)    # LD R, A Instruction Opcode
+    cpu._machine.write_memory_byte(0x0001, 0x4f)
+    cpu.a = 0x42
+    cpu.step()
+    assert cpu.r == 0x42
+    assert cpu._cycles == 9
+
+def test_ld_a_i(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xed)    # LD A, I Instruction Opcode
+    cpu._machine.write_memory_byte(0x0001, 0x57)
+    cpu.i = 0x42
+    cpu.step()
+    assert cpu.a == 0x42
+    assert cpu._cycles == 9
+
+def test_ld_a_r(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xed)    # LD A, R Instruction Opcode
+    cpu._machine.write_memory_byte(0x0001, 0x5f)
+    cpu.r = 0x42
+    cpu.step()
+    assert cpu.a == 0x42
+    assert cpu._cycles == 9
+
 
 # Execution flow instruction tests
 

@@ -692,6 +692,25 @@ class CPU:
 
         self._log_2b_instruction(f"LD {self._reg_symb(reg)}, {value:02x}")
 
+    def _load_a_from_i_r_registers(self):
+        """ Load accumulator from I or R registers """
+        self._a = self._r if (self._current_inst & 0x08) else self._i
+
+        self._cycles += 9
+        reg_symb = "R" if (self._current_inst & 0x08) else "I"
+        self._log_1b_instruction(f"LD A, {reg_symb}")
+
+    def _load_i_r_register_from_a(self):
+        """ Load I or R register from accumulator """
+        if self._current_inst & 0x08:
+            self._r = self._a
+        else:
+            self._i = self._a
+
+        self._cycles += 9
+        reg_symb = "R" if (self._current_inst & 0x08) else "I"
+        self._log_1b_instruction(f"LD {reg_symb}, A")
+
 
     # Execution flow instructions
 
@@ -1169,7 +1188,7 @@ class CPU:
         self._instructions_0xed[0x44] = None
         self._instructions_0xed[0x45] = None
         self._instructions_0xed[0x46] = None
-        self._instructions_0xed[0x47] = None
+        self._instructions_0xed[0x47] = self._load_i_r_register_from_a
         self._instructions_0xed[0x48] = None
         self._instructions_0xed[0x49] = None
         self._instructions_0xed[0x4a] = None
@@ -1177,7 +1196,7 @@ class CPU:
         self._instructions_0xed[0x4c] = None
         self._instructions_0xed[0x4d] = None
         self._instructions_0xed[0x4e] = None
-        self._instructions_0xed[0x4f] = None
+        self._instructions_0xed[0x4f] = self._load_i_r_register_from_a
 
         self._instructions_0xed[0x50] = None
         self._instructions_0xed[0x51] = None
@@ -1186,7 +1205,7 @@ class CPU:
         self._instructions_0xed[0x54] = None
         self._instructions_0xed[0x55] = None
         self._instructions_0xed[0x56] = None
-        self._instructions_0xed[0x57] = None
+        self._instructions_0xed[0x57] = self._load_a_from_i_r_registers
         self._instructions_0xed[0x58] = None
         self._instructions_0xed[0x59] = None
         self._instructions_0xed[0x5a] = None
@@ -1194,7 +1213,7 @@ class CPU:
         self._instructions_0xed[0x5c] = None
         self._instructions_0xed[0x5d] = None
         self._instructions_0xed[0x5e] = None
-        self._instructions_0xed[0x5f] = None
+        self._instructions_0xed[0x5f] = self._load_a_from_i_r_registers
 
         self._instructions_0xed[0x60] = None
         self._instructions_0xed[0x61] = None
