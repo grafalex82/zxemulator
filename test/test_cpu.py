@@ -242,6 +242,51 @@ def test_ld_a_r(cpu):
     assert cpu.a == 0x42
     assert cpu._cycles == 9
 
+def test_ex_de_hl(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xeb)    # EX DE, HL Instruction Opcode
+    cpu.hl = 0x1234
+    cpu.de = 0xbeef
+    cpu.step()
+    assert cpu.hl == 0xbeef
+    assert cpu.de == 0x1234
+    assert cpu._cycles == 4
+
+def test_ex_stack_hl(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xe3)    # EX (SP), HL Instruction Opcode
+    cpu._machine.write_memory_word(0x4321, 0xbeef)  # data to be exchanged
+    cpu.hl = 0x1234
+    cpu.sp = 0x4321
+    cpu.step()
+    assert cpu.hl == 0xbeef
+    assert cpu._machine.read_memory_word(0x4321) == 0x1234
+    assert cpu._cycles == 19
+
+def test_ex_af_afx(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0x08)    # EX AF, AF' Instruction Opcode
+    cpu.af = 0x1234
+    cpu.afx = 0xbeef
+    cpu.step()
+    assert cpu.af == 0xbeef
+    assert cpu.afx == 0x1234
+    assert cpu._cycles == 4
+
+def test_exx(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xd9)    # EXX Instruction Opcode
+    cpu.bc = 0x1234
+    cpu.de = 0x5678
+    cpu.hl = 0x9abc
+    cpu.bcx = 0x4321
+    cpu.dex = 0x8765
+    cpu.hlx = 0xcba9
+    cpu.step()
+    assert cpu.bc == 0x4321
+    assert cpu.de == 0x8765
+    assert cpu.hl == 0xcba9
+    assert cpu.bcx == 0x1234
+    assert cpu.dex == 0x5678
+    assert cpu.hlx == 0x9abc
+    assert cpu._cycles == 4
+
 
 # Execution flow instruction tests
 

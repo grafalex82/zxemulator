@@ -670,6 +670,7 @@ class CPU:
 
         self._log_3b_instruction(f"LD {self._reg_pair_symb(reg_pair)}, {value:04x}")
 
+
     def _load_register_to_register(self):
         """ Move a byte between 2 registers """
         dst = (self._current_inst & 0x38) >> 3
@@ -683,6 +684,7 @@ class CPU:
 
         self._log_1b_instruction(f"LD {self._reg_symb(dst)}, {self._reg_symb(src)}")
 
+
     def _load_8b_immediate_to_register(self):
         """ Move immediate to register or memory """
         reg = (self._current_inst & 0x38) >> 3
@@ -692,6 +694,7 @@ class CPU:
 
         self._log_2b_instruction(f"LD {self._reg_symb(reg)}, {value:02x}")
 
+
     def _load_a_from_i_r_registers(self):
         """ Load accumulator from I or R registers """
         self._a = self._r if (self._current_inst & 0x08) else self._i
@@ -699,6 +702,7 @@ class CPU:
         self._cycles += 9
         reg_symb = "R" if (self._current_inst & 0x08) else "I"
         self._log_1b_instruction(f"LD A, {reg_symb}")
+
 
     def _load_i_r_register_from_a(self):
         """ Load I or R register from accumulator """
@@ -710,6 +714,55 @@ class CPU:
         self._cycles += 9
         reg_symb = "R" if (self._current_inst & 0x08) else "I"
         self._log_1b_instruction(f"LD {reg_symb}, A")
+
+
+    def _exchange_de_hl(self):
+        """ Exchange DE and HL register pairs """
+        tmp = self.de
+        self.de = self.hl
+        self.hl = tmp
+
+        self._cycles += 4
+        self._log_1b_instruction(f"EX DE, HL")
+
+
+    def _exchange_hl_stack(self):
+        """ Exchange HL and 2 bytes on the stack """
+        value = self.hl
+        self.hl = self._machine.read_memory_word(self._sp)
+        self._machine.write_memory_word(self._sp, value)
+        self._cycles += 19
+
+        self._log_1b_instruction(f"EX (SP), HL")
+
+
+    def _exchange_af_afx(self):
+        """ Exchange AF register pair with alternate registers set """
+        tmp = self.afx
+        self.afx = self.af
+        self.af = tmp
+
+        self._cycles += 4
+        self._log_1b_instruction(f"EX AF, AF'")
+
+
+    def _exchange_register_set(self):
+        """ Exchange register set with alternate register set """
+        tmp = self.bcx
+        self.bcx = self.bc
+        self.bc = tmp
+
+        tmp = self.dex
+        self.dex = self.de
+        self.de = tmp
+
+        tmp = self.hlx
+        self.hlx = self.hl
+        self.hl = tmp
+
+        self._cycles += 4
+        self._log_1b_instruction(f"EXX")
+
 
 
     # Execution flow instructions
@@ -1000,7 +1053,7 @@ class CPU:
         self._instructions[0x05] = self._dec8
         self._instructions[0x06] = self._load_8b_immediate_to_register
         self._instructions[0x07] = None
-        self._instructions[0x08] = None
+        self._instructions[0x08] = self._exchange_af_afx
         self._instructions[0x09] = self._add_hl
         self._instructions[0x0a] = None
         self._instructions[0x0b] = self._dec16
@@ -1222,7 +1275,7 @@ class CPU:
         self._instructions[0xd6] = self._alu_immediate
         self._instructions[0xd7] = None
         self._instructions[0xd8] = None
-        self._instructions[0xd9] = None
+        self._instructions[0xd9] = self._exchange_register_set
         self._instructions[0xda] = None
         self._instructions[0xdb] = self._in
         self._instructions[0xdc] = None
@@ -1233,7 +1286,7 @@ class CPU:
         self._instructions[0xe0] = None
         self._instructions[0xe1] = None
         self._instructions[0xe2] = None
-        self._instructions[0xe3] = None
+        self._instructions[0xe3] = self._exchange_hl_stack
         self._instructions[0xe4] = None
         self._instructions[0xe5] = None
         self._instructions[0xe6] = self._alu_immediate
@@ -1241,7 +1294,7 @@ class CPU:
         self._instructions[0xe8] = None
         self._instructions[0xe9] = None
         self._instructions[0xea] = None
-        self._instructions[0xeb] = None
+        self._instructions[0xeb] = self._exchange_de_hl
         self._instructions[0xec] = None
         self._instructions[0xed] = None
         self._instructions[0xee] = self._alu_immediate
