@@ -121,7 +121,7 @@ def test_out(cpu):
     assert cpu._cycles == 11
 
 
-# Data transfer instructions tests
+# 8-bit data transfer instructions tests
 
 def test_ld_bc(cpu):
     cpu._machine.write_memory_byte(0x0000, 0x01)    # LD BC, #beef Instruction Opcode
@@ -242,6 +242,9 @@ def test_ld_a_r(cpu):
     assert cpu.a == 0x42
     assert cpu._cycles == 9
 
+
+# 16-bit data transfer instructions tests
+
 def test_ld_mem_hl(cpu):
     cpu.hl = 0x1234   # Value to write
     cpu._machine.write_memory_byte(0x0000, 0x22)    # LD (beef), HL Instruction Opcode
@@ -275,6 +278,9 @@ def test_ld_reg16_mem(cpu):
     cpu.step()
     assert cpu.bc == 0x1234
     assert cpu._cycles == 20
+
+
+# Exchange instructions tests
 
 def test_ex_de_hl(cpu):
     cpu._machine.write_memory_byte(0x0000, 0xeb)    # EX DE, HL Instruction Opcode
@@ -321,6 +327,67 @@ def test_exx(cpu):
     assert cpu.hlx == 0x9abc
     assert cpu._cycles == 4
 
+# Block transfer instructions tests
+
+def test_ldi(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xed)    # LDI Instruction Opcode
+    cpu._machine.write_memory_byte(0x0001, 0xa0)
+    cpu.hl = 0x1234     # Source address
+    cpu.de = 0x4321     # Destination address
+    cpu.bc = 0x5678     # Number of bytes to transfer
+    cpu._machine.write_memory_byte(0x1234, 0x42)    # Data to transfer
+    cpu.step()
+    assert cpu.hl == 0x1235     # Incremented address
+    assert cpu.de == 0x4322     # Incremented address
+    assert cpu.bc == 0x5677     # Decremented count
+    assert cpu._machine.read_memory_byte(0x4321) == 0x42
+    assert cpu._cycles == 16
+    assert cpu.overflow == True # There are still bytes to copy
+
+def test_ldi_last(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xed)    # LDI Instruction Opcode
+    cpu._machine.write_memory_byte(0x0001, 0xa0)
+    cpu.hl = 0x1234     # Source address
+    cpu.de = 0x4321     # Destination address
+    cpu.bc = 0x0001     # Last byte to transfer
+    cpu._machine.write_memory_byte(0x1234, 0x42)    # Data to transfer
+    cpu.step()
+    assert cpu.hl == 0x1235     # Incremented address
+    assert cpu.de == 0x4322     # Incremented address
+    assert cpu.bc == 0x0000     # Reached last byte
+    assert cpu._machine.read_memory_byte(0x4321) == 0x42
+    assert cpu._cycles == 16
+    assert cpu.overflow == False    # Reached last byte to copy
+
+def test_ldd(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xed)    # LDD Instruction Opcode
+    cpu._machine.write_memory_byte(0x0001, 0xa8)
+    cpu.hl = 0x1234     # Source address
+    cpu.de = 0x4321     # Destination address
+    cpu.bc = 0x5678     # Number of bytes to transfer
+    cpu._machine.write_memory_byte(0x1234, 0x42)    # Data to transfer
+    cpu.step()
+    assert cpu.hl == 0x1233     # Decremented address
+    assert cpu.de == 0x4320     # Decremented address
+    assert cpu.bc == 0x5677     # Decremented count
+    assert cpu._machine.read_memory_byte(0x4321) == 0x42
+    assert cpu._cycles == 16
+    assert cpu.overflow == True # There are still bytes to copy
+
+def test_ldd_last(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xed)    # LDD Instruction Opcode
+    cpu._machine.write_memory_byte(0x0001, 0xa8)
+    cpu.hl = 0x1234     # Source address
+    cpu.de = 0x4321     # Destination address
+    cpu.bc = 0x0001     # Last byte to transfer
+    cpu._machine.write_memory_byte(0x1234, 0x42)    # Data to transfer
+    cpu.step()
+    assert cpu.hl == 0x1233     # Decremented address
+    assert cpu.de == 0x4320     # Decremented address
+    assert cpu.bc == 0x0000     # Reached last byte
+    assert cpu._machine.read_memory_byte(0x4321) == 0x42
+    assert cpu._cycles == 16
+    assert cpu.overflow == False    # Reached last byte to copy
 
 # Execution flow instruction tests
 

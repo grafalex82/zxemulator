@@ -656,7 +656,7 @@ class CPU:
 
 
 
-    # Data transfer instructions
+    # 8-bit data transfer instructions
 
     def _load_immediate_16b(self):
         """ Load register pair with immediate value"""
@@ -716,6 +716,8 @@ class CPU:
         self._log_1b_instruction(f"LD {reg_symb}, A")
 
 
+    # 16-bit data transfer instructions
+
     def _store_hl_to_memory(self):
         """ Store H and L to memory at immediate address """
         addr = self._fetch_next_word()
@@ -754,6 +756,8 @@ class CPU:
 
         self._log_3b_instruction(f"LD {self._reg_pair_symb(reg_pair)}, ({addr:04x})")
 
+
+    # Exchange instructions
 
     def _exchange_de_hl(self):
         """ Exchange DE and HL register pairs """
@@ -802,6 +806,37 @@ class CPU:
         self._cycles += 4
         self._log_1b_instruction(f"EXX")
 
+    # Block transfer instructions
+
+    def _ldd(self):
+        """ Copy byte from (HL) to (DE) and decrement HL and DE, decrement BC """
+        value = self._machine.read_memory_byte(self.hl)
+        self._machine.write_memory_byte(self.de, value)
+        self.hl = (self.hl - 1) & 0xffff
+        self.de = (self.de - 1) & 0xffff
+        self.bc = (self.bc - 1) & 0xffff
+
+        self._half_carry = False
+        self._parity_overflow = self.bc != 0x0000
+        self._add_subtract = False
+
+        self._cycles += 16
+        self._log_1b_instruction("LDD")
+
+    def _ldi(self):
+        """ Copy byte from (HL) to (DE) and increment HL and DE, decrement BC """
+        value = self._machine.read_memory_byte(self.hl)
+        self._machine.write_memory_byte(self.de, value)
+        self.hl = (self.hl + 1) & 0xffff
+        self.de = (self.de + 1) & 0xffff
+        self.bc = (self.bc - 1) & 0xffff
+
+        self._half_carry = False
+        self._parity_overflow = self.bc != 0x0000
+        self._add_subtract = False
+
+        self._cycles += 16
+        self._log_1b_instruction("LDI")
 
 
     # Execution flow instructions
@@ -1529,7 +1564,7 @@ class CPU:
         self._instructions_0xed[0x9e] = None
         self._instructions_0xed[0x9f] = None
 
-        self._instructions_0xed[0xa0] = None
+        self._instructions_0xed[0xa0] = self._ldi
         self._instructions_0xed[0xa1] = None
         self._instructions_0xed[0xa2] = None
         self._instructions_0xed[0xa3] = None
@@ -1537,7 +1572,7 @@ class CPU:
         self._instructions_0xed[0xa5] = None
         self._instructions_0xed[0xa6] = None
         self._instructions_0xed[0xa7] = None
-        self._instructions_0xed[0xa8] = None
+        self._instructions_0xed[0xa8] = self._ldd
         self._instructions_0xed[0xa9] = None
         self._instructions_0xed[0xaa] = None
         self._instructions_0xed[0xab] = None
