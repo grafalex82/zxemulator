@@ -279,6 +279,13 @@ def test_ld_reg16_mem(cpu):
     assert cpu.bc == 0x1234
     assert cpu._cycles == 20
 
+def test_ld_sp_hl(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xf9)    # LD SP, HL Instruction Opcode
+    cpu.hl = 0x1234
+    cpu.step()
+    assert cpu.sp == 0x1234
+    assert cpu._cycles == 6
+
 
 # Exchange instructions tests
 

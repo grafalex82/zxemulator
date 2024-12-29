@@ -756,6 +756,12 @@ class CPU:
 
         self._log_3b_instruction(f"LD {self._reg_pair_symb(reg_pair)}, ({addr:04x})")
 
+    def _ld_sp_hl(self):
+        """ Load HL value to SP register """
+        self._sp = self.hl
+        self._cycles += 6
+        self._log_1b_instruction(f"LD SP, HL")
+
 
     # Exchange instructions
 
@@ -1423,7 +1429,7 @@ class CPU:
         self._instructions[0xf6] = self._alu_immediate
         self._instructions[0xf7] = None
         self._instructions[0xf8] = None
-        self._instructions[0xf9] = None
+        self._instructions[0xf9] = self._ld_sp_hl
         self._instructions[0xfa] = None
         self._instructions[0xfb] = self._ei
         self._instructions[0xfc] = None
