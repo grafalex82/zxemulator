@@ -716,6 +716,23 @@ class CPU:
         reg_symb = "R" if (self._current_inst & 0x08) else "I"
         self._log_1b_instruction(f"LD {reg_symb}, A")
 
+    def _store_a_to_mem(self):
+        """ Store accumulator to memory pointed by immediate argument """
+        addr = self._fetch_next_word()
+        self._machine.write_memory_byte(addr, self._a)
+        self._cycles += 13
+
+        self._log_3b_instruction(f"LD ({addr:04x}), A")
+
+
+    def _load_a_from_mem(self):
+        """ Load accumulator from memory pointed by immediate argument """
+        addr = self._fetch_next_word()
+        self._a = self._machine.read_memory_byte(addr)
+        self._cycles += 13
+
+        self._log_3b_instruction(f"LD A, ({addr:04x})")
+
 
     # 16-bit data transfer instructions
 
@@ -1248,7 +1265,7 @@ class CPU:
 
         self._instructions[0x30] = self._jr_cond
         self._instructions[0x31] = self._load_immediate_16b
-        self._instructions[0x32] = None
+        self._instructions[0x32] = self._store_a_to_mem
         self._instructions[0x33] = self._inc16
         self._instructions[0x34] = self._inc8
         self._instructions[0x35] = self._dec8
@@ -1256,7 +1273,7 @@ class CPU:
         self._instructions[0x37] = None
         self._instructions[0x38] = self._jr_cond
         self._instructions[0x39] = self._add_hl
-        self._instructions[0x3a] = None
+        self._instructions[0x3a] = self._load_a_from_mem
         self._instructions[0x3b] = self._dec16
         self._instructions[0x3c] = self._inc8
         self._instructions[0x3d] = self._dec8

@@ -228,6 +228,22 @@ def test_ld_a_r(cpu):
     assert cpu.a == 0x42
     assert cpu._cycles == 9
 
+def test_ld_mem_a(cpu):
+    cpu.a = 0x42   # Value to write
+    cpu._machine.write_memory_byte(0x0000, 0x32)    # LD (#beef), A Instruction Opcode
+    cpu._machine.write_memory_word(0x0001, 0xbeef)  # Address
+    cpu.step()
+    assert cpu._machine.read_memory_byte(0xbeef) == 0x42
+    assert cpu._cycles == 13
+
+def test_ld_a_mem(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0x3a)    # LD A, (#beef) Instruction Opcode
+    cpu._machine.write_memory_word(0x0001, 0xbeef)  # Address
+    cpu._machine.write_memory_byte(0xbeef, 0x42)    # Data to read
+    cpu.step()
+    assert cpu.a == 0x42
+    assert cpu._cycles == 13
+
 
 # 16-bit data transfer instructions tests
 
