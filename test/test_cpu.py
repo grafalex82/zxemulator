@@ -716,3 +716,65 @@ def test_cmp_zero(cpu):
     assert cpu.overflow == False
     assert cpu.carry == False
     assert cpu.half_carry == True
+
+def test_dec_bc(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0x0b)    # DEC BC Instruction Opcode
+    cpu.bc = 0xbeef
+    cpu.step()
+    assert cpu._cycles == 6
+    assert cpu.b == 0xbe
+    assert cpu.c == 0xee
+
+def test_dec_de(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0x1b)    # DEC DE Instruction Opcode
+    cpu.de = 0xbeef
+    cpu.step()
+    assert cpu._cycles == 6
+    assert cpu.d == 0xbe
+    assert cpu.e == 0xee
+
+def test_dec_hl(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0x2b)    # DEC HL Instruction Opcode
+    cpu.hl = 0xbeef
+    cpu.step()
+    assert cpu._cycles == 6
+    assert cpu.h == 0xbe
+    assert cpu.l == 0xee
+
+def test_dec_sp(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0x3b)    # DEC SP Instruction Opcode
+    cpu.sp = 0xbeef
+    cpu.step()
+    assert cpu._cycles == 6
+    assert cpu.sp == 0xbeee
+
+def test_inc_bc(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0x03)    # INC BC Instruction Opcode
+    cpu.bc = 0xbeef
+    cpu.step()
+    assert cpu._cycles == 6
+    assert cpu.b == 0xbe
+    assert cpu.c == 0xf0
+
+def test_inc_de(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0x13)    # INC DE Instruction Opcode
+    cpu.de = 0xbeef
+    cpu.step()
+    assert cpu._cycles == 6
+    assert cpu.d == 0xbe
+    assert cpu.e == 0xf0
+
+def test_inc_hl(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0x23)    # INC HL Instruction Opcode
+    cpu.hl = 0xbeef
+    cpu.step()
+    assert cpu._cycles == 6
+    assert cpu.h == 0xbe
+    assert cpu.l == 0xf0
+
+def test_inc_sp(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0x33)    # INC SP Instruction Opcode
+    cpu.sp = 0xbeef
+    cpu.step()
+    assert cpu._cycles == 6
+    assert cpu.sp == 0xbef0

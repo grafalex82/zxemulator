@@ -835,13 +835,34 @@ class CPU:
         self._log_2b_instruction(f"{op_name} {value:02x}")
 
 
+    def _dec16(self):
+        """ Decrement a register pair """
+        reg_pair = (self._current_inst & 0x30) >> 4
+        value = self._get_register_pair(reg_pair)
+        self._set_register_pair(reg_pair, (value - 1) & 0xffff)
+        self._cycles += 6
+
+        self._log_1b_instruction(f"DEC {self._reg_pair_symb(reg_pair)}")
+
+
+    def _inc16(self):
+        """ Increment a register pair """
+        reg_pair = (self._current_inst & 0x30) >> 4
+        value = self._get_register_pair(reg_pair)
+        self._set_register_pair(reg_pair, (value + 1) & 0xffff)
+        self._cycles += 6
+
+        self._log_1b_instruction(f"INC {self._reg_pair_symb(reg_pair)}")
+
+
+
     # Instruction table
 
     def init_instruction_table(self):
         self._instructions[0x00] = self._nop
         self._instructions[0x01] = self._load_immediate_16b
         self._instructions[0x02] = None
-        self._instructions[0x03] = None
+        self._instructions[0x03] = self._inc16
         self._instructions[0x04] = None
         self._instructions[0x05] = None
         self._instructions[0x06] = self._load_8b_immediate_to_register
@@ -849,7 +870,7 @@ class CPU:
         self._instructions[0x08] = None
         self._instructions[0x09] = None
         self._instructions[0x0a] = None
-        self._instructions[0x0b] = None
+        self._instructions[0x0b] = self._dec16
         self._instructions[0x0c] = None
         self._instructions[0x0d] = None
         self._instructions[0x0e] = self._load_8b_immediate_to_register
@@ -858,7 +879,7 @@ class CPU:
         self._instructions[0x10] = None
         self._instructions[0x11] = self._load_immediate_16b
         self._instructions[0x12] = None
-        self._instructions[0x13] = None
+        self._instructions[0x13] = self._inc16
         self._instructions[0x14] = None
         self._instructions[0x15] = None
         self._instructions[0x16] = self._load_8b_immediate_to_register
@@ -866,7 +887,7 @@ class CPU:
         self._instructions[0x18] = None
         self._instructions[0x19] = None
         self._instructions[0x1a] = None
-        self._instructions[0x1b] = None
+        self._instructions[0x1b] = self._dec16
         self._instructions[0x1c] = None
         self._instructions[0x1d] = None
         self._instructions[0x1e] = self._load_8b_immediate_to_register
@@ -875,7 +896,7 @@ class CPU:
         self._instructions[0x20] = None
         self._instructions[0x21] = self._load_immediate_16b
         self._instructions[0x22] = None
-        self._instructions[0x23] = None
+        self._instructions[0x23] = self._inc16
         self._instructions[0x24] = None
         self._instructions[0x25] = None
         self._instructions[0x26] = self._load_8b_immediate_to_register
@@ -883,7 +904,7 @@ class CPU:
         self._instructions[0x28] = None
         self._instructions[0x29] = None
         self._instructions[0x2a] = None
-        self._instructions[0x2b] = None
+        self._instructions[0x2b] = self._dec16
         self._instructions[0x2c] = None
         self._instructions[0x2d] = None
         self._instructions[0x2e] = self._load_8b_immediate_to_register
@@ -892,7 +913,7 @@ class CPU:
         self._instructions[0x30] = None
         self._instructions[0x31] = self._load_immediate_16b
         self._instructions[0x32] = None
-        self._instructions[0x33] = None
+        self._instructions[0x33] = self._inc16
         self._instructions[0x34] = None
         self._instructions[0x35] = None
         self._instructions[0x36] = self._load_8b_immediate_to_register
@@ -900,7 +921,7 @@ class CPU:
         self._instructions[0x38] = None
         self._instructions[0x39] = None
         self._instructions[0x3a] = None
-        self._instructions[0x3b] = None
+        self._instructions[0x3b] = self._dec16
         self._instructions[0x3c] = None
         self._instructions[0x3d] = None
         self._instructions[0x3e] = self._load_8b_immediate_to_register
