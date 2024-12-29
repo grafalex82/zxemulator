@@ -933,6 +933,27 @@ class CPU:
         self._log_1b_instruction(f"ADC HL, {self._reg_pair_symb(reg_pair)}")
 
 
+    def _sbc_hl(self):
+        """ Subtract register pairs with carry """
+        reg_pair = (self._current_inst & 0x30) >> 4
+        hl = self.hl
+        value = self._get_register_pair(reg_pair)
+        carry = 1 if self._carry else 0
+        res = hl - value - carry
+        neg_value = (~value + 1) & 0xffff
+        self._sign = (res & 0x8000) != 0
+        self._zero = (res & 0xffff) == 0
+        self._parity_overflow = ((hl ^ neg_value) < 0x8000) and ((hl ^ res) > 0x7fff) and (hl != 0) and (neg_value != 0)
+        self._carry = (res >= 0x10000)
+        self._half_carry = ((self.hl & 0x0fff) + (neg_value & 0x0fff) + carry) >= 0x1000
+        self._add_subtract = False
+        self.hl = res & 0xffff
+
+        self._cycles += 15
+
+        self._log_1b_instruction(f"SBC HL, {self._reg_pair_symb(reg_pair)}")
+
+
 
     # Instruction table
 
@@ -1282,7 +1303,7 @@ class CPU:
 
         self._instructions_0xed[0x40] = None
         self._instructions_0xed[0x41] = None
-        self._instructions_0xed[0x42] = None
+        self._instructions_0xed[0x42] = self._sbc_hl
         self._instructions_0xed[0x43] = None
         self._instructions_0xed[0x44] = None
         self._instructions_0xed[0x45] = None
@@ -1299,7 +1320,7 @@ class CPU:
 
         self._instructions_0xed[0x50] = None
         self._instructions_0xed[0x51] = None
-        self._instructions_0xed[0x52] = None
+        self._instructions_0xed[0x52] = self._sbc_hl
         self._instructions_0xed[0x53] = None
         self._instructions_0xed[0x54] = None
         self._instructions_0xed[0x55] = None
@@ -1316,7 +1337,7 @@ class CPU:
 
         self._instructions_0xed[0x60] = None
         self._instructions_0xed[0x61] = None
-        self._instructions_0xed[0x62] = None
+        self._instructions_0xed[0x62] = self._sbc_hl
         self._instructions_0xed[0x63] = None
         self._instructions_0xed[0x64] = None
         self._instructions_0xed[0x65] = None
@@ -1333,7 +1354,7 @@ class CPU:
 
         self._instructions_0xed[0x70] = None
         self._instructions_0xed[0x71] = None
-        self._instructions_0xed[0x72] = None
+        self._instructions_0xed[0x72] = self._sbc_hl
         self._instructions_0xed[0x73] = None
         self._instructions_0xed[0x74] = None
         self._instructions_0xed[0x75] = None

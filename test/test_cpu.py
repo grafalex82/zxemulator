@@ -1001,3 +1001,91 @@ def test_adc_hl_sp_zero(cpu):
     assert cpu.add_subtract == False
     assert cpu.overflow == False
     assert cpu.zero == True
+
+def test_sbc_hl_bc(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xed)    # SBC HL, BC Instruction Opcode
+    cpu._machine.write_memory_byte(0x0001, 0x42)
+    cpu.hl = 0xa17b     # Negative - Positive result an overflow
+    cpu.bc = 0x339f
+    cpu.carry = True    # Shall be processed
+    cpu.step()
+    assert cpu.hl == 0x6ddb
+    assert cpu._cycles == 15
+    assert cpu.carry == False
+    assert cpu.half_carry == False
+    assert cpu.add_subtract == False
+    assert cpu.overflow == True
+    assert cpu.zero == False
+
+def test_sbc_hl_de(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xed)    # SBC HL, DE Instruction Opcode
+    cpu._machine.write_memory_byte(0x0001, 0x52)
+    cpu.hl = 0xabcd     # Negative - negative result no overflow
+    cpu.de = 0xef12
+    cpu.carry = True    # Shall be processed
+    cpu.step()
+    assert cpu.hl == 0xbcba
+    assert cpu._cycles == 15
+    assert cpu.carry == False
+    assert cpu.half_carry == False
+    assert cpu.add_subtract == False
+    assert cpu.overflow == False
+    assert cpu.zero == False
+
+def test_sbc_hl_hl(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xed)    # SBC HL, HL Instruction Opcode
+    cpu._machine.write_memory_byte(0x0001, 0x62)
+    cpu.hl = 0x4567     # Positive - positive result no overflow
+    cpu.carry = True    # Shall be processed
+    cpu.step()
+    assert cpu.hl == 0xffff
+    assert cpu._cycles == 15
+    assert cpu.carry == False
+    assert cpu.half_carry == True
+    assert cpu.add_subtract == False
+    assert cpu.overflow == False
+    assert cpu.zero == False
+
+def test_sbc_hl_hl_zero(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xed)    # SBC HL, HL Instruction Opcode
+    cpu._machine.write_memory_byte(0x0001, 0x62)
+    cpu.hl = 0x0000     # Zero + zero result no overflow
+    cpu.carry = False   # No carry
+    cpu.step()
+    assert cpu.hl == 0x0000
+    assert cpu._cycles == 15
+    assert cpu.carry == False
+    assert cpu.half_carry == False
+    assert cpu.add_subtract == False
+    assert cpu.overflow == False
+    assert cpu.zero == True
+
+def test_sbc_hl_sp(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xed)    # SBC HL, SP Instruction Opcode
+    cpu._machine.write_memory_byte(0x0001, 0x72)
+    cpu.hl = 0x4567     # Positive - negative result no overflow
+    cpu.sp = 0x89ab
+    cpu.carry = True    # Shall be processed
+    cpu.step()
+    assert cpu.hl == 0xbbbb
+    assert cpu._cycles == 15
+    assert cpu.carry == False
+    assert cpu.half_carry == False
+    assert cpu.add_subtract == False
+    assert cpu.overflow == False
+    assert cpu.zero == False
+
+def test_sbc_hl_sp_zero(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xed)    # SBC HL, SP Instruction Opcode
+    cpu._machine.write_memory_byte(0x0001, 0x72)
+    cpu.hl = 0x4567     # Positive - negative result no overflow
+    cpu.sp = 0x4566
+    cpu.carry = True    # Shall be processed
+    cpu.step()
+    assert cpu.hl == 0x0000
+    assert cpu._cycles == 15
+    assert cpu.carry == False
+    assert cpu.half_carry == True
+    assert cpu.add_subtract == False
+    assert cpu.overflow == False
+    assert cpu.zero == True
