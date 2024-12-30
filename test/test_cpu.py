@@ -1149,6 +1149,36 @@ def test_dec_m(cpu):
     assert cpu.overflow == False
     assert cpu.add_subtract == True
 
+def test_dec_iy_d(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xfd)    # DEC (IY + 5) Instruction Opcode
+    cpu._machine.write_memory_byte(0x0001, 0x35)
+    cpu._machine.write_memory_byte(0x0002, 0x05)
+    cpu._machine.write_memory_byte(0x1234 + 5, 0x42)    # Data byte
+    cpu.iy = 0x1234
+    cpu.step()
+    assert cpu._cycles == 23
+    assert cpu._machine.read_memory_byte(0x1234 + 5) == 0x41
+    assert cpu.half_carry == False
+    assert cpu.zero == False
+    assert cpu.sign == False
+    assert cpu.overflow == False
+    assert cpu.add_subtract == True
+
+def test_dec_iy_d_negative_offset(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xfd)    # DEC (IY - 5) Instruction Opcode
+    cpu._machine.write_memory_byte(0x0001, 0x35)
+    cpu._machine.write_memory_byte(0x0002, 0xfb)
+    cpu._machine.write_memory_byte(0x1234 - 5, 0x80)    # Data byte
+    cpu.iy = 0x1234
+    cpu.step()
+    assert cpu._cycles == 23
+    assert cpu._machine.read_memory_byte(0x1234 - 5) == 0x7f
+    assert cpu.half_carry == False
+    assert cpu.zero == False
+    assert cpu.sign == False
+    assert cpu.overflow == True
+    assert cpu.add_subtract == True
+
 def test_inc_a(cpu):
     cpu._machine.write_memory_byte(0x0000, 0x3c)    # INC A Instruction Opcode
     cpu.a = 0x42
@@ -1232,6 +1262,36 @@ def test_inc_m(cpu):
     assert cpu.zero == False
     assert cpu.sign == False
     assert cpu.overflow == False
+    assert cpu.add_subtract == False
+
+def test_inc_iy_d(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xfd)    # INC (IY + 5) Instruction Opcode
+    cpu._machine.write_memory_byte(0x0001, 0x34)
+    cpu._machine.write_memory_byte(0x0002, 0x05)
+    cpu._machine.write_memory_byte(0x1234 + 5, 0x42)    # Data byte
+    cpu.iy = 0x1234
+    cpu.step()
+    assert cpu._cycles == 23
+    assert cpu._machine.read_memory_byte(0x1234 + 5) == 0x43
+    assert cpu.half_carry == False
+    assert cpu.zero == False
+    assert cpu.sign == False
+    assert cpu.overflow == False
+    assert cpu.add_subtract == False
+
+def test_inc_iy_d_negative_offset(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xfd)    # INC (IY - 5) Instruction Opcode
+    cpu._machine.write_memory_byte(0x0001, 0x34)
+    cpu._machine.write_memory_byte(0x0002, 0xfb)
+    cpu._machine.write_memory_byte(0x1234 - 5, 0x7f)    # Data byte
+    cpu.iy = 0x1234
+    cpu.step()
+    assert cpu._cycles == 23
+    assert cpu._machine.read_memory_byte(0x1234 - 5) == 0x80
+    assert cpu.half_carry == True
+    assert cpu.zero == False
+    assert cpu.sign == True
+    assert cpu.overflow == True
     assert cpu.add_subtract == False
 
 def test_dec_bc(cpu):

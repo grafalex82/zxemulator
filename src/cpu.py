@@ -1098,28 +1098,9 @@ class CPU:
         self._log_2b_instruction(f"{op_name} {value:02x}")
 
 
-    def _dec8(self):
-        """ Decrement a 8-bit register """
-        reg = (self._current_inst & 0x38) >> 3
-        value = (self._get_register(reg) - 1) & 0xff
-        self._set_register(reg, value)
-
-        self._zero = (value & 0xff) == 0
-        self._parity = self._count_bits(value) % 2 == 0
-        self._sign = (value & 0x80) != 0
-        self._half_carry = value == 0x0f
-        self._add_subtract = True
-        self._parity_overflow = value == 0x7f
-
-        self._log_1b_instruction(f"DEC {self._reg_symb(reg)}")
-        self._cycles += 11 if reg == 6 else 4
-
-
-    def _inc8(self):
-        """ Increment a 8-bit register """
-        reg = (self._current_inst & 0x38) >> 3
-        value = (self._get_register(reg) + 1) & 0xff
-        self._set_register(reg, value)
+    def _inc_8bit_value(self, value):
+        """ Increment a 8-bit value and update flags """
+        value = (value + 1) & 0xff
 
         self._zero = (value & 0xff) == 0
         self._parity = self._count_bits(value) % 2 == 0
@@ -1128,8 +1109,73 @@ class CPU:
         self._add_subtract = False
         self._parity_overflow = value == 0x80
 
+        return value
+
+
+    def _dec_8bit_value(self, value):
+        """ Decrement a 8-bit value and update flags """
+        value = (value - 1) & 0xff
+
+        self._zero = (value & 0xff) == 0
+        self._parity = self._count_bits(value) % 2 == 0
+        self._sign = (value & 0x80) != 0
+        self._half_carry = value == 0x0f
+        self._add_subtract = True
+        self._parity_overflow = value == 0x7f
+
+        return value
+
+
+    def _inc_reg8(self):
+        """ Increment a 8-bit register """
+        reg = (self._current_inst & 0x38) >> 3
+        value = self._inc_8bit_value(self._get_register(reg))
+        self._set_register(reg, value)
+
         self._log_1b_instruction(f"INC {self._reg_symb(reg)}")
         self._cycles += 11 if reg == 6 else 4
+
+    
+    def _dec_reg8(self):
+        """ Decrement a 8-bit register """
+        reg = (self._current_inst & 0x38) >> 3
+        value = self._dec_8bit_value(self._get_register(reg))
+        self._set_register(reg, value)
+
+        self._log_1b_instruction(f"DEC {self._reg_symb(reg)}")
+        self._cycles += 11 if reg == 6 else 4
+
+
+    def _inc_mem_indexed(self):
+        """ Increment 8-bit value pointed by IY-based index """
+        # TODO Add IX support
+        displacement = self._fetch_next_byte()
+        if displacement > 0x7f:
+            displacement -= 0x100
+
+        addr = self._iy + displacement
+        value = self._machine.read_memory_byte(addr)
+        value = self._inc_8bit_value(value)
+        self._machine.write_memory_byte(addr, value)
+
+        self._log_2b_instruction(f"INC (IY{displacement:+02x})")
+        self._cycles += 23
+
+
+    def _dec_mem_indexed(self):
+        """ Deccrement 8-bit value pointed by IY-based index """
+        # TODO Add IX support
+        displacement = self._fetch_next_byte()
+        if displacement > 0x7f:
+            displacement -= 0x100
+
+        addr = self._iy + displacement
+        value = self._machine.read_memory_byte(addr)
+        value = self._dec_8bit_value(value)
+        self._machine.write_memory_byte(addr, value)
+
+        self._log_2b_instruction(f"DEC (IY{displacement:+02x})")
+        self._cycles += 23
 
 
     def _dec16(self):
@@ -1216,16 +1262,16 @@ class CPU:
         self._instructions[0x01] = self._load_immediate_16b
         self._instructions[0x02] = None
         self._instructions[0x03] = self._inc16
-        self._instructions[0x04] = self._inc8
-        self._instructions[0x05] = self._dec8
+        self._instructions[0x04] = self._inc_reg8
+        self._instructions[0x05] = self._dec_reg8
         self._instructions[0x06] = self._load_8b_immediate_to_register
         self._instructions[0x07] = None
         self._instructions[0x08] = self._exchange_af_afx
         self._instructions[0x09] = self._add_hl
         self._instructions[0x0a] = None
         self._instructions[0x0b] = self._dec16
-        self._instructions[0x0c] = self._inc8
-        self._instructions[0x0d] = self._dec8
+        self._instructions[0x0c] = self._inc_reg8
+        self._instructions[0x0d] = self._dec_reg8
         self._instructions[0x0e] = self._load_8b_immediate_to_register
         self._instructions[0x0f] = None
 
@@ -1233,16 +1279,16 @@ class CPU:
         self._instructions[0x11] = self._load_immediate_16b
         self._instructions[0x12] = None
         self._instructions[0x13] = self._inc16
-        self._instructions[0x14] = self._inc8
-        self._instructions[0x15] = self._dec8
+        self._instructions[0x14] = self._inc_reg8
+        self._instructions[0x15] = self._dec_reg8
         self._instructions[0x16] = self._load_8b_immediate_to_register
         self._instructions[0x17] = None
         self._instructions[0x18] = self._jr
         self._instructions[0x19] = self._add_hl
         self._instructions[0x1a] = None
         self._instructions[0x1b] = self._dec16
-        self._instructions[0x1c] = self._inc8
-        self._instructions[0x1d] = self._dec8
+        self._instructions[0x1c] = self._inc_reg8
+        self._instructions[0x1d] = self._dec_reg8
         self._instructions[0x1e] = self._load_8b_immediate_to_register
         self._instructions[0x1f] = None
 
@@ -1250,16 +1296,16 @@ class CPU:
         self._instructions[0x21] = self._load_immediate_16b
         self._instructions[0x22] = self._store_hl_to_memory
         self._instructions[0x23] = self._inc16
-        self._instructions[0x24] = self._inc8
-        self._instructions[0x25] = self._dec8
+        self._instructions[0x24] = self._inc_reg8
+        self._instructions[0x25] = self._dec_reg8
         self._instructions[0x26] = self._load_8b_immediate_to_register
         self._instructions[0x27] = None
         self._instructions[0x28] = self._jr_cond
         self._instructions[0x29] = self._add_hl
         self._instructions[0x2a] = self._load_hl_from_memory
         self._instructions[0x2b] = self._dec16
-        self._instructions[0x2c] = self._inc8
-        self._instructions[0x2d] = self._dec8
+        self._instructions[0x2c] = self._inc_reg8
+        self._instructions[0x2d] = self._dec_reg8
         self._instructions[0x2e] = self._load_8b_immediate_to_register
         self._instructions[0x2f] = None
 
@@ -1267,16 +1313,16 @@ class CPU:
         self._instructions[0x31] = self._load_immediate_16b
         self._instructions[0x32] = self._store_a_to_mem
         self._instructions[0x33] = self._inc16
-        self._instructions[0x34] = self._inc8
-        self._instructions[0x35] = self._dec8
+        self._instructions[0x34] = self._inc_reg8
+        self._instructions[0x35] = self._dec_reg8
         self._instructions[0x36] = self._load_8b_immediate_to_register
         self._instructions[0x37] = None
         self._instructions[0x38] = self._jr_cond
         self._instructions[0x39] = self._add_hl
         self._instructions[0x3a] = self._load_a_from_mem
         self._instructions[0x3b] = self._dec16
-        self._instructions[0x3c] = self._inc8
-        self._instructions[0x3d] = self._dec8
+        self._instructions[0x3c] = self._inc_reg8
+        self._instructions[0x3d] = self._dec_reg8
         self._instructions[0x3e] = self._load_8b_immediate_to_register
         self._instructions[0x3f] = None
 
@@ -1817,8 +1863,8 @@ class CPU:
         self._instructions_0xfd[0x31] = None
         self._instructions_0xfd[0x32] = None
         self._instructions_0xfd[0x33] = None
-        self._instructions_0xfd[0x34] = None
-        self._instructions_0xfd[0x35] = None
+        self._instructions_0xfd[0x34] = self._inc_mem_indexed
+        self._instructions_0xfd[0x35] = self._dec_mem_indexed
         self._instructions_0xfd[0x36] = None
         self._instructions_0xfd[0x37] = None
         self._instructions_0xfd[0x38] = None
