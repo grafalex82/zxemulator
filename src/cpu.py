@@ -576,14 +576,14 @@ class CPU:
         if instruction is not None:
             instruction()
         else:
-            if self._instruction_prefix > 0x80:
+            if self._instruction_prefix == None:
+                prefix = ""
+            elif self._instruction_prefix > 0x80:
                 h = self._instruction_prefix >> 8
                 l = self._instruction_prefix & 0xff
                 prefix = f"{h:02x} {l:02x} {self._displacement:02x} "
-            elif self._instruction_prefix != None:
-                prefix = f"{self._instruction_prefix:02x} "
             else:
-                prefix = ""
+                prefix = f"{self._instruction_prefix:02x} "
             raise InvalidInstruction(f"Incorrect OPCODE {prefix}{self._current_inst:02x} (at addr 0x{pc:04x})")
 
 
