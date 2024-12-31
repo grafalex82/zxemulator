@@ -578,7 +578,7 @@ class CPU:
         else:
             if self._instruction_prefix == None:
                 prefix = ""
-            elif self._instruction_prefix > 0x80:
+            elif self._instruction_prefix >= 0x100:
                 h = self._instruction_prefix >> 8
                 l = self._instruction_prefix & 0xff
                 prefix = f"{h:02x} {l:02x} {self._displacement:02x} "
