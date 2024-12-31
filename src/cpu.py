@@ -520,11 +520,11 @@ class CPU:
 
     def _push_to_stack(self, value):
         self._sp -= 2
-        self._machine.write_stack(self._sp, value)
+        self._machine.write_memory_word(self._sp, value)
 
 
     def _pop_from_stack(self):
-        value = self._machine.read_stack(self._sp)
+        value = self._machine.read_memory_word(self._sp)
         self._sp += 2
         return value
 
@@ -1053,6 +1053,16 @@ class CPU:
         else:
             self._cycles += 7
 
+    def _call(self):
+        """ Call a subroutine """
+        addr = self._fetch_next_word()
+
+        self._log_3b_instruction(f"CALL {addr:04x}")
+
+        self._push_to_stack(self._pc)
+        self._pc = addr
+        self._cycles += 17
+
 
     # ALU instructions
 
@@ -1576,7 +1586,7 @@ class CPU:
         self._instructions[0xca] = None
         self._instructions[0xcb] = None
         self._instructions[0xcc] = None
-        self._instructions[0xcd] = None
+        self._instructions[0xcd] = self._call
         self._instructions[0xce] = self._alu_immediate
         self._instructions[0xcf] = None
 

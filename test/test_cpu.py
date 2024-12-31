@@ -599,6 +599,16 @@ def test_jr_c_negative(cpu):
     assert cpu.pc == 0x0002   # No jump
     assert cpu._cycles == 7
 
+def test_call(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xcd)    # Instruction Opcode
+    cpu._machine.write_memory_word(0x0001, 0xbeef)  # Address
+    cpu.sp = 0x1234
+    cpu.step()
+    assert cpu.pc == 0xbeef
+    assert cpu._cycles == 17
+    assert cpu._machine.read_memory_word(0x1232) == 0x0003 # address of the next instruction
+
+
 
 # ALU instructions tests
 
