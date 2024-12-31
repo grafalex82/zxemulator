@@ -26,11 +26,16 @@ class CPU:
         # Instructions and execution
         self._cycles = 0
         self._instruction_prefix = None
-        self._current_inst = 0  # current instruction
-        self._instructions = [None] * 0x100
-        self._instructions_0xed = [None] * 0x100    # Additional instruction set
-        self._instructions_0xfd = [None] * 0x100    # IY instructions
-        self.init_instruction_table();
+        self._current_inst = 0              # current instruction
+        self._displacement = 0              # Parsed displacement for IX- and IY-based operations
+
+        self._init_instruction_table()       # Main instruction set
+        self._init_ed_instruction_table()    # Additional instruction set
+        self._init_cb_instruction_table()    # Bit instructions
+        self._init_dd_instruction_table()    # IX instructions
+        self._init_ddcb_instruction_table()  # IX bit instructions
+        self._init_fd_instruction_table()    # IY instructions
+        self._init_fdcb_instruction_table()  # IY bit instructions
     
         self._registers_logging = False
 
@@ -521,30 +526,56 @@ class CPU:
         """
         Executes an instruction and updates processor state
         """
-        # Fetch the next instruction, take into account the instruction prefix
+        # Fetch the next instruction, and parse prefix bytes if needed
         pc = self._pc
         b = self._fetch_next_byte()
-        if b == 0xed or b == 0xfd:
+        if b in [0xed, 0xcb, 0xdd, 0xfd]:
             self._instruction_prefix = b
             self._current_inst = self._fetch_next_byte()
+
+            # Handle double prefixes such as 0xDDCB and 0xFDCB
+            # In these instructions3rd byte is a displacement, and 4th byte is the opcode
+            if self._current_inst == 0xcb:
+                self._instruction_prefix <<= 8
+                self._instruction_prefix |= self._current_inst
+                self._displacement = self._fetch_next_byte()
+                if self._displacement > 0x7f:
+                    self._displacement = 0x100 - self._displacement
+                self._current_inst = self._fetch_next_byte()
         else:
             self._instruction_prefix = None
             self._current_inst = b
 
         # Depending on instruction prefix, select the correct instruction table
-        if self._instruction_prefix == 0xed:
-            instruction = self._instructions_0xed[self._current_inst]
-        elif self._instruction_prefix == 0xfd:
-            instruction = self._instructions_0xfd[self._current_inst]
-        else:
-            instruction = self._instructions[self._current_inst]
+        match self._instruction_prefix:
+            case 0xed:
+                instruction = self._instructions_0xed[self._current_inst]
+            case 0xcb:
+                instruction = self._instructions_0xcb[self._current_inst]
+            case 0xdd:
+                instruction = self._instructions_0xdd[self._current_inst]
+            case 0xddcb:
+                instruction = self._instructions_0xddcb[self._current_inst]
+            case 0xfd:
+                instruction = self._instructions_0xfd[self._current_inst]
+            case 0xfdcb:
+                instruction = self._instructions_0xfdcb[self._current_inst]
+            case _:
+                instruction = self._instructions[self._current_inst]
 
         # Execute the instruction
         if instruction is not None:
             instruction()
         else:
-            prefix = f"0x{self._instruction_prefix:02x} " if self._instruction_prefix else ""
-            raise InvalidInstruction(f"Incorrect OPCODE {prefix}0x{self._current_inst:02x} (at addr 0x{pc:04x})")
+            if self._instruction_prefix > 0x80:
+                h = self._instruction_prefix >> 8
+                l = self._instruction_prefix & 0xff
+                prefix = f"{h:02x} {l:02x} {self._displacement:02x} "
+            elif self._instruction_prefix != None:
+                prefix = f"{self._instruction_prefix:02x} "
+            else:
+                prefix = ""
+            raise InvalidInstruction(f"Incorrect OPCODE {prefix}{self._current_inst:02x} (at addr 0x{pc:04x})")
 
 
     # Logging
@@ -567,13 +598,24 @@ class CPU:
         return res
 
 
+    def _prepare_log_prefix(self):
+        if self._instruction_prefix == None:
+            return "  "
+
+        if self._instruction_prefix >= 0x100:
+            return f"{(self._instruction_prefix >> 8):02x}"
+
+        return f"{self._instruction_prefix:02x}"
+
+
     def _log_1b_instruction(self, mnemonic):
         if logger.level > logging.DEBUG:
             return
 
         addr = self._pc - 1
-        prefix = f"{self._instruction_prefix:02x}" if self._instruction_prefix else "  "
-        log_str = f' {addr:04x}  {prefix} {self._current_inst:02x}         {mnemonic}'
+        if self._instruction_prefix:
+            addr -= 1
+        log_str = f' {addr:04x}  {self._prepare_log_prefix()} {self._current_inst:02x}         {mnemonic}'
 
         if self._registers_logging:
             log_str = f"{log_str:40} {self._get_cpu_state_str()}"
@@ -586,9 +628,10 @@ class CPU:
             return
 
         addr = self._pc - 2
+        if self._instruction_prefix:
+            addr -= 1
         param = self._machine.read_memory_byte(self._pc - 1)
-        prefix = f"{self._instruction_prefix:02x}" if self._instruction_prefix else "  "
-        log_str = f' {addr:04x}  {prefix} {self._current_inst:02x} {param:02x}      {mnemonic}'
+        log_str = f' {addr:04x}  {self._prepare_log_prefix()} {self._current_inst:02x} {param:02x}      {mnemonic}'
 
         if self._registers_logging:
             log_str = f"{log_str:40} {self._get_cpu_state_str()}"
@@ -601,10 +644,24 @@ class CPU:
             return
 
         addr = self._pc - 3
+        if self._instruction_prefix:
+            addr -= 1
         param1 = self._machine.read_memory_byte(self._pc - 2)
         param2 = self._machine.read_memory_byte(self._pc - 1)
-        prefix = f"{self._instruction_prefix:02x}" if self._instruction_prefix else "  "
-        log_str = f' {addr:04x}  {prefix} {self._current_inst:02x} {param1:02x} {param2:02x}   {mnemonic}'
+        log_str = f' {addr:04x}  {self._prepare_log_prefix()} {self._current_inst:02x} {param1:02x} {param2:02x}   {mnemonic}'
+
+        if self._registers_logging:
+            log_str = f"{log_str:40} {self._get_cpu_state_str()}"
+            
+        logger.debug(log_str)
+
+
+    def _log_3b_bit_instruction(self, mnemonic):
+        if logger.level > logging.DEBUG:
+            return
+
+        addr = self._pc - 4
+        log_str = f' {addr:04x}  {self._instruction_prefix >> 8:02x} {(self._instruction_prefix & 0xff):02x} {self._displacement:02x} {self._current_inst:02x}   {mnemonic}'
 
         if self._registers_logging:
             log_str = f"{log_str:40} {self._get_cpu_state_str()}"
@@ -881,13 +938,14 @@ class CPU:
         self._parity_overflow = self.bc != 0x0000
         self._add_subtract = False
 
+        self._log_1b_instruction("LDDR")
+
         if self.bc != 0:
             self._pc -= 2
             self._cycles += 21
         else:
             self._cycles += 16
 
-        self._log_1b_instruction("LDDR")
 
     def _ldi(self):
         """ Copy byte from (HL) to (DE) and increment HL and DE, decrement BC """
@@ -916,13 +974,13 @@ class CPU:
         self._parity_overflow = self.bc != 0x0000
         self._add_subtract = False
 
+        self._log_1b_instruction("LDIR")
+
         if self.bc != 0:
             self._pc -= 2
             self._cycles += 21
         else:
             self._cycles += 16
-
-        self._log_1b_instruction("LDIR")
 
 
     # Execution flow instructions
@@ -1254,10 +1312,13 @@ class CPU:
         self._log_1b_instruction(f"SBC HL, {self._reg_pair_symb(reg_pair)}")
 
 
+    # Instruction tables
 
-    # Instruction table
+    def _init_instruction_table(self):
+        """ Initialize main instruction set """
 
-    def init_instruction_table(self):
+        self._instructions = [None] * 0x100
+
         self._instructions[0x00] = self._nop
         self._instructions[0x01] = self._load_immediate_16b
         self._instructions[0x02] = None
@@ -1531,7 +1592,10 @@ class CPU:
         self._instructions[0xff] = None
 
 
-        # Extended instruction set with 0xed prefix
+    def _init_ed_instruction_table(self):
+        """ Initialize additional instruction set with 0xED prefix """
+
+        self._instructions_0xed = [None] * 0x100
 
         self._instructions_0xed[0x00] = None
         self._instructions_0xed[0x01] = None
@@ -1806,7 +1870,844 @@ class CPU:
         self._instructions_0xed[0xff] = None
 
 
-        # IY instruction set
+    def _init_cb_instruction_table(self):
+        """ Initialize bit instruction set with 0xCB prefix """
+        
+        self._instructions_0xcb = [None] * 0x100
+
+        self._instructions_0xcb[0x00] = None
+        self._instructions_0xcb[0x01] = None
+        self._instructions_0xcb[0x02] = None
+        self._instructions_0xcb[0x03] = None
+        self._instructions_0xcb[0x04] = None
+        self._instructions_0xcb[0x05] = None
+        self._instructions_0xcb[0x06] = None
+        self._instructions_0xcb[0x07] = None
+        self._instructions_0xcb[0x08] = None
+        self._instructions_0xcb[0x09] = None
+        self._instructions_0xcb[0x0a] = None
+        self._instructions_0xcb[0x0b] = None
+        self._instructions_0xcb[0x0c] = None
+        self._instructions_0xcb[0x0d] = None
+        self._instructions_0xcb[0x0e] = None
+        self._instructions_0xcb[0x0f] = None
+
+        self._instructions_0xcb[0x10] = None
+        self._instructions_0xcb[0x11] = None
+        self._instructions_0xcb[0x12] = None
+        self._instructions_0xcb[0x13] = None
+        self._instructions_0xcb[0x14] = None
+        self._instructions_0xcb[0x15] = None
+        self._instructions_0xcb[0x16] = None
+        self._instructions_0xcb[0x17] = None
+        self._instructions_0xcb[0x18] = None
+        self._instructions_0xcb[0x19] = None
+        self._instructions_0xcb[0x1a] = None
+        self._instructions_0xcb[0x1b] = None
+        self._instructions_0xcb[0x1c] = None
+        self._instructions_0xcb[0x1d] = None
+        self._instructions_0xcb[0x1e] = None
+        self._instructions_0xcb[0x1f] = None
+
+        self._instructions_0xcb[0x20] = None
+        self._instructions_0xcb[0x21] = None
+        self._instructions_0xcb[0x22] = None
+        self._instructions_0xcb[0x23] = None
+        self._instructions_0xcb[0x24] = None
+        self._instructions_0xcb[0x25] = None
+        self._instructions_0xcb[0x26] = None
+        self._instructions_0xcb[0x27] = None
+        self._instructions_0xcb[0x28] = None
+        self._instructions_0xcb[0x29] = None
+        self._instructions_0xcb[0x2a] = None
+        self._instructions_0xcb[0x2b] = None
+        self._instructions_0xcb[0x2c] = None
+        self._instructions_0xcb[0x2d] = None
+        self._instructions_0xcb[0x2e] = None
+        self._instructions_0xcb[0x2f] = None
+
+        self._instructions_0xcb[0x30] = None
+        self._instructions_0xcb[0x31] = None
+        self._instructions_0xcb[0x32] = None
+        self._instructions_0xcb[0x33] = None
+        self._instructions_0xcb[0x34] = None
+        self._instructions_0xcb[0x35] = None
+        self._instructions_0xcb[0x36] = None
+        self._instructions_0xcb[0x37] = None
+        self._instructions_0xcb[0x38] = None
+        self._instructions_0xcb[0x39] = None
+        self._instructions_0xcb[0x3a] = None
+        self._instructions_0xcb[0x3b] = None
+        self._instructions_0xcb[0x3c] = None
+        self._instructions_0xcb[0x3d] = None
+        self._instructions_0xcb[0x3e] = None
+        self._instructions_0xcb[0x3f] = None
+
+        self._instructions_0xcb[0x40] = None
+        self._instructions_0xcb[0x41] = None
+        self._instructions_0xcb[0x42] = None
+        self._instructions_0xcb[0x43] = None
+        self._instructions_0xcb[0x44] = None
+        self._instructions_0xcb[0x45] = None
+        self._instructions_0xcb[0x46] = None
+        self._instructions_0xcb[0x47] = None
+        self._instructions_0xcb[0x48] = None
+        self._instructions_0xcb[0x49] = None
+        self._instructions_0xcb[0x4a] = None
+        self._instructions_0xcb[0x4b] = None
+        self._instructions_0xcb[0x4c] = None
+        self._instructions_0xcb[0x4d] = None
+        self._instructions_0xcb[0x4e] = None
+        self._instructions_0xcb[0x4f] = None
+
+        self._instructions_0xcb[0x50] = None
+        self._instructions_0xcb[0x51] = None
+        self._instructions_0xcb[0x52] = None
+        self._instructions_0xcb[0x53] = None
+        self._instructions_0xcb[0x54] = None
+        self._instructions_0xcb[0x55] = None
+        self._instructions_0xcb[0x56] = None
+        self._instructions_0xcb[0x57] = None
+        self._instructions_0xcb[0x58] = None
+        self._instructions_0xcb[0x59] = None
+        self._instructions_0xcb[0x5a] = None
+        self._instructions_0xcb[0x5b] = None
+        self._instructions_0xcb[0x5c] = None
+        self._instructions_0xcb[0x5d] = None
+        self._instructions_0xcb[0x5e] = None
+        self._instructions_0xcb[0x5f] = None
+
+        self._instructions_0xcb[0x60] = None
+        self._instructions_0xcb[0x61] = None
+        self._instructions_0xcb[0x62] = None
+        self._instructions_0xcb[0x63] = None
+        self._instructions_0xcb[0x64] = None
+        self._instructions_0xcb[0x65] = None
+        self._instructions_0xcb[0x66] = None
+        self._instructions_0xcb[0x67] = None
+        self._instructions_0xcb[0x68] = None
+        self._instructions_0xcb[0x69] = None
+        self._instructions_0xcb[0x6a] = None
+        self._instructions_0xcb[0x6b] = None
+        self._instructions_0xcb[0x6c] = None
+        self._instructions_0xcb[0x6d] = None
+        self._instructions_0xcb[0x6e] = None
+        self._instructions_0xcb[0x6f] = None
+
+        self._instructions_0xcb[0x70] = None
+        self._instructions_0xcb[0x71] = None
+        self._instructions_0xcb[0x72] = None
+        self._instructions_0xcb[0x73] = None
+        self._instructions_0xcb[0x74] = None
+        self._instructions_0xcb[0x75] = None
+        self._instructions_0xcb[0x76] = None
+        self._instructions_0xcb[0x77] = None
+        self._instructions_0xcb[0x78] = None
+        self._instructions_0xcb[0x79] = None
+        self._instructions_0xcb[0x7a] = None
+        self._instructions_0xcb[0x7b] = None
+        self._instructions_0xcb[0x7c] = None
+        self._instructions_0xcb[0x7d] = None
+        self._instructions_0xcb[0x7e] = None
+        self._instructions_0xcb[0x7f] = None
+
+        self._instructions_0xcb[0x80] = None
+        self._instructions_0xcb[0x81] = None
+        self._instructions_0xcb[0x82] = None
+        self._instructions_0xcb[0x83] = None
+        self._instructions_0xcb[0x84] = None
+        self._instructions_0xcb[0x85] = None
+        self._instructions_0xcb[0x86] = None
+        self._instructions_0xcb[0x87] = None
+        self._instructions_0xcb[0x88] = None
+        self._instructions_0xcb[0x89] = None
+        self._instructions_0xcb[0x8a] = None
+        self._instructions_0xcb[0x8b] = None
+        self._instructions_0xcb[0x8c] = None
+        self._instructions_0xcb[0x8d] = None
+        self._instructions_0xcb[0x8e] = None
+        self._instructions_0xcb[0x8f] = None
+
+        self._instructions_0xcb[0x90] = None
+        self._instructions_0xcb[0x91] = None
+        self._instructions_0xcb[0x92] = None
+        self._instructions_0xcb[0x93] = None
+        self._instructions_0xcb[0x94] = None
+        self._instructions_0xcb[0x95] = None
+        self._instructions_0xcb[0x96] = None
+        self._instructions_0xcb[0x97] = None
+        self._instructions_0xcb[0x98] = None
+        self._instructions_0xcb[0x99] = None
+        self._instructions_0xcb[0x9a] = None
+        self._instructions_0xcb[0x9b] = None
+        self._instructions_0xcb[0x9c] = None
+        self._instructions_0xcb[0x9d] = None
+        self._instructions_0xcb[0x9e] = None
+        self._instructions_0xcb[0x9f] = None
+
+        self._instructions_0xcb[0xa0] = None
+        self._instructions_0xcb[0xa1] = None
+        self._instructions_0xcb[0xa2] = None
+        self._instructions_0xcb[0xa3] = None
+        self._instructions_0xcb[0xa4] = None
+        self._instructions_0xcb[0xa5] = None
+        self._instructions_0xcb[0xa6] = None
+        self._instructions_0xcb[0xa7] = None
+        self._instructions_0xcb[0xa8] = None
+        self._instructions_0xcb[0xa9] = None
+        self._instructions_0xcb[0xaa] = None
+        self._instructions_0xcb[0xab] = None
+        self._instructions_0xcb[0xac] = None
+        self._instructions_0xcb[0xad] = None
+        self._instructions_0xcb[0xae] = None
+        self._instructions_0xcb[0xaf] = None
+
+        self._instructions_0xcb[0xb0] = None
+        self._instructions_0xcb[0xb1] = None
+        self._instructions_0xcb[0xb2] = None
+        self._instructions_0xcb[0xb3] = None
+        self._instructions_0xcb[0xb4] = None
+        self._instructions_0xcb[0xb5] = None
+        self._instructions_0xcb[0xb6] = None
+        self._instructions_0xcb[0xb7] = None
+        self._instructions_0xcb[0xb8] = None
+        self._instructions_0xcb[0xb9] = None
+        self._instructions_0xcb[0xba] = None
+        self._instructions_0xcb[0xbb] = None
+        self._instructions_0xcb[0xbc] = None
+        self._instructions_0xcb[0xbd] = None
+        self._instructions_0xcb[0xbe] = None
+        self._instructions_0xcb[0xbf] = None
+
+        self._instructions_0xcb[0xc0] = None
+        self._instructions_0xcb[0xc1] = None
+        self._instructions_0xcb[0xc2] = None
+        self._instructions_0xcb[0xc3] = None
+        self._instructions_0xcb[0xc4] = None
+        self._instructions_0xcb[0xc5] = None
+        self._instructions_0xcb[0xc6] = None
+        self._instructions_0xcb[0xc7] = None
+        self._instructions_0xcb[0xc8] = None
+        self._instructions_0xcb[0xc9] = None
+        self._instructions_0xcb[0xca] = None
+        self._instructions_0xcb[0xcb] = None
+        self._instructions_0xcb[0xcc] = None
+        self._instructions_0xcb[0xcd] = None
+        self._instructions_0xcb[0xce] = None
+        self._instructions_0xcb[0xcf] = None
+
+        self._instructions_0xcb[0xd0] = None
+        self._instructions_0xcb[0xd1] = None
+        self._instructions_0xcb[0xd2] = None
+        self._instructions_0xcb[0xd3] = None
+        self._instructions_0xcb[0xd4] = None
+        self._instructions_0xcb[0xd5] = None
+        self._instructions_0xcb[0xd6] = None
+        self._instructions_0xcb[0xd7] = None
+        self._instructions_0xcb[0xd8] = None
+        self._instructions_0xcb[0xd9] = None
+        self._instructions_0xcb[0xda] = None
+        self._instructions_0xcb[0xdb] = None
+        self._instructions_0xcb[0xdc] = None
+        self._instructions_0xcb[0xdd] = None
+        self._instructions_0xcb[0xde] = None
+        self._instructions_0xcb[0xdf] = None
+
+        self._instructions_0xcb[0xe0] = None
+        self._instructions_0xcb[0xe1] = None
+        self._instructions_0xcb[0xe2] = None
+        self._instructions_0xcb[0xe3] = None
+        self._instructions_0xcb[0xe4] = None
+        self._instructions_0xcb[0xe5] = None
+        self._instructions_0xcb[0xe6] = None
+        self._instructions_0xcb[0xe7] = None
+        self._instructions_0xcb[0xe8] = None
+        self._instructions_0xcb[0xe9] = None
+        self._instructions_0xcb[0xea] = None
+        self._instructions_0xcb[0xeb] = None
+        self._instructions_0xcb[0xec] = None
+        self._instructions_0xcb[0xed] = None
+        self._instructions_0xcb[0xee] = None
+        self._instructions_0xcb[0xef] = None
+
+        self._instructions_0xcb[0xf0] = None
+        self._instructions_0xcb[0xf1] = None
+        self._instructions_0xcb[0xf2] = None
+        self._instructions_0xcb[0xf3] = None
+        self._instructions_0xcb[0xf4] = None
+        self._instructions_0xcb[0xf5] = None
+        self._instructions_0xcb[0xf6] = None
+        self._instructions_0xcb[0xf7] = None
+        self._instructions_0xcb[0xf8] = None
+        self._instructions_0xcb[0xf9] = None
+        self._instructions_0xcb[0xfa] = None
+        self._instructions_0xcb[0xfb] = None
+        self._instructions_0xcb[0xfc] = None
+        self._instructions_0xcb[0xfd] = None
+        self._instructions_0xcb[0xfe] = None
+        self._instructions_0xcb[0xff] = None
+
+
+    def _init_dd_instruction_table(self):
+        """ Initialize IX instruction set with 0xDD prefix """
+        
+        self._instructions_0xdd = [None] * 0x100
+
+        self._instructions_0xdd[0x00] = None
+        self._instructions_0xdd[0x01] = None
+        self._instructions_0xdd[0x02] = None
+        self._instructions_0xdd[0x03] = None
+        self._instructions_0xdd[0x04] = None
+        self._instructions_0xdd[0x05] = None
+        self._instructions_0xdd[0x06] = None
+        self._instructions_0xdd[0x07] = None
+        self._instructions_0xdd[0x08] = None
+        self._instructions_0xdd[0x09] = None
+        self._instructions_0xdd[0x0a] = None
+        self._instructions_0xdd[0x0b] = None
+        self._instructions_0xdd[0x0c] = None
+        self._instructions_0xdd[0x0d] = None
+        self._instructions_0xdd[0x0e] = None
+        self._instructions_0xdd[0x0f] = None
+
+        self._instructions_0xdd[0x10] = None
+        self._instructions_0xdd[0x11] = None
+        self._instructions_0xdd[0x12] = None
+        self._instructions_0xdd[0x13] = None
+        self._instructions_0xdd[0x14] = None
+        self._instructions_0xdd[0x15] = None
+        self._instructions_0xdd[0x16] = None
+        self._instructions_0xdd[0x17] = None
+        self._instructions_0xdd[0x18] = None
+        self._instructions_0xdd[0x19] = None
+        self._instructions_0xdd[0x1a] = None
+        self._instructions_0xdd[0x1b] = None
+        self._instructions_0xdd[0x1c] = None
+        self._instructions_0xdd[0x1d] = None
+        self._instructions_0xdd[0x1e] = None
+        self._instructions_0xdd[0x1f] = None
+
+        self._instructions_0xdd[0x20] = None
+        self._instructions_0xdd[0x21] = None
+        self._instructions_0xdd[0x22] = None
+        self._instructions_0xdd[0x23] = None
+        self._instructions_0xdd[0x24] = None
+        self._instructions_0xdd[0x25] = None
+        self._instructions_0xdd[0x26] = None
+        self._instructions_0xdd[0x27] = None
+        self._instructions_0xdd[0x28] = None
+        self._instructions_0xdd[0x29] = None
+        self._instructions_0xdd[0x2a] = None
+        self._instructions_0xdd[0x2b] = None
+        self._instructions_0xdd[0x2c] = None
+        self._instructions_0xdd[0x2d] = None
+        self._instructions_0xdd[0x2e] = None
+        self._instructions_0xdd[0x2f] = None
+
+        self._instructions_0xcb[0x30] = None
+        self._instructions_0xdd[0x31] = None
+        self._instructions_0xdd[0x32] = None
+        self._instructions_0xdd[0x33] = None
+        self._instructions_0xdd[0x34] = None
+        self._instructions_0xdd[0x35] = None
+        self._instructions_0xdd[0x36] = None
+        self._instructions_0xdd[0x37] = None
+        self._instructions_0xdd[0x38] = None
+        self._instructions_0xdd[0x39] = None
+        self._instructions_0xdd[0x3a] = None
+        self._instructions_0xdd[0x3b] = None
+        self._instructions_0xdd[0x3c] = None
+        self._instructions_0xdd[0x3d] = None
+        self._instructions_0xdd[0x3e] = None
+        self._instructions_0xdd[0x3f] = None
+
+        self._instructions_0xcb[0x40] = None
+        self._instructions_0xdd[0x41] = None
+        self._instructions_0xdd[0x42] = None
+        self._instructions_0xdd[0x43] = None
+        self._instructions_0xdd[0x44] = None
+        self._instructions_0xdd[0x45] = None
+        self._instructions_0xdd[0x46] = None
+        self._instructions_0xdd[0x47] = None
+        self._instructions_0xdd[0x48] = None
+        self._instructions_0xdd[0x49] = None
+        self._instructions_0xdd[0x4a] = None
+        self._instructions_0xdd[0x4b] = None
+        self._instructions_0xdd[0x4c] = None
+        self._instructions_0xdd[0x4d] = None
+        self._instructions_0xdd[0x4e] = None
+        self._instructions_0xdd[0x4f] = None
+
+        self._instructions_0xdd[0x50] = None
+        self._instructions_0xdd[0x51] = None
+        self._instructions_0xdd[0x52] = None
+        self._instructions_0xdd[0x53] = None
+        self._instructions_0xdd[0x54] = None
+        self._instructions_0xdd[0x55] = None
+        self._instructions_0xdd[0x56] = None
+        self._instructions_0xdd[0x57] = None
+        self._instructions_0xdd[0x58] = None
+        self._instructions_0xdd[0x59] = None
+        self._instructions_0xdd[0x5a] = None
+        self._instructions_0xdd[0x5b] = None
+        self._instructions_0xdd[0x5c] = None
+        self._instructions_0xdd[0x5d] = None
+        self._instructions_0xdd[0x5e] = None
+        self._instructions_0xdd[0x5f] = None
+
+        self._instructions_0xdd[0x60] = None
+        self._instructions_0xdd[0x61] = None
+        self._instructions_0xdd[0x62] = None
+        self._instructions_0xdd[0x63] = None
+        self._instructions_0xdd[0x64] = None
+        self._instructions_0xdd[0x65] = None
+        self._instructions_0xdd[0x66] = None
+        self._instructions_0xdd[0x67] = None
+        self._instructions_0xdd[0x68] = None
+        self._instructions_0xdd[0x69] = None
+        self._instructions_0xdd[0x6a] = None
+        self._instructions_0xdd[0x6b] = None
+        self._instructions_0xdd[0x6c] = None
+        self._instructions_0xdd[0x6d] = None
+        self._instructions_0xdd[0x6e] = None
+        self._instructions_0xdd[0x6f] = None
+
+        self._instructions_0xdd[0x70] = None
+        self._instructions_0xdd[0x71] = None
+        self._instructions_0xdd[0x72] = None
+        self._instructions_0xdd[0x73] = None
+        self._instructions_0xdd[0x74] = None
+        self._instructions_0xdd[0x75] = None
+        self._instructions_0xdd[0x76] = None
+        self._instructions_0xdd[0x77] = None
+        self._instructions_0xdd[0x78] = None
+        self._instructions_0xdd[0x79] = None
+        self._instructions_0xdd[0x7a] = None
+        self._instructions_0xdd[0x7b] = None
+        self._instructions_0xdd[0x7c] = None
+        self._instructions_0xdd[0x7d] = None
+        self._instructions_0xdd[0x7e] = None
+        self._instructions_0xdd[0x7f] = None
+
+        self._instructions_0xdd[0x80] = None
+        self._instructions_0xdd[0x81] = None
+        self._instructions_0xdd[0x82] = None
+        self._instructions_0xdd[0x83] = None
+        self._instructions_0xdd[0x84] = None
+        self._instructions_0xdd[0x85] = None
+        self._instructions_0xdd[0x86] = None
+        self._instructions_0xdd[0x87] = None
+        self._instructions_0xdd[0x88] = None
+        self._instructions_0xdd[0x89] = None
+        self._instructions_0xdd[0x8a] = None
+        self._instructions_0xdd[0x8b] = None
+        self._instructions_0xdd[0x8c] = None
+        self._instructions_0xdd[0x8d] = None
+        self._instructions_0xdd[0x8e] = None
+        self._instructions_0xdd[0x8f] = None
+
+        self._instructions_0xdd[0x90] = None
+        self._instructions_0xdd[0x91] = None
+        self._instructions_0xdd[0x92] = None
+        self._instructions_0xdd[0x93] = None
+        self._instructions_0xdd[0x94] = None
+        self._instructions_0xdd[0x95] = None
+        self._instructions_0xdd[0x96] = None
+        self._instructions_0xdd[0x97] = None
+        self._instructions_0xdd[0x98] = None
+        self._instructions_0xdd[0x99] = None
+        self._instructions_0xdd[0x9a] = None
+        self._instructions_0xdd[0x9b] = None
+        self._instructions_0xdd[0x9c] = None
+        self._instructions_0xdd[0x9d] = None
+        self._instructions_0xdd[0x9e] = None
+        self._instructions_0xdd[0x9f] = None
+
+        self._instructions_0xdd[0xa0] = None
+        self._instructions_0xdd[0xa1] = None
+        self._instructions_0xdd[0xa2] = None
+        self._instructions_0xdd[0xa3] = None
+        self._instructions_0xdd[0xa4] = None
+        self._instructions_0xdd[0xa5] = None
+        self._instructions_0xdd[0xa6] = None
+        self._instructions_0xdd[0xa7] = None
+        self._instructions_0xdd[0xa8] = None
+        self._instructions_0xdd[0xa9] = None
+        self._instructions_0xdd[0xaa] = None
+        self._instructions_0xdd[0xab] = None
+        self._instructions_0xdd[0xac] = None
+        self._instructions_0xdd[0xad] = None
+        self._instructions_0xdd[0xae] = None
+        self._instructions_0xdd[0xaf] = None
+
+        self._instructions_0xdd[0xb0] = None
+        self._instructions_0xdd[0xb1] = None
+        self._instructions_0xdd[0xb2] = None
+        self._instructions_0xdd[0xb3] = None
+        self._instructions_0xdd[0xb4] = None
+        self._instructions_0xdd[0xb5] = None
+        self._instructions_0xdd[0xb6] = None
+        self._instructions_0xdd[0xb7] = None
+        self._instructions_0xdd[0xb8] = None
+        self._instructions_0xdd[0xb9] = None
+        self._instructions_0xdd[0xba] = None
+        self._instructions_0xdd[0xbb] = None
+        self._instructions_0xdd[0xbc] = None
+        self._instructions_0xdd[0xbd] = None
+        self._instructions_0xdd[0xbe] = None
+        self._instructions_0xdd[0xbf] = None
+
+        self._instructions_0xdd[0xc0] = None
+        self._instructions_0xdd[0xc1] = None
+        self._instructions_0xdd[0xc2] = None
+        self._instructions_0xdd[0xc3] = None
+        self._instructions_0xdd[0xc4] = None
+        self._instructions_0xdd[0xc5] = None
+        self._instructions_0xdd[0xc6] = None
+        self._instructions_0xdd[0xc7] = None
+        self._instructions_0xdd[0xc8] = None
+        self._instructions_0xdd[0xc9] = None
+        self._instructions_0xdd[0xca] = None
+        self._instructions_0xdd[0xcb] = None
+        self._instructions_0xdd[0xcc] = None
+        self._instructions_0xdd[0xcd] = None
+        self._instructions_0xdd[0xce] = None
+        self._instructions_0xdd[0xcf] = None
+
+        self._instructions_0xdd[0xd0] = None
+        self._instructions_0xdd[0xd1] = None
+        self._instructions_0xdd[0xd2] = None
+        self._instructions_0xdd[0xd3] = None
+        self._instructions_0xdd[0xd4] = None
+        self._instructions_0xdd[0xd5] = None
+        self._instructions_0xdd[0xd6] = None
+        self._instructions_0xdd[0xd7] = None
+        self._instructions_0xdd[0xd8] = None
+        self._instructions_0xdd[0xd9] = None
+        self._instructions_0xdd[0xda] = None
+        self._instructions_0xdd[0xdb] = None
+        self._instructions_0xdd[0xdc] = None
+        self._instructions_0xdd[0xdd] = None
+        self._instructions_0xdd[0xde] = None
+        self._instructions_0xdd[0xdf] = None
+
+        self._instructions_0xdd[0xe0] = None
+        self._instructions_0xdd[0xe1] = None
+        self._instructions_0xdd[0xe2] = None
+        self._instructions_0xdd[0xe3] = None
+        self._instructions_0xdd[0xe4] = None
+        self._instructions_0xdd[0xe5] = None
+        self._instructions_0xdd[0xe6] = None
+        self._instructions_0xdd[0xe7] = None
+        self._instructions_0xdd[0xe8] = None
+        self._instructions_0xdd[0xe9] = None
+        self._instructions_0xdd[0xea] = None
+        self._instructions_0xdd[0xeb] = None
+        self._instructions_0xdd[0xec] = None
+        self._instructions_0xdd[0xed] = None
+        self._instructions_0xdd[0xee] = None
+        self._instructions_0xdd[0xef] = None
+
+        self._instructions_0xdd[0xf0] = None
+        self._instructions_0xdd[0xf1] = None
+        self._instructions_0xdd[0xf2] = None
+        self._instructions_0xdd[0xf3] = None
+        self._instructions_0xdd[0xf4] = None
+        self._instructions_0xdd[0xf5] = None
+        self._instructions_0xdd[0xf6] = None
+        self._instructions_0xdd[0xf7] = None
+        self._instructions_0xdd[0xf8] = None
+        self._instructions_0xdd[0xf9] = None
+        self._instructions_0xdd[0xfa] = None
+        self._instructions_0xdd[0xfb] = None
+        self._instructions_0xdd[0xfc] = None
+        self._instructions_0xdd[0xfd] = None
+        self._instructions_0xdd[0xfe] = None
+        self._instructions_0xdd[0xff] = None
+
+
+    def _init_ddcb_instruction_table(self):
+        """ Initialize IX bit instruction set with 0xDD 0xCB prefix """
+        
+        self._instructions_0xddcb = [None] * 0x100
+
+        self._instructions_0xddcb[0x00] = None
+        self._instructions_0xddcb[0x01] = None
+        self._instructions_0xddcb[0x02] = None
+        self._instructions_0xddcb[0x03] = None
+        self._instructions_0xddcb[0x04] = None
+        self._instructions_0xddcb[0x05] = None
+        self._instructions_0xddcb[0x06] = None
+        self._instructions_0xddcb[0x07] = None
+        self._instructions_0xddcb[0x08] = None
+        self._instructions_0xddcb[0x09] = None
+        self._instructions_0xddcb[0x0a] = None
+        self._instructions_0xddcb[0x0b] = None
+        self._instructions_0xddcb[0x0c] = None
+        self._instructions_0xddcb[0x0d] = None
+        self._instructions_0xddcb[0x0e] = None
+        self._instructions_0xddcb[0x0f] = None
+
+        self._instructions_0xddcb[0x10] = None
+        self._instructions_0xddcb[0x11] = None
+        self._instructions_0xddcb[0x12] = None
+        self._instructions_0xddcb[0x13] = None
+        self._instructions_0xddcb[0x14] = None
+        self._instructions_0xddcb[0x15] = None
+        self._instructions_0xddcb[0x16] = None
+        self._instructions_0xddcb[0x17] = None
+        self._instructions_0xddcb[0x18] = None
+        self._instructions_0xddcb[0x19] = None
+        self._instructions_0xddcb[0x1a] = None
+        self._instructions_0xddcb[0x1b] = None
+        self._instructions_0xddcb[0x1c] = None
+        self._instructions_0xddcb[0x1d] = None
+        self._instructions_0xddcb[0x1e] = None
+        self._instructions_0xddcb[0x1f] = None
+
+        self._instructions_0xddcb[0x20] = None
+        self._instructions_0xddcb[0x21] = None
+        self._instructions_0xddcb[0x22] = None
+        self._instructions_0xddcb[0x23] = None
+        self._instructions_0xddcb[0x24] = None
+        self._instructions_0xddcb[0x25] = None
+        self._instructions_0xddcb[0x26] = None
+        self._instructions_0xddcb[0x27] = None
+        self._instructions_0xddcb[0x28] = None
+        self._instructions_0xddcb[0x29] = None
+        self._instructions_0xddcb[0x2a] = None
+        self._instructions_0xddcb[0x2b] = None
+        self._instructions_0xddcb[0x2c] = None
+        self._instructions_0xddcb[0x2d] = None
+        self._instructions_0xddcb[0x2e] = None
+        self._instructions_0xddcb[0x2f] = None
+
+        self._instructions_0xddcb[0x30] = None
+        self._instructions_0xddcb[0x31] = None
+        self._instructions_0xddcb[0x32] = None
+        self._instructions_0xddcb[0x33] = None
+        self._instructions_0xddcb[0x34] = None
+        self._instructions_0xddcb[0x35] = None
+        self._instructions_0xddcb[0x36] = None
+        self._instructions_0xddcb[0x37] = None
+        self._instructions_0xddcb[0x38] = None
+        self._instructions_0xddcb[0x39] = None
+        self._instructions_0xddcb[0x3a] = None
+        self._instructions_0xddcb[0x3b] = None
+        self._instructions_0xddcb[0x3c] = None
+        self._instructions_0xddcb[0x3d] = None
+        self._instructions_0xddcb[0x3e] = None
+        self._instructions_0xddcb[0x3f] = None
+
+        self._instructions_0xddcb[0x40] = None
+        self._instructions_0xddcb[0x41] = None
+        self._instructions_0xddcb[0x42] = None
+        self._instructions_0xddcb[0x43] = None
+        self._instructions_0xddcb[0x44] = None
+        self._instructions_0xddcb[0x45] = None
+        self._instructions_0xddcb[0x46] = None
+        self._instructions_0xddcb[0x47] = None
+        self._instructions_0xddcb[0x48] = None
+        self._instructions_0xddcb[0x49] = None
+        self._instructions_0xddcb[0x4a] = None
+        self._instructions_0xddcb[0x4b] = None
+        self._instructions_0xddcb[0x4c] = None
+        self._instructions_0xddcb[0x4d] = None
+        self._instructions_0xddcb[0x4e] = None
+        self._instructions_0xddcb[0x4f] = None
+
+        self._instructions_0xddcb[0x50] = None
+        self._instructions_0xddcb[0x51] = None
+        self._instructions_0xddcb[0x52] = None
+        self._instructions_0xddcb[0x53] = None
+        self._instructions_0xddcb[0x54] = None
+        self._instructions_0xddcb[0x55] = None
+        self._instructions_0xddcb[0x56] = None
+        self._instructions_0xddcb[0x57] = None
+        self._instructions_0xddcb[0x58] = None
+        self._instructions_0xddcb[0x59] = None
+        self._instructions_0xddcb[0x5a] = None
+        self._instructions_0xddcb[0x5b] = None
+        self._instructions_0xddcb[0x5c] = None
+        self._instructions_0xddcb[0x5d] = None
+        self._instructions_0xddcb[0x5e] = None
+        self._instructions_0xddcb[0x5f] = None
+
+        self._instructions_0xddcb[0x60] = None
+        self._instructions_0xddcb[0x61] = None
+        self._instructions_0xddcb[0x62] = None
+        self._instructions_0xddcb[0x63] = None
+        self._instructions_0xddcb[0x64] = None
+        self._instructions_0xddcb[0x65] = None
+        self._instructions_0xddcb[0x66] = None
+        self._instructions_0xddcb[0x67] = None
+        self._instructions_0xddcb[0x68] = None
+        self._instructions_0xddcb[0x69] = None
+        self._instructions_0xddcb[0x6a] = None
+        self._instructions_0xddcb[0x6b] = None
+        self._instructions_0xddcb[0x6c] = None
+        self._instructions_0xddcb[0x6d] = None
+        self._instructions_0xddcb[0x6e] = None
+        self._instructions_0xddcb[0x6f] = None
+
+        self._instructions_0xddcb[0x70] = None
+        self._instructions_0xddcb[0x71] = None
+        self._instructions_0xddcb[0x72] = None
+        self._instructions_0xddcb[0x73] = None
+        self._instructions_0xddcb[0x74] = None
+        self._instructions_0xddcb[0x75] = None
+        self._instructions_0xddcb[0x76] = None
+        self._instructions_0xddcb[0x77] = None
+        self._instructions_0xddcb[0x78] = None
+        self._instructions_0xddcb[0x79] = None
+        self._instructions_0xddcb[0x7a] = None
+        self._instructions_0xddcb[0x7b] = None
+        self._instructions_0xddcb[0x7c] = None
+        self._instructions_0xddcb[0x7d] = None
+        self._instructions_0xddcb[0x7e] = None
+        self._instructions_0xddcb[0x7f] = None
+
+        self._instructions_0xddcb[0x80] = None
+        self._instructions_0xddcb[0x81] = None
+        self._instructions_0xddcb[0x82] = None
+        self._instructions_0xddcb[0x83] = None
+        self._instructions_0xddcb[0x84] = None
+        self._instructions_0xddcb[0x85] = None
+        self._instructions_0xddcb[0x86] = None
+        self._instructions_0xddcb[0x87] = None
+        self._instructions_0xddcb[0x88] = None
+        self._instructions_0xddcb[0x89] = None
+        self._instructions_0xddcb[0x8a] = None
+        self._instructions_0xddcb[0x8b] = None
+        self._instructions_0xddcb[0x8c] = None
+        self._instructions_0xddcb[0x8d] = None
+        self._instructions_0xddcb[0x8e] = None
+        self._instructions_0xddcb[0x8f] = None
+
+        self._instructions_0xddcb[0x90] = None
+        self._instructions_0xddcb[0x91] = None
+        self._instructions_0xddcb[0x92] = None
+        self._instructions_0xddcb[0x93] = None
+        self._instructions_0xddcb[0x94] = None
+        self._instructions_0xddcb[0x95] = None
+        self._instructions_0xddcb[0x96] = None
+        self._instructions_0xddcb[0x97] = None
+        self._instructions_0xddcb[0x98] = None
+        self._instructions_0xddcb[0x99] = None
+        self._instructions_0xddcb[0x9a] = None
+        self._instructions_0xddcb[0x9b] = None
+        self._instructions_0xddcb[0x9c] = None
+        self._instructions_0xddcb[0x9d] = None
+        self._instructions_0xddcb[0x9e] = None
+        self._instructions_0xddcb[0x9f] = None
+
+        self._instructions_0xddcb[0xa0] = None
+        self._instructions_0xddcb[0xa1] = None
+        self._instructions_0xddcb[0xa2] = None
+        self._instructions_0xddcb[0xa3] = None
+        self._instructions_0xddcb[0xa4] = None
+        self._instructions_0xddcb[0xa5] = None
+        self._instructions_0xddcb[0xa6] = None
+        self._instructions_0xddcb[0xa7] = None
+        self._instructions_0xddcb[0xa8] = None
+        self._instructions_0xddcb[0xa9] = None
+        self._instructions_0xddcb[0xaa] = None
+        self._instructions_0xddcb[0xab] = None
+        self._instructions_0xddcb[0xac] = None
+        self._instructions_0xddcb[0xad] = None
+        self._instructions_0xddcb[0xae] = None
+        self._instructions_0xddcb[0xaf] = None
+
+        self._instructions_0xddcb[0xb0] = None
+        self._instructions_0xddcb[0xb1] = None
+        self._instructions_0xddcb[0xb2] = None
+        self._instructions_0xddcb[0xb3] = None
+        self._instructions_0xddcb[0xb4] = None
+        self._instructions_0xddcb[0xb5] = None
+        self._instructions_0xddcb[0xb6] = None
+        self._instructions_0xddcb[0xb7] = None
+        self._instructions_0xddcb[0xb8] = None
+        self._instructions_0xddcb[0xb9] = None
+        self._instructions_0xddcb[0xba] = None
+        self._instructions_0xddcb[0xbb] = None
+        self._instructions_0xddcb[0xbc] = None
+        self._instructions_0xddcb[0xbd] = None
+        self._instructions_0xddcb[0xbe] = None
+        self._instructions_0xddcb[0xbf] = None
+
+        self._instructions_0xddcb[0xc0] = None
+        self._instructions_0xddcb[0xc1] = None
+        self._instructions_0xddcb[0xc2] = None
+        self._instructions_0xddcb[0xc3] = None
+        self._instructions_0xddcb[0xc4] = None
+        self._instructions_0xddcb[0xc5] = None
+        self._instructions_0xddcb[0xc6] = None
+        self._instructions_0xddcb[0xc7] = None
+        self._instructions_0xddcb[0xc8] = None
+        self._instructions_0xddcb[0xc9] = None
+        self._instructions_0xddcb[0xca] = None
+        self._instructions_0xddcb[0xcb] = None
+        self._instructions_0xddcb[0xcc] = None
+        self._instructions_0xddcb[0xcd] = None
+        self._instructions_0xddcb[0xce] = None
+        self._instructions_0xddcb[0xcf] = None
+
+        self._instructions_0xddcb[0xd0] = None
+        self._instructions_0xddcb[0xd1] = None
+        self._instructions_0xddcb[0xd2] = None
+        self._instructions_0xddcb[0xd3] = None
+        self._instructions_0xddcb[0xd4] = None
+        self._instructions_0xddcb[0xd5] = None
+        self._instructions_0xddcb[0xd6] = None
+        self._instructions_0xddcb[0xd7] = None
+        self._instructions_0xddcb[0xd8] = None
+        self._instructions_0xddcb[0xd9] = None
+        self._instructions_0xddcb[0xda] = None
+        self._instructions_0xddcb[0xdb] = None
+        self._instructions_0xddcb[0xdc] = None
+        self._instructions_0xddcb[0xdd] = None
+        self._instructions_0xddcb[0xde] = None
+        self._instructions_0xddcb[0xdf] = None
+
+        self._instructions_0xddcb[0xe0] = None
+        self._instructions_0xddcb[0xe1] = None
+        self._instructions_0xddcb[0xe2] = None
+        self._instructions_0xddcb[0xe3] = None
+        self._instructions_0xddcb[0xe4] = None
+        self._instructions_0xddcb[0xe5] = None
+        self._instructions_0xddcb[0xe6] = None
+        self._instructions_0xddcb[0xe7] = None
+        self._instructions_0xddcb[0xe8] = None
+        self._instructions_0xddcb[0xe9] = None
+        self._instructions_0xddcb[0xea] = None
+        self._instructions_0xddcb[0xeb] = None
+        self._instructions_0xddcb[0xec] = None
+        self._instructions_0xddcb[0xed] = None
+        self._instructions_0xddcb[0xee] = None
+        self._instructions_0xddcb[0xef] = None
+
+        self._instructions_0xddcb[0xf0] = None
+        self._instructions_0xddcb[0xf1] = None
+        self._instructions_0xddcb[0xf2] = None
+        self._instructions_0xddcb[0xf3] = None
+        self._instructions_0xddcb[0xf4] = None
+        self._instructions_0xddcb[0xf5] = None
+        self._instructions_0xddcb[0xf6] = None
+        self._instructions_0xddcb[0xf7] = None
+        self._instructions_0xddcb[0xf8] = None
+        self._instructions_0xddcb[0xf9] = None
+        self._instructions_0xddcb[0xfa] = None
+        self._instructions_0xddcb[0xfb] = None
+        self._instructions_0xddcb[0xfc] = None
+        self._instructions_0xddcb[0xfd] = None
+        self._instructions_0xddcb[0xfe] = None
+        self._instructions_0xddcb[0xff] = None
+
+
+    def _init_fd_instruction_table(self):
+        """ Initialize IY instruction set with 0xFD prefix """
+        
+        self._instructions_0xfd = [None] * 0x100
 
         self._instructions_0xfd[0x00] = None
         self._instructions_0xfd[0x01] = None
@@ -2079,3 +2980,282 @@ class CPU:
         self._instructions_0xfd[0xfd] = None
         self._instructions_0xfd[0xfe] = None
         self._instructions_0xfd[0xff] = None
+
+
+    def _init_fdcb_instruction_table(self):
+        """ Initialize IY bit instruction set with 0xFD 0xCB prefix """
+        
+        self._instructions_0xfdcb = [None] * 0x100
+
+        self._instructions_0xfdcb[0x00] = None
+        self._instructions_0xfdcb[0x01] = None
+        self._instructions_0xfdcb[0x02] = None
+        self._instructions_0xfdcb[0x03] = None
+        self._instructions_0xfdcb[0x04] = None
+        self._instructions_0xfdcb[0x05] = None
+        self._instructions_0xfdcb[0x06] = None
+        self._instructions_0xfdcb[0x07] = None
+        self._instructions_0xfdcb[0x08] = None
+        self._instructions_0xfdcb[0x09] = None
+        self._instructions_0xfdcb[0x0a] = None
+        self._instructions_0xfdcb[0x0b] = None
+        self._instructions_0xfdcb[0x0c] = None
+        self._instructions_0xfdcb[0x0d] = None
+        self._instructions_0xfdcb[0x0e] = None
+        self._instructions_0xfdcb[0x0f] = None
+
+        self._instructions_0xfdcb[0x10] = None
+        self._instructions_0xfdcb[0x11] = None
+        self._instructions_0xfdcb[0x12] = None
+        self._instructions_0xfdcb[0x13] = None
+        self._instructions_0xfdcb[0x14] = None
+        self._instructions_0xfdcb[0x15] = None
+        self._instructions_0xfdcb[0x16] = None
+        self._instructions_0xfdcb[0x17] = None
+        self._instructions_0xfdcb[0x18] = None
+        self._instructions_0xfdcb[0x19] = None
+        self._instructions_0xfdcb[0x1a] = None
+        self._instructions_0xfdcb[0x1b] = None
+        self._instructions_0xfdcb[0x1c] = None
+        self._instructions_0xfdcb[0x1d] = None
+        self._instructions_0xfdcb[0x1e] = None
+        self._instructions_0xfdcb[0x1f] = None
+
+        self._instructions_0xfdcb[0x20] = None
+        self._instructions_0xfdcb[0x21] = None
+        self._instructions_0xfdcb[0x22] = None
+        self._instructions_0xfdcb[0x23] = None
+        self._instructions_0xfdcb[0x24] = None
+        self._instructions_0xfdcb[0x25] = None
+        self._instructions_0xfdcb[0x26] = None
+        self._instructions_0xfdcb[0x27] = None
+        self._instructions_0xfdcb[0x28] = None
+        self._instructions_0xfdcb[0x29] = None
+        self._instructions_0xfdcb[0x2a] = None
+        self._instructions_0xfdcb[0x2b] = None
+        self._instructions_0xfdcb[0x2c] = None
+        self._instructions_0xfdcb[0x2d] = None
+        self._instructions_0xfdcb[0x2e] = None
+        self._instructions_0xfdcb[0x2f] = None
+
+        self._instructions_0xfdcb[0x30] = None
+        self._instructions_0xfdcb[0x31] = None
+        self._instructions_0xfdcb[0x32] = None
+        self._instructions_0xfdcb[0x33] = None
+        self._instructions_0xfdcb[0x34] = None
+        self._instructions_0xfdcb[0x35] = None
+        self._instructions_0xfdcb[0x36] = None
+        self._instructions_0xfdcb[0x37] = None
+        self._instructions_0xfdcb[0x38] = None
+        self._instructions_0xfdcb[0x39] = None
+        self._instructions_0xfdcb[0x3a] = None
+        self._instructions_0xfdcb[0x3b] = None
+        self._instructions_0xfdcb[0x3c] = None
+        self._instructions_0xfdcb[0x3d] = None
+        self._instructions_0xfdcb[0x3e] = None
+        self._instructions_0xfdcb[0x3f] = None
+
+        self._instructions_0xfdcb[0x40] = None
+        self._instructions_0xfdcb[0x41] = None
+        self._instructions_0xfdcb[0x42] = None
+        self._instructions_0xfdcb[0x43] = None
+        self._instructions_0xfdcb[0x44] = None
+        self._instructions_0xfdcb[0x45] = None
+        self._instructions_0xfdcb[0x46] = None
+        self._instructions_0xfdcb[0x47] = None
+        self._instructions_0xfdcb[0x48] = None
+        self._instructions_0xfdcb[0x49] = None
+        self._instructions_0xfdcb[0x4a] = None
+        self._instructions_0xfdcb[0x4b] = None
+        self._instructions_0xfdcb[0x4c] = None
+        self._instructions_0xfdcb[0x4d] = None
+        self._instructions_0xfdcb[0x4e] = None
+        self._instructions_0xfdcb[0x4f] = None
+
+        self._instructions_0xfdcb[0x50] = None
+        self._instructions_0xfdcb[0x51] = None
+        self._instructions_0xfdcb[0x52] = None
+        self._instructions_0xfdcb[0x53] = None
+        self._instructions_0xfdcb[0x54] = None
+        self._instructions_0xfdcb[0x55] = None
+        self._instructions_0xfdcb[0x56] = None
+        self._instructions_0xfdcb[0x57] = None
+        self._instructions_0xfdcb[0x58] = None
+        self._instructions_0xfdcb[0x59] = None
+        self._instructions_0xfdcb[0x5a] = None
+        self._instructions_0xfdcb[0x5b] = None
+        self._instructions_0xfdcb[0x5c] = None
+        self._instructions_0xfdcb[0x5d] = None
+        self._instructions_0xfdcb[0x5e] = None
+        self._instructions_0xfdcb[0x5f] = None
+
+        self._instructions_0xfdcb[0x60] = None
+        self._instructions_0xfdcb[0x61] = None
+        self._instructions_0xfdcb[0x62] = None
+        self._instructions_0xfdcb[0x63] = None
+        self._instructions_0xfdcb[0x64] = None
+        self._instructions_0xfdcb[0x65] = None
+        self._instructions_0xfdcb[0x66] = None
+        self._instructions_0xfdcb[0x67] = None
+        self._instructions_0xfdcb[0x68] = None
+        self._instructions_0xfdcb[0x69] = None
+        self._instructions_0xfdcb[0x6a] = None
+        self._instructions_0xfdcb[0x6b] = None
+        self._instructions_0xfdcb[0x6c] = None
+        self._instructions_0xfdcb[0x6d] = None
+        self._instructions_0xfdcb[0x6e] = None
+        self._instructions_0xfdcb[0x6f] = None
+
+        self._instructions_0xfdcb[0x70] = None
+        self._instructions_0xfdcb[0x71] = None
+        self._instructions_0xfdcb[0x72] = None
+        self._instructions_0xfdcb[0x73] = None
+        self._instructions_0xfdcb[0x74] = None
+        self._instructions_0xfdcb[0x75] = None
+        self._instructions_0xfdcb[0x76] = None
+        self._instructions_0xfdcb[0x77] = None
+        self._instructions_0xfdcb[0x78] = None
+        self._instructions_0xfdcb[0x79] = None
+        self._instructions_0xfdcb[0x7a] = None
+        self._instructions_0xfdcb[0x7b] = None
+        self._instructions_0xfdcb[0x7c] = None
+        self._instructions_0xfdcb[0x7d] = None
+        self._instructions_0xfdcb[0x7e] = None
+        self._instructions_0xfdcb[0x7f] = None
+
+        self._instructions_0xfdcb[0x80] = None
+        self._instructions_0xfdcb[0x81] = None
+        self._instructions_0xfdcb[0x82] = None
+        self._instructions_0xfdcb[0x83] = None
+        self._instructions_0xfdcb[0x84] = None
+        self._instructions_0xfdcb[0x85] = None
+        self._instructions_0xfdcb[0x86] = None
+        self._instructions_0xfdcb[0x87] = None
+        self._instructions_0xfdcb[0x88] = None
+        self._instructions_0xfdcb[0x89] = None
+        self._instructions_0xfdcb[0x8a] = None
+        self._instructions_0xfdcb[0x8b] = None
+        self._instructions_0xfdcb[0x8c] = None
+        self._instructions_0xfdcb[0x8d] = None
+        self._instructions_0xfdcb[0x8e] = None
+        self._instructions_0xfdcb[0x8f] = None
+
+        self._instructions_0xfdcb[0x90] = None
+        self._instructions_0xfdcb[0x91] = None
+        self._instructions_0xfdcb[0x92] = None
+        self._instructions_0xfdcb[0x93] = None
+        self._instructions_0xfdcb[0x94] = None
+        self._instructions_0xfdcb[0x95] = None
+        self._instructions_0xfdcb[0x96] = None
+        self._instructions_0xfdcb[0x97] = None
+        self._instructions_0xfdcb[0x98] = None
+        self._instructions_0xfdcb[0x99] = None
+        self._instructions_0xfdcb[0x9a] = None
+        self._instructions_0xfdcb[0x9b] = None
+        self._instructions_0xfdcb[0x9c] = None
+        self._instructions_0xfdcb[0x9d] = None
+        self._instructions_0xfdcb[0x9e] = None
+        self._instructions_0xfdcb[0x9f] = None
+
+        self._instructions_0xfdcb[0xa0] = None
+        self._instructions_0xfdcb[0xa1] = None
+        self._instructions_0xfdcb[0xa2] = None
+        self._instructions_0xfdcb[0xa3] = None
+        self._instructions_0xfdcb[0xa4] = None
+        self._instructions_0xfdcb[0xa5] = None
+        self._instructions_0xfdcb[0xa6] = None
+        self._instructions_0xfdcb[0xa7] = None
+        self._instructions_0xfdcb[0xa8] = None
+        self._instructions_0xfdcb[0xa9] = None
+        self._instructions_0xfdcb[0xaa] = None
+        self._instructions_0xfdcb[0xab] = None
+        self._instructions_0xfdcb[0xac] = None
+        self._instructions_0xfdcb[0xad] = None
+        self._instructions_0xfdcb[0xae] = None
+        self._instructions_0xfdcb[0xaf] = None
+
+        self._instructions_0xfdcb[0xb0] = None
+        self._instructions_0xfdcb[0xb1] = None
+        self._instructions_0xfdcb[0xb2] = None
+        self._instructions_0xfdcb[0xb3] = None
+        self._instructions_0xfdcb[0xb4] = None
+        self._instructions_0xfdcb[0xb5] = None
+        self._instructions_0xfdcb[0xb6] = None
+        self._instructions_0xfdcb[0xb7] = None
+        self._instructions_0xfdcb[0xb8] = None
+        self._instructions_0xfdcb[0xb9] = None
+        self._instructions_0xfdcb[0xba] = None
+        self._instructions_0xfdcb[0xbb] = None
+        self._instructions_0xfdcb[0xbc] = None
+        self._instructions_0xfdcb[0xbd] = None
+        self._instructions_0xfdcb[0xbe] = None
+        self._instructions_0xfdcb[0xbf] = None
+
+        self._instructions_0xfdcb[0xc0] = None
+        self._instructions_0xfdcb[0xc1] = None
+        self._instructions_0xfdcb[0xc2] = None
+        self._instructions_0xfdcb[0xc3] = None
+        self._instructions_0xfdcb[0xc4] = None
+        self._instructions_0xfdcb[0xc5] = None
+        self._instructions_0xfdcb[0xc6] = None
+        self._instructions_0xfdcb[0xc7] = None
+        self._instructions_0xfdcb[0xc8] = None
+        self._instructions_0xfdcb[0xc9] = None
+        self._instructions_0xfdcb[0xca] = None
+        self._instructions_0xfdcb[0xcb] = None
+        self._instructions_0xfdcb[0xcc] = None
+        self._instructions_0xfdcb[0xcd] = None
+        self._instructions_0xfdcb[0xce] = None
+        self._instructions_0xfdcb[0xcf] = None
+
+        self._instructions_0xfdcb[0xd0] = None
+        self._instructions_0xfdcb[0xd1] = None
+        self._instructions_0xfdcb[0xd2] = None
+        self._instructions_0xfdcb[0xd3] = None
+        self._instructions_0xfdcb[0xd4] = None
+        self._instructions_0xfdcb[0xd5] = None
+        self._instructions_0xfdcb[0xd6] = None
+        self._instructions_0xfdcb[0xd7] = None
+        self._instructions_0xfdcb[0xd8] = None
+        self._instructions_0xfdcb[0xd9] = None
+        self._instructions_0xfdcb[0xda] = None
+        self._instructions_0xfdcb[0xdb] = None
+        self._instructions_0xfdcb[0xdc] = None
+        self._instructions_0xfdcb[0xdd] = None
+        self._instructions_0xfdcb[0xde] = None
+        self._instructions_0xfdcb[0xdf] = None
+
+        self._instructions_0xfdcb[0xe0] = None
+        self._instructions_0xfdcb[0xe1] = None
+        self._instructions_0xfdcb[0xe2] = None
+        self._instructions_0xfdcb[0xe3] = None
+        self._instructions_0xfdcb[0xe4] = None
+        self._instructions_0xfdcb[0xe5] = None
+        self._instructions_0xfdcb[0xe6] = None
+        self._instructions_0xfdcb[0xe7] = None
+        self._instructions_0xfdcb[0xe8] = None
+        self._instructions_0xfdcb[0xe9] = None
+        self._instructions_0xfdcb[0xea] = None
+        self._instructions_0xfdcb[0xeb] = None
+        self._instructions_0xfdcb[0xec] = None
+        self._instructions_0xfdcb[0xed] = None
+        self._instructions_0xfdcb[0xee] = None
+        self._instructions_0xfdcb[0xef] = None
+
+        self._instructions_0xfdcb[0xf0] = None
+        self._instructions_0xfdcb[0xf1] = None
+        self._instructions_0xfdcb[0xf2] = None
+        self._instructions_0xfdcb[0xf3] = None
+        self._instructions_0xfdcb[0xf4] = None
+        self._instructions_0xfdcb[0xf5] = None
+        self._instructions_0xfdcb[0xf6] = None
+        self._instructions_0xfdcb[0xf7] = None
+        self._instructions_0xfdcb[0xf8] = None
+        self._instructions_0xfdcb[0xf9] = None
+        self._instructions_0xfdcb[0xfa] = None
+        self._instructions_0xfdcb[0xfb] = None
+        self._instructions_0xfdcb[0xfc] = None
+        self._instructions_0xfdcb[0xfd] = None
+        self._instructions_0xfdcb[0xfe] = None
+        self._instructions_0xfdcb[0xff] = None
+
