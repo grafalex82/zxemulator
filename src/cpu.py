@@ -431,6 +431,15 @@ class CPU:
         return ["BC", "DE", "HL", "SP"][reg_pair]
 
 
+    def _get_index_reg(self):
+        prefix = self._instruction_prefix if self._instruction_prefix < 0x100 else self._instruction_prefix >> 8
+        return self._ix if prefix == 0xdd else self._iy
+
+    def _get_index_reg_symb(self):
+        prefix = self._instruction_prefix if self._instruction_prefix < 0x100 else self._instruction_prefix >> 8
+        return "IX" if prefix == 0xdd else "IY"
+
+
     # ALU flags
 
     def get_sign(self):
@@ -539,8 +548,8 @@ class CPU:
                 self._instruction_prefix <<= 8
                 self._instruction_prefix |= self._current_inst
                 self._displacement = self._fetch_next_byte()
-                if self._displacement > 0x7f:
-                    self._displacement = 0x100 - self._displacement
+                if self._displacement >= 0x80:
+                    self._displacement = self._displacement - 0x100
                 self._current_inst = self._fetch_next_byte()
         else:
             self._instruction_prefix = None
@@ -1310,6 +1319,37 @@ class CPU:
         self._cycles += 15
 
         self._log_1b_instruction(f"SBC HL, {self._reg_pair_symb(reg_pair)}")
+
+
+    # Bit instructions
+
+    def _set_bit_indexed(self):
+        """ Set bit on a memory byte addressed via IX/IY index registers """
+        bit = (self._current_inst & 0x38) >> 3
+        value = 1 << bit
+        addr = self._get_index_reg() + self._displacement
+
+        byte = self._machine.read_memory_byte(addr)
+        self._machine.write_memory_byte(addr, byte | value)
+
+        self._cycles += 23
+        
+        self._log_3b_bit_instruction(f"SET {bit}, ({self._get_index_reg_symb()}{self._displacement:+02x})")
+
+
+    def _reset_bit_indexed(self):
+        """ Reset bit on a memory byte addressed via IX/IY index registers """
+
+        bit = (self._current_inst & 0x38) >> 3
+        value = 1 << bit
+        addr = self._get_index_reg() + self._displacement
+
+        byte = self._machine.read_memory_byte(addr)
+        self._machine.write_memory_byte(addr, byte & ~value)
+
+        self._cycles += 23
+        
+        self._log_3b_bit_instruction(f"RES {bit}, ({self._get_index_reg_symb()}{self._displacement:+02x})")
 
 
     # Instruction tables
@@ -2573,7 +2613,7 @@ class CPU:
         self._instructions_0xddcb[0x83] = None
         self._instructions_0xddcb[0x84] = None
         self._instructions_0xddcb[0x85] = None
-        self._instructions_0xddcb[0x86] = None
+        self._instructions_0xddcb[0x86] = self._reset_bit_indexed
         self._instructions_0xddcb[0x87] = None
         self._instructions_0xddcb[0x88] = None
         self._instructions_0xddcb[0x89] = None
@@ -2581,7 +2621,7 @@ class CPU:
         self._instructions_0xddcb[0x8b] = None
         self._instructions_0xddcb[0x8c] = None
         self._instructions_0xddcb[0x8d] = None
-        self._instructions_0xddcb[0x8e] = None
+        self._instructions_0xddcb[0x8e] = self._reset_bit_indexed
         self._instructions_0xddcb[0x8f] = None
 
         self._instructions_0xddcb[0x90] = None
@@ -2590,7 +2630,7 @@ class CPU:
         self._instructions_0xddcb[0x93] = None
         self._instructions_0xddcb[0x94] = None
         self._instructions_0xddcb[0x95] = None
-        self._instructions_0xddcb[0x96] = None
+        self._instructions_0xddcb[0x96] = self._reset_bit_indexed
         self._instructions_0xddcb[0x97] = None
         self._instructions_0xddcb[0x98] = None
         self._instructions_0xddcb[0x99] = None
@@ -2598,7 +2638,7 @@ class CPU:
         self._instructions_0xddcb[0x9b] = None
         self._instructions_0xddcb[0x9c] = None
         self._instructions_0xddcb[0x9d] = None
-        self._instructions_0xddcb[0x9e] = None
+        self._instructions_0xddcb[0x9e] = self._reset_bit_indexed
         self._instructions_0xddcb[0x9f] = None
 
         self._instructions_0xddcb[0xa0] = None
@@ -2607,7 +2647,7 @@ class CPU:
         self._instructions_0xddcb[0xa3] = None
         self._instructions_0xddcb[0xa4] = None
         self._instructions_0xddcb[0xa5] = None
-        self._instructions_0xddcb[0xa6] = None
+        self._instructions_0xddcb[0xa6] = self._reset_bit_indexed
         self._instructions_0xddcb[0xa7] = None
         self._instructions_0xddcb[0xa8] = None
         self._instructions_0xddcb[0xa9] = None
@@ -2615,7 +2655,7 @@ class CPU:
         self._instructions_0xddcb[0xab] = None
         self._instructions_0xddcb[0xac] = None
         self._instructions_0xddcb[0xad] = None
-        self._instructions_0xddcb[0xae] = None
+        self._instructions_0xddcb[0xae] = self._reset_bit_indexed
         self._instructions_0xddcb[0xaf] = None
 
         self._instructions_0xddcb[0xb0] = None
@@ -2624,7 +2664,7 @@ class CPU:
         self._instructions_0xddcb[0xb3] = None
         self._instructions_0xddcb[0xb4] = None
         self._instructions_0xddcb[0xb5] = None
-        self._instructions_0xddcb[0xb6] = None
+        self._instructions_0xddcb[0xb6] = self._reset_bit_indexed
         self._instructions_0xddcb[0xb7] = None
         self._instructions_0xddcb[0xb8] = None
         self._instructions_0xddcb[0xb9] = None
@@ -2632,7 +2672,7 @@ class CPU:
         self._instructions_0xddcb[0xbb] = None
         self._instructions_0xddcb[0xbc] = None
         self._instructions_0xddcb[0xbd] = None
-        self._instructions_0xddcb[0xbe] = None
+        self._instructions_0xddcb[0xbe] = self._reset_bit_indexed
         self._instructions_0xddcb[0xbf] = None
 
         self._instructions_0xddcb[0xc0] = None
@@ -2641,7 +2681,7 @@ class CPU:
         self._instructions_0xddcb[0xc3] = None
         self._instructions_0xddcb[0xc4] = None
         self._instructions_0xddcb[0xc5] = None
-        self._instructions_0xddcb[0xc6] = None
+        self._instructions_0xddcb[0xc6] = self._set_bit_indexed
         self._instructions_0xddcb[0xc7] = None
         self._instructions_0xddcb[0xc8] = None
         self._instructions_0xddcb[0xc9] = None
@@ -2649,7 +2689,7 @@ class CPU:
         self._instructions_0xddcb[0xcb] = None
         self._instructions_0xddcb[0xcc] = None
         self._instructions_0xddcb[0xcd] = None
-        self._instructions_0xddcb[0xce] = None
+        self._instructions_0xddcb[0xce] = self._set_bit_indexed
         self._instructions_0xddcb[0xcf] = None
 
         self._instructions_0xddcb[0xd0] = None
@@ -2658,7 +2698,7 @@ class CPU:
         self._instructions_0xddcb[0xd3] = None
         self._instructions_0xddcb[0xd4] = None
         self._instructions_0xddcb[0xd5] = None
-        self._instructions_0xddcb[0xd6] = None
+        self._instructions_0xddcb[0xd6] = self._set_bit_indexed
         self._instructions_0xddcb[0xd7] = None
         self._instructions_0xddcb[0xd8] = None
         self._instructions_0xddcb[0xd9] = None
@@ -2666,7 +2706,7 @@ class CPU:
         self._instructions_0xddcb[0xdb] = None
         self._instructions_0xddcb[0xdc] = None
         self._instructions_0xddcb[0xdd] = None
-        self._instructions_0xddcb[0xde] = None
+        self._instructions_0xddcb[0xde] = self._set_bit_indexed
         self._instructions_0xddcb[0xdf] = None
 
         self._instructions_0xddcb[0xe0] = None
@@ -2675,7 +2715,7 @@ class CPU:
         self._instructions_0xddcb[0xe3] = None
         self._instructions_0xddcb[0xe4] = None
         self._instructions_0xddcb[0xe5] = None
-        self._instructions_0xddcb[0xe6] = None
+        self._instructions_0xddcb[0xe6] = self._set_bit_indexed
         self._instructions_0xddcb[0xe7] = None
         self._instructions_0xddcb[0xe8] = None
         self._instructions_0xddcb[0xe9] = None
@@ -2683,7 +2723,7 @@ class CPU:
         self._instructions_0xddcb[0xeb] = None
         self._instructions_0xddcb[0xec] = None
         self._instructions_0xddcb[0xed] = None
-        self._instructions_0xddcb[0xee] = None
+        self._instructions_0xddcb[0xee] = self._set_bit_indexed
         self._instructions_0xddcb[0xef] = None
 
         self._instructions_0xddcb[0xf0] = None
@@ -2692,7 +2732,7 @@ class CPU:
         self._instructions_0xddcb[0xf3] = None
         self._instructions_0xddcb[0xf4] = None
         self._instructions_0xddcb[0xf5] = None
-        self._instructions_0xddcb[0xf6] = None
+        self._instructions_0xddcb[0xf6] = self._set_bit_indexed
         self._instructions_0xddcb[0xf7] = None
         self._instructions_0xddcb[0xf8] = None
         self._instructions_0xddcb[0xf9] = None
@@ -2700,7 +2740,7 @@ class CPU:
         self._instructions_0xddcb[0xfb] = None
         self._instructions_0xddcb[0xfc] = None
         self._instructions_0xddcb[0xfd] = None
-        self._instructions_0xddcb[0xfe] = None
+        self._instructions_0xddcb[0xfe] = self._set_bit_indexed
         self._instructions_0xddcb[0xff] = None
 
 
@@ -3129,7 +3169,7 @@ class CPU:
         self._instructions_0xfdcb[0x83] = None
         self._instructions_0xfdcb[0x84] = None
         self._instructions_0xfdcb[0x85] = None
-        self._instructions_0xfdcb[0x86] = None
+        self._instructions_0xfdcb[0x86] = self._reset_bit_indexed
         self._instructions_0xfdcb[0x87] = None
         self._instructions_0xfdcb[0x88] = None
         self._instructions_0xfdcb[0x89] = None
@@ -3137,7 +3177,7 @@ class CPU:
         self._instructions_0xfdcb[0x8b] = None
         self._instructions_0xfdcb[0x8c] = None
         self._instructions_0xfdcb[0x8d] = None
-        self._instructions_0xfdcb[0x8e] = None
+        self._instructions_0xfdcb[0x8e] = self._reset_bit_indexed
         self._instructions_0xfdcb[0x8f] = None
 
         self._instructions_0xfdcb[0x90] = None
@@ -3146,7 +3186,7 @@ class CPU:
         self._instructions_0xfdcb[0x93] = None
         self._instructions_0xfdcb[0x94] = None
         self._instructions_0xfdcb[0x95] = None
-        self._instructions_0xfdcb[0x96] = None
+        self._instructions_0xfdcb[0x96] = self._reset_bit_indexed
         self._instructions_0xfdcb[0x97] = None
         self._instructions_0xfdcb[0x98] = None
         self._instructions_0xfdcb[0x99] = None
@@ -3154,7 +3194,7 @@ class CPU:
         self._instructions_0xfdcb[0x9b] = None
         self._instructions_0xfdcb[0x9c] = None
         self._instructions_0xfdcb[0x9d] = None
-        self._instructions_0xfdcb[0x9e] = None
+        self._instructions_0xfdcb[0x9e] = self._reset_bit_indexed
         self._instructions_0xfdcb[0x9f] = None
 
         self._instructions_0xfdcb[0xa0] = None
@@ -3163,7 +3203,7 @@ class CPU:
         self._instructions_0xfdcb[0xa3] = None
         self._instructions_0xfdcb[0xa4] = None
         self._instructions_0xfdcb[0xa5] = None
-        self._instructions_0xfdcb[0xa6] = None
+        self._instructions_0xfdcb[0xa6] = self._reset_bit_indexed
         self._instructions_0xfdcb[0xa7] = None
         self._instructions_0xfdcb[0xa8] = None
         self._instructions_0xfdcb[0xa9] = None
@@ -3171,7 +3211,7 @@ class CPU:
         self._instructions_0xfdcb[0xab] = None
         self._instructions_0xfdcb[0xac] = None
         self._instructions_0xfdcb[0xad] = None
-        self._instructions_0xfdcb[0xae] = None
+        self._instructions_0xfdcb[0xae] = self._reset_bit_indexed
         self._instructions_0xfdcb[0xaf] = None
 
         self._instructions_0xfdcb[0xb0] = None
@@ -3180,7 +3220,7 @@ class CPU:
         self._instructions_0xfdcb[0xb3] = None
         self._instructions_0xfdcb[0xb4] = None
         self._instructions_0xfdcb[0xb5] = None
-        self._instructions_0xfdcb[0xb6] = None
+        self._instructions_0xfdcb[0xb6] = self._reset_bit_indexed
         self._instructions_0xfdcb[0xb7] = None
         self._instructions_0xfdcb[0xb8] = None
         self._instructions_0xfdcb[0xb9] = None
@@ -3188,7 +3228,7 @@ class CPU:
         self._instructions_0xfdcb[0xbb] = None
         self._instructions_0xfdcb[0xbc] = None
         self._instructions_0xfdcb[0xbd] = None
-        self._instructions_0xfdcb[0xbe] = None
+        self._instructions_0xfdcb[0xbe] = self._reset_bit_indexed
         self._instructions_0xfdcb[0xbf] = None
 
         self._instructions_0xfdcb[0xc0] = None
@@ -3197,7 +3237,7 @@ class CPU:
         self._instructions_0xfdcb[0xc3] = None
         self._instructions_0xfdcb[0xc4] = None
         self._instructions_0xfdcb[0xc5] = None
-        self._instructions_0xfdcb[0xc6] = None
+        self._instructions_0xfdcb[0xc6] = self._set_bit_indexed
         self._instructions_0xfdcb[0xc7] = None
         self._instructions_0xfdcb[0xc8] = None
         self._instructions_0xfdcb[0xc9] = None
@@ -3205,7 +3245,7 @@ class CPU:
         self._instructions_0xfdcb[0xcb] = None
         self._instructions_0xfdcb[0xcc] = None
         self._instructions_0xfdcb[0xcd] = None
-        self._instructions_0xfdcb[0xce] = None
+        self._instructions_0xfdcb[0xce] = self._set_bit_indexed
         self._instructions_0xfdcb[0xcf] = None
 
         self._instructions_0xfdcb[0xd0] = None
@@ -3214,7 +3254,7 @@ class CPU:
         self._instructions_0xfdcb[0xd3] = None
         self._instructions_0xfdcb[0xd4] = None
         self._instructions_0xfdcb[0xd5] = None
-        self._instructions_0xfdcb[0xd6] = None
+        self._instructions_0xfdcb[0xd6] = self._set_bit_indexed
         self._instructions_0xfdcb[0xd7] = None
         self._instructions_0xfdcb[0xd8] = None
         self._instructions_0xfdcb[0xd9] = None
@@ -3222,7 +3262,7 @@ class CPU:
         self._instructions_0xfdcb[0xdb] = None
         self._instructions_0xfdcb[0xdc] = None
         self._instructions_0xfdcb[0xdd] = None
-        self._instructions_0xfdcb[0xde] = None
+        self._instructions_0xfdcb[0xde] = self._set_bit_indexed
         self._instructions_0xfdcb[0xdf] = None
 
         self._instructions_0xfdcb[0xe0] = None
@@ -3231,7 +3271,7 @@ class CPU:
         self._instructions_0xfdcb[0xe3] = None
         self._instructions_0xfdcb[0xe4] = None
         self._instructions_0xfdcb[0xe5] = None
-        self._instructions_0xfdcb[0xe6] = None
+        self._instructions_0xfdcb[0xe6] = self._set_bit_indexed
         self._instructions_0xfdcb[0xe7] = None
         self._instructions_0xfdcb[0xe8] = None
         self._instructions_0xfdcb[0xe9] = None
@@ -3239,7 +3279,7 @@ class CPU:
         self._instructions_0xfdcb[0xeb] = None
         self._instructions_0xfdcb[0xec] = None
         self._instructions_0xfdcb[0xed] = None
-        self._instructions_0xfdcb[0xee] = None
+        self._instructions_0xfdcb[0xee] = self._set_bit_indexed
         self._instructions_0xfdcb[0xef] = None
 
         self._instructions_0xfdcb[0xf0] = None
@@ -3248,7 +3288,7 @@ class CPU:
         self._instructions_0xfdcb[0xf3] = None
         self._instructions_0xfdcb[0xf4] = None
         self._instructions_0xfdcb[0xf5] = None
-        self._instructions_0xfdcb[0xf6] = None
+        self._instructions_0xfdcb[0xf6] = self._set_bit_indexed
         self._instructions_0xfdcb[0xf7] = None
         self._instructions_0xfdcb[0xf8] = None
         self._instructions_0xfdcb[0xf9] = None
@@ -3256,6 +3296,6 @@ class CPU:
         self._instructions_0xfdcb[0xfb] = None
         self._instructions_0xfdcb[0xfc] = None
         self._instructions_0xfdcb[0xfd] = None
-        self._instructions_0xfdcb[0xfe] = None
+        self._instructions_0xfdcb[0xfe] = self._set_bit_indexed
         self._instructions_0xfdcb[0xff] = None
 

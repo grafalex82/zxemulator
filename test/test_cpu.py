@@ -1578,3 +1578,60 @@ def test_sbc_hl_sp_zero(cpu):
     assert cpu.add_subtract == False
     assert cpu.overflow == False
     assert cpu.zero == True
+
+
+# Bit instructions tests
+
+def test_set_bit_ix(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xdd)    # SET 3, (IX+42) Instruction Opcode
+    cpu._machine.write_memory_byte(0x0001, 0xcb)
+    cpu._machine.write_memory_byte(0x0002, 0x42)    # Positive displacement
+    cpu._machine.write_memory_byte(0x0003, 0xde)    # Set bit 3
+
+    cpu._machine.write_memory_byte(0xbeef + 0x42, 0x11)     # Initial data
+
+    cpu.ix = 0xbeef
+    cpu.step()
+    assert cpu._cycles == 23
+    assert cpu._machine.read_memory_byte(0xbeef + 0x42) == 0x19     # Bit 3 is now set
+
+def test_set_bit_iy(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xfd)    # SET 3, (IY-42) Instruction Opcode
+    cpu._machine.write_memory_byte(0x0001, 0xcb)
+    cpu._machine.write_memory_byte(0x0002, 0xbe)    # Negative displacement (-0x42)
+    cpu._machine.write_memory_byte(0x0003, 0xf6)    # Set bit 6
+
+    cpu._machine.write_memory_byte(0xbeef - 0x42, 0x11)     # Initial data
+
+    cpu.iy = 0xbeef
+    cpu.step()
+
+    assert cpu._cycles == 23
+    assert cpu._machine.read_memory_byte(0xbeef - 0x42) == 0x51     # Bit 6 is now set
+
+def test_res_bit_ix(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xdd)    # RES 3, (IX+42) Instruction Opcode
+    cpu._machine.write_memory_byte(0x0001, 0xcb)
+    cpu._machine.write_memory_byte(0x0002, 0x42)    # Positive displacement
+    cpu._machine.write_memory_byte(0x0003, 0x9e)    # Reset bit 3
+
+    cpu._machine.write_memory_byte(0xbeef + 0x42, 0x19)     # Initial data
+
+    cpu.ix = 0xbeef
+    cpu.step()
+    assert cpu._cycles == 23
+    assert cpu._machine.read_memory_byte(0xbeef + 0x42) == 0x11     # Bit 3 is now reset
+
+def test_res_bit_iy(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xfd)    # RES 3, (IY-42) Instruction Opcode
+    cpu._machine.write_memory_byte(0x0001, 0xcb)
+    cpu._machine.write_memory_byte(0x0002, 0xbe)    # Negative displacement (-0x42)
+    cpu._machine.write_memory_byte(0x0003, 0xb6)    # Reset bit 6
+
+    cpu._machine.write_memory_byte(0xbeef - 0x42, 0x51)     # Initial data
+
+    cpu.iy = 0xbeef
+    cpu.step()
+    
+    assert cpu._cycles == 23
+    assert cpu._machine.read_memory_byte(0xbeef - 0x42) == 0x11     # Bit 6 is now reset
