@@ -1101,6 +1101,16 @@ class CPU:
         self._pc = addr
         self._cycles += 17
 
+    def _ret(self):
+        """ Return from a subroutine """
+
+        self._log_1b_instruction(f"RET")
+
+        self._pc = self._pop_from_stack()
+        self._cycles += 10
+
+
+
 
     # ALU instructions
 
@@ -1630,7 +1640,7 @@ class CPU:
         self._instructions[0xc6] = self._alu_immediate          # ADD A, n
         self._instructions[0xc7] = None                         # RST 00
         self._instructions[0xc8] = None                         # RET Z
-        self._instructions[0xc9] = None                         # RET
+        self._instructions[0xc9] = self._ret                    # RET
         self._instructions[0xca] = None                         # JP Z, nn
         self._instructions[0xcb] = None                         # Bit instruction set
         self._instructions[0xcc] = None                         # CALL Z, nn

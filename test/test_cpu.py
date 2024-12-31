@@ -668,13 +668,22 @@ def test_djnz_negative_offset(cpu):
     assert cpu._cycles == 13
 
 def test_call(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xcd)    # Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xcd)    # CALL BEEF Instruction Opcode
     cpu._machine.write_memory_word(0x0001, 0xbeef)  # Address
     cpu.sp = 0x1234
     cpu.step()
     assert cpu.pc == 0xbeef
     assert cpu._cycles == 17
     assert cpu._machine.read_memory_word(0x1232) == 0x0003 # address of the next instruction
+
+def test_ret(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xc9)    # RET Instruction Opcode
+    cpu._machine.write_memory_word(0x1234, 0xbeef)  # Return address
+    cpu.sp = 0x1234
+    cpu.step()
+    assert cpu.pc == 0xbeef
+    assert cpu.sp == 0x1236
+    assert cpu._cycles == 10
 
 
 
