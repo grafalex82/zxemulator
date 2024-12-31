@@ -1045,10 +1045,9 @@ class CPU:
     def _jr(self):
         """ Unconditional relative jump """
         displacement = self._fetch_displacement()
-        self._pc += displacement
 
-        log_displacement = displacement+2
-        self._log_2b_instruction(f"JR {log_displacement:+03x} ({self._pc:04x})")
+        self._log_2b_instruction(f"JR {displacement + 2:+03x} ({self._pc + displacement:04x})")
+        self._pc += displacement
 
         self._cycles += 12
 
@@ -1070,14 +1069,27 @@ class CPU:
             condition = self._carry
             condition_code = "C"
 
-        log_displacement = displacement + 2
-        self._log_2b_instruction(f"JR {condition_code}, {log_displacement:+03x} ({(self._pc + displacement):04x})")
+        self._log_2b_instruction(f"JR {condition_code}, {displacement + 2:+03x} ({(self._pc + displacement):04x})")
 
         if condition:
             self._pc += displacement
             self._cycles += 12
         else:
             self._cycles += 7
+
+    def _djnz(self):
+        """ Decrease counter and jump if not zero """
+        self._b = (self._b - 1) & 0xff
+
+        displacement = self._fetch_displacement()
+
+        self._log_2b_instruction(f"DJNZ {displacement + 2:+03x} ({self._pc + displacement:04x})")
+
+        if self._b != 0:
+            self._pc += displacement
+            self._cycles += 13
+        else:
+            self._cycles += 8
 
     def _call(self):
         """ Call a subroutine """
@@ -1408,7 +1420,7 @@ class CPU:
         self._instructions[0x0e] = self._load_8b_immediate_to_register
         self._instructions[0x0f] = None
 
-        self._instructions[0x10] = None
+        self._instructions[0x10] = self._djnz
         self._instructions[0x11] = self._load_immediate_16b
         self._instructions[0x12] = None
         self._instructions[0x13] = self._inc16

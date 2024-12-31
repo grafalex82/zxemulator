@@ -639,6 +639,34 @@ def test_jr_c_negative(cpu):
     assert cpu.pc == 0x0002   # No jump
     assert cpu._cycles == 7
 
+def test_djnz_non_zero(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0x10)    # DJNZ $+5 Instruction Opcode
+    cpu._machine.write_memory_byte(0x0001, 0x03)    # relative offset
+    cpu.b = 0x10                # Counter will be non-zero after decrement, expect jump forward
+    cpu.step()
+    assert cpu.pc == 0x0005     # Jump happened
+    assert cpu.b == 0x0f        # Counter decremented
+    assert cpu._cycles == 13
+
+def test_djnz_zero(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0x10)    # DJNZ $+5 Instruction Opcode
+    cpu._machine.write_memory_byte(0x0001, 0x03)    # relative offset
+    cpu.b = 0x01                # Counter will be zero after decrement, expect no jump
+    cpu.step()
+    assert cpu.pc == 0x0002     # No jump happened
+    assert cpu.b == 0x00        # Counter decremented
+    assert cpu._cycles == 8
+
+def test_djnz_negative_offset(cpu):
+    cpu._machine.write_memory_byte(0x1234, 0x10)    # DJNZ $-66 Instruction Opcode
+    cpu._machine.write_memory_byte(0x1235, 0x9a)    # relative offset
+    cpu.b = 0x10                # Counter will be non-zero after decrement, expect jump backwards
+    cpu.pc = 0x1234
+    cpu.step()
+    assert cpu.pc == 0x11d0     # Jumped backwards
+    assert cpu.b == 0x0f        # Counter decremented
+    assert cpu._cycles == 13
+
 def test_call(cpu):
     cpu._machine.write_memory_byte(0x0000, 0xcd)    # Instruction Opcode
     cpu._machine.write_memory_word(0x0001, 0xbeef)  # Address
