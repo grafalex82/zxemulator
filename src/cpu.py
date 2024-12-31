@@ -518,6 +518,14 @@ class CPU:
         return data
 
 
+    def _fetch_displacement(self):
+        data = self._machine.read_memory_byte(self._pc)
+        self._pc += 1
+        if data >= 0x80:
+            return data - 0x100
+        return data
+
+
     def _push_to_stack(self, value):
         self._sp -= 2
         self._machine.write_memory_word(self._sp, value)
@@ -547,9 +555,7 @@ class CPU:
             if self._current_inst == 0xcb:
                 self._instruction_prefix <<= 8
                 self._instruction_prefix |= self._current_inst
-                self._displacement = self._fetch_next_byte()
-                if self._displacement >= 0x80:
-                    self._displacement = self._displacement - 0x100
+                self._displacement = self._fetch_displacement()
                 self._current_inst = self._fetch_next_byte()
         else:
             self._instruction_prefix = None
@@ -800,6 +806,32 @@ class CPU:
         self._log_3b_instruction(f"LD A, ({addr:04x})")
 
 
+    def _store_reg_to_indexed_mem(self):
+        """ Store a 8-bit register to a memory indexed by IX/IY registers """
+        displacement = self._fetch_displacement()
+        src = self._current_inst & 0x07
+        addr = self._get_index_reg() + displacement
+        value = self._get_register(src)
+        self._machine.write_memory_byte(addr, value)
+
+        self._cycles += 19
+
+        self._log_2b_instruction(f"LD ({self._get_index_reg_symb()}{displacement:+03x}), {self._reg_symb(src)}")
+
+
+    def _load_reg_from_indexed_mem(self):
+        """ Load a 8-bit register from a memory indexed by IX/IY registers """
+        displacement = self._fetch_displacement()
+        dst = (self._current_inst & 0x38) >> 3
+        addr = self._get_index_reg() + displacement
+        value = self._machine.read_memory_byte(addr)
+        self._set_register(dst, value)
+
+        self._cycles += 19
+
+        self._log_2b_instruction(f"LD {self._reg_symb(dst)}, ({self._get_index_reg_symb()}{displacement:+03x})")
+
+
     # 16-bit data transfer instructions
 
     def _load_immediate_16b(self):
@@ -1012,22 +1044,17 @@ class CPU:
 
     def _jr(self):
         """ Unconditional relative jump """
-        displacement = self._fetch_next_byte()
-        if displacement > 0x7f:
-            displacement = -(0x100 - displacement)
+        displacement = self._fetch_displacement()
         self._pc += displacement
 
         log_displacement = displacement+2
-        displacement_str = f"${'+' if log_displacement >= 0 else '-'}{abs(log_displacement):02x}"
-        self._log_2b_instruction(f"JR {displacement_str} ({self._pc:04x})")
+        self._log_2b_instruction(f"JR {log_displacement:+03x} ({self._pc:04x})")
 
         self._cycles += 12
 
     def _jr_cond(self):
         """ Conditional relative jump """
-        displacement = self._fetch_next_byte()
-        if displacement > 0x7f:
-            displacement = -(0x100 - displacement)
+        displacement = self._fetch_displacement()
 
         condition_code = (self._current_inst & 0x18)
         if condition_code == 0x00:
@@ -1044,8 +1071,7 @@ class CPU:
             condition_code = "C"
 
         log_displacement = displacement + 2
-        displacement_str = f"${'+' if log_displacement >= 0 else '-'}{abs(log_displacement):02x}"
-        self._log_2b_instruction(f"JR {condition_code}, {displacement_str} ({(self._pc + displacement):04x})")
+        self._log_2b_instruction(f"JR {condition_code}, {log_displacement:+03x} ({(self._pc + displacement):04x})")
 
         if condition:
             self._pc += displacement
@@ -1226,32 +1252,28 @@ class CPU:
     def _inc_mem_indexed(self):
         """ Increment 8-bit value pointed by IY-based index """
         # TODO Add IX support
-        displacement = self._fetch_next_byte()
-        if displacement > 0x7f:
-            displacement -= 0x100
+        displacement = self._fetch_displacement()
 
         addr = self._iy + displacement
         value = self._machine.read_memory_byte(addr)
         value = self._inc_8bit_value(value)
         self._machine.write_memory_byte(addr, value)
 
-        self._log_2b_instruction(f"INC (IY{displacement:+02x})")
+        self._log_2b_instruction(f"INC (IY{displacement:+03x})")
         self._cycles += 23
 
 
     def _dec_mem_indexed(self):
         """ Deccrement 8-bit value pointed by IY-based index """
         # TODO Add IX support
-        displacement = self._fetch_next_byte()
-        if displacement > 0x7f:
-            displacement -= 0x100
+        displacement = self._fetch_displacement()
 
         addr = self._iy + displacement
         value = self._machine.read_memory_byte(addr)
         value = self._dec_8bit_value(value)
         self._machine.write_memory_byte(addr, value)
 
-        self._log_2b_instruction(f"DEC (IY{displacement:+02x})")
+        self._log_2b_instruction(f"DEC (IY{displacement:+03x})")
         self._cycles += 23
 
 
@@ -1344,7 +1366,7 @@ class CPU:
 
         self._cycles += 23
         
-        self._log_3b_bit_instruction(f"SET {bit}, ({self._get_index_reg_symb()}{self._displacement:+02x})")
+        self._log_3b_bit_instruction(f"SET {bit}, ({self._get_index_reg_symb()}{self._displacement:+03x})")
 
 
     def _reset_bit_indexed(self):
@@ -1359,7 +1381,7 @@ class CPU:
 
         self._cycles += 23
         
-        self._log_3b_bit_instruction(f"RES {bit}, ({self._get_index_reg_symb()}{self._displacement:+02x})")
+        self._log_3b_bit_instruction(f"RES {bit}, ({self._get_index_reg_symb()}{self._displacement:+03x})")
 
 
     # Instruction tables
@@ -2277,7 +2299,7 @@ class CPU:
         self._instructions_0xdd[0x43] = None
         self._instructions_0xdd[0x44] = None
         self._instructions_0xdd[0x45] = None
-        self._instructions_0xdd[0x46] = None
+        self._instructions_0xdd[0x46] = self._load_reg_from_indexed_mem
         self._instructions_0xdd[0x47] = None
         self._instructions_0xdd[0x48] = None
         self._instructions_0xdd[0x49] = None
@@ -2285,7 +2307,7 @@ class CPU:
         self._instructions_0xdd[0x4b] = None
         self._instructions_0xdd[0x4c] = None
         self._instructions_0xdd[0x4d] = None
-        self._instructions_0xdd[0x4e] = None
+        self._instructions_0xdd[0x4e] = self._load_reg_from_indexed_mem
         self._instructions_0xdd[0x4f] = None
 
         self._instructions_0xdd[0x50] = None
@@ -2294,7 +2316,7 @@ class CPU:
         self._instructions_0xdd[0x53] = None
         self._instructions_0xdd[0x54] = None
         self._instructions_0xdd[0x55] = None
-        self._instructions_0xdd[0x56] = None
+        self._instructions_0xdd[0x56] = self._load_reg_from_indexed_mem
         self._instructions_0xdd[0x57] = None
         self._instructions_0xdd[0x58] = None
         self._instructions_0xdd[0x59] = None
@@ -2302,7 +2324,7 @@ class CPU:
         self._instructions_0xdd[0x5b] = None
         self._instructions_0xdd[0x5c] = None
         self._instructions_0xdd[0x5d] = None
-        self._instructions_0xdd[0x5e] = None
+        self._instructions_0xdd[0x5e] = self._load_reg_from_indexed_mem
         self._instructions_0xdd[0x5f] = None
 
         self._instructions_0xdd[0x60] = None
@@ -2311,7 +2333,7 @@ class CPU:
         self._instructions_0xdd[0x63] = None
         self._instructions_0xdd[0x64] = None
         self._instructions_0xdd[0x65] = None
-        self._instructions_0xdd[0x66] = None
+        self._instructions_0xdd[0x66] = self._load_reg_from_indexed_mem
         self._instructions_0xdd[0x67] = None
         self._instructions_0xdd[0x68] = None
         self._instructions_0xdd[0x69] = None
@@ -2319,24 +2341,24 @@ class CPU:
         self._instructions_0xdd[0x6b] = None
         self._instructions_0xdd[0x6c] = None
         self._instructions_0xdd[0x6d] = None
-        self._instructions_0xdd[0x6e] = None
+        self._instructions_0xdd[0x6e] = self._load_reg_from_indexed_mem
         self._instructions_0xdd[0x6f] = None
 
-        self._instructions_0xdd[0x70] = None
-        self._instructions_0xdd[0x71] = None
-        self._instructions_0xdd[0x72] = None
-        self._instructions_0xdd[0x73] = None
-        self._instructions_0xdd[0x74] = None
-        self._instructions_0xdd[0x75] = None
+        self._instructions_0xdd[0x70] = self._store_reg_to_indexed_mem
+        self._instructions_0xdd[0x71] = self._store_reg_to_indexed_mem
+        self._instructions_0xdd[0x72] = self._store_reg_to_indexed_mem
+        self._instructions_0xdd[0x73] = self._store_reg_to_indexed_mem
+        self._instructions_0xdd[0x74] = self._store_reg_to_indexed_mem
+        self._instructions_0xdd[0x75] = self._store_reg_to_indexed_mem
         self._instructions_0xdd[0x76] = None
-        self._instructions_0xdd[0x77] = None
+        self._instructions_0xdd[0x77] = self._store_reg_to_indexed_mem
         self._instructions_0xdd[0x78] = None
         self._instructions_0xdd[0x79] = None
         self._instructions_0xdd[0x7a] = None
         self._instructions_0xdd[0x7b] = None
         self._instructions_0xdd[0x7c] = None
         self._instructions_0xdd[0x7d] = None
-        self._instructions_0xdd[0x7e] = None
+        self._instructions_0xdd[0x7e] = self._load_reg_from_indexed_mem
         self._instructions_0xdd[0x7f] = None
 
         self._instructions_0xdd[0x80] = None
@@ -2833,7 +2855,7 @@ class CPU:
         self._instructions_0xfd[0x43] = None
         self._instructions_0xfd[0x44] = None
         self._instructions_0xfd[0x45] = None
-        self._instructions_0xfd[0x46] = None
+        self._instructions_0xfd[0x46] = self._load_reg_from_indexed_mem
         self._instructions_0xfd[0x47] = None
         self._instructions_0xfd[0x48] = None
         self._instructions_0xfd[0x49] = None
@@ -2841,7 +2863,7 @@ class CPU:
         self._instructions_0xfd[0x4b] = None
         self._instructions_0xfd[0x4c] = None
         self._instructions_0xfd[0x4d] = None
-        self._instructions_0xfd[0x4e] = None
+        self._instructions_0xfd[0x4e] = self._load_reg_from_indexed_mem
         self._instructions_0xfd[0x4f] = None
 
         self._instructions_0xfd[0x50] = None
@@ -2850,7 +2872,7 @@ class CPU:
         self._instructions_0xfd[0x53] = None
         self._instructions_0xfd[0x54] = None
         self._instructions_0xfd[0x55] = None
-        self._instructions_0xfd[0x56] = None
+        self._instructions_0xfd[0x56] = self._load_reg_from_indexed_mem
         self._instructions_0xfd[0x57] = None
         self._instructions_0xfd[0x58] = None
         self._instructions_0xfd[0x59] = None
@@ -2858,7 +2880,7 @@ class CPU:
         self._instructions_0xfd[0x5b] = None
         self._instructions_0xfd[0x5c] = None
         self._instructions_0xfd[0x5d] = None
-        self._instructions_0xfd[0x5e] = None
+        self._instructions_0xfd[0x5e] = self._load_reg_from_indexed_mem
         self._instructions_0xfd[0x5f] = None
 
         self._instructions_0xfd[0x60] = None
@@ -2867,7 +2889,7 @@ class CPU:
         self._instructions_0xfd[0x63] = None
         self._instructions_0xfd[0x64] = None
         self._instructions_0xfd[0x65] = None
-        self._instructions_0xfd[0x66] = None
+        self._instructions_0xfd[0x66] = self._load_reg_from_indexed_mem
         self._instructions_0xfd[0x67] = None
         self._instructions_0xfd[0x68] = None
         self._instructions_0xfd[0x69] = None
@@ -2875,24 +2897,24 @@ class CPU:
         self._instructions_0xfd[0x6b] = None
         self._instructions_0xfd[0x6c] = None
         self._instructions_0xfd[0x6d] = None
-        self._instructions_0xfd[0x6e] = None
+        self._instructions_0xfd[0x6e] = self._load_reg_from_indexed_mem
         self._instructions_0xfd[0x6f] = None
 
-        self._instructions_0xfd[0x70] = None
-        self._instructions_0xfd[0x71] = None
-        self._instructions_0xfd[0x72] = None
-        self._instructions_0xfd[0x73] = None
-        self._instructions_0xfd[0x74] = None
-        self._instructions_0xfd[0x75] = None
+        self._instructions_0xfd[0x70] = self._store_reg_to_indexed_mem
+        self._instructions_0xfd[0x71] = self._store_reg_to_indexed_mem
+        self._instructions_0xfd[0x72] = self._store_reg_to_indexed_mem
+        self._instructions_0xfd[0x73] = self._store_reg_to_indexed_mem
+        self._instructions_0xfd[0x74] = self._store_reg_to_indexed_mem
+        self._instructions_0xfd[0x75] = self._store_reg_to_indexed_mem
         self._instructions_0xfd[0x76] = None
-        self._instructions_0xfd[0x77] = None
+        self._instructions_0xfd[0x77] = self._store_reg_to_indexed_mem
         self._instructions_0xfd[0x78] = None
         self._instructions_0xfd[0x79] = None
         self._instructions_0xfd[0x7a] = None
         self._instructions_0xfd[0x7b] = None
         self._instructions_0xfd[0x7c] = None
         self._instructions_0xfd[0x7d] = None
-        self._instructions_0xfd[0x7e] = None
+        self._instructions_0xfd[0x7e] = self._load_reg_from_indexed_mem
         self._instructions_0xfd[0x7f] = None
 
         self._instructions_0xfd[0x80] = None
