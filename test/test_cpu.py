@@ -1660,6 +1660,48 @@ def test_sbc_hl_sp_zero(cpu):
 
 # Bit instructions tests
 
+def test_get_bit_ix_1(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xdd)    # BIT 3, (IX+42) Instruction Opcode
+    cpu._machine.write_memory_byte(0x0001, 0xcb)
+    cpu._machine.write_memory_byte(0x0002, 0x42)    # Positive displacement
+    cpu._machine.write_memory_byte(0x0003, 0x5e)    # Get bit 3
+
+    cpu._machine.write_memory_byte(0xbeef + 0x42, 0x08)     # Data bit is set
+
+    cpu.ix = 0xbeef
+    cpu.step()
+
+    assert cpu._cycles == 20
+    assert cpu.zero == False                        # Bit is set (non-zero)
+
+def test_get_bit_ix_0(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xdd)    # BIT 3, (IX+42) Instruction Opcode
+    cpu._machine.write_memory_byte(0x0001, 0xcb)
+    cpu._machine.write_memory_byte(0x0002, 0x42)    # Positive displacement
+    cpu._machine.write_memory_byte(0x0003, 0x5e)    # Get bit 3
+
+    cpu._machine.write_memory_byte(0xbeef + 0x42, 0xf7)     # Data bit is not set
+
+    cpu.ix = 0xbeef
+    cpu.step()
+
+    assert cpu._cycles == 20
+    assert cpu.zero == True                        # Bit is reset (zero)
+
+def test_set_bit_iy(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xfd)    # SET 3, (IY-42) Instruction Opcode
+    cpu._machine.write_memory_byte(0x0001, 0xcb)
+    cpu._machine.write_memory_byte(0x0002, 0xbe)    # Negative displacement (-0x42)
+    cpu._machine.write_memory_byte(0x0003, 0x76)    # Get bit 6
+
+    cpu._machine.write_memory_byte(0xbeef - 0x42, 0x40)     # Initial data
+
+    cpu.iy = 0xbeef
+    cpu.step()
+
+    assert cpu._cycles == 23
+    assert cpu.zero == False                        # Bit is set (non-zero)
+
 def test_set_bit_ix(cpu):
     cpu._machine.write_memory_byte(0x0000, 0xdd)    # SET 3, (IX+42) Instruction Opcode
     cpu._machine.write_memory_byte(0x0001, 0xcb)
