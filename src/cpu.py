@@ -1272,30 +1272,28 @@ class CPU:
 
 
     def _inc_mem_indexed(self):
-        """ Increment 8-bit value pointed by IY-based index """
-        # TODO Add IX support
+        """ Increment 8-bit value pointed by IX/IY-based index """
         displacement = self._fetch_displacement()
 
-        addr = self._iy + displacement
+        addr = self._get_index_reg() + displacement
         value = self._machine.read_memory_byte(addr)
         value = self._inc_8bit_value(value)
         self._machine.write_memory_byte(addr, value)
 
-        self._log_2b_instruction(f"INC (IY{displacement:+03x})")
+        self._log_2b_instruction(f"INC ({self._get_index_reg_symb()}{displacement:+03x})")
         self._cycles += 23
 
 
     def _dec_mem_indexed(self):
-        """ Deccrement 8-bit value pointed by IY-based index """
-        # TODO Add IX support
+        """ Deccrement 8-bit value pointed by IX/IY-based index """
         displacement = self._fetch_displacement()
 
-        addr = self._iy + displacement
+        addr = self._get_index_reg() + displacement
         value = self._machine.read_memory_byte(addr)
         value = self._dec_8bit_value(value)
         self._machine.write_memory_byte(addr, value)
 
-        self._log_2b_instruction(f"DEC (IY{displacement:+03x})")
+        self._log_2b_instruction(f"DEC ({self._get_index_reg_symb()}{displacement:+03x})")
         self._cycles += 23
 
 
@@ -2316,8 +2314,8 @@ class CPU:
         self._instructions_0xdd[0x31] = None
         self._instructions_0xdd[0x32] = None
         self._instructions_0xdd[0x33] = None
-        self._instructions_0xdd[0x34] = None
-        self._instructions_0xdd[0x35] = None
+        self._instructions_0xdd[0x34] = self._inc_mem_indexed
+        self._instructions_0xdd[0x35] = self._dec_mem_indexed
         self._instructions_0xdd[0x36] = None
         self._instructions_0xdd[0x37] = None
         self._instructions_0xdd[0x38] = None

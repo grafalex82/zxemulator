@@ -1351,12 +1351,12 @@ def test_inc_m(cpu):
     assert cpu.overflow == False
     assert cpu.add_subtract == False
 
-def test_inc_iy_d(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xfd)    # INC (IY + 5) Instruction Opcode
+def test_inc_ix_d(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xdd)    # INC (IX + 5) Instruction Opcode
     cpu._machine.write_memory_byte(0x0001, 0x34)
     cpu._machine.write_memory_byte(0x0002, 0x05)
     cpu._machine.write_memory_byte(0x1234 + 5, 0x42)    # Data byte
-    cpu.iy = 0x1234
+    cpu.ix = 0x1234
     cpu.step()
     assert cpu._cycles == 23
     assert cpu._machine.read_memory_byte(0x1234 + 5) == 0x43
