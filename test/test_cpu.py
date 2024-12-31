@@ -256,11 +256,11 @@ def test_ld_reg_indexed_mem_1(cpu):
     assert cpu._cycles == 19
 
 def test_ld_reg_indexed_mem_2(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xdd)    # LD H, (IY-05) Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xfd)    # LD H, (IY-05) Instruction Opcode
     cpu._machine.write_memory_byte(0x0001, 0x66)    # H register is a destination
     cpu._machine.write_memory_byte(0x0002, 0xfb)    # Negative Displacement
     cpu._machine.write_memory_byte(0xbeef - 0x05, 0x42) # Data to load
-    cpu._ix = 0xbeef
+    cpu._iy = 0xbeef
     cpu.step()
     assert cpu.h == 0x42
     assert cpu._cycles == 19
@@ -276,11 +276,31 @@ def test_ld_indexed_mem_reg_1(cpu):
     assert cpu._machine.read_memory_byte(0xbeef + 0x05) == 0x42
 
 def test_ld_indexed_mem_reg_2(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xdd)    # LD (IY-05), H Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xfd)    # LD (IY-05), H Instruction Opcode
     cpu._machine.write_memory_byte(0x0001, 0x74)    # H register is a source
     cpu._machine.write_memory_byte(0x0002, 0xfb)    # Negative Displacement
-    cpu._ix = 0xbeef
+    cpu._iy = 0xbeef
     cpu.h = 0x42
+    cpu.step()
+    assert cpu._cycles == 19
+    assert cpu._machine.read_memory_byte(0xbeef - 0x05) == 0x42
+
+def test_ld_reg_indexed_mem_1(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xdd)    # LD (IX+05), 42    Instruction Opcode
+    cpu._machine.write_memory_byte(0x0001, 0x36)
+    cpu._machine.write_memory_byte(0x0002, 0x05)    # Displacement
+    cpu._machine.write_memory_byte(0x0003, 0x42)    # Value
+    cpu._ix = 0xbeef
+    cpu.step()
+    assert cpu._cycles == 19
+    assert cpu._machine.read_memory_byte(0xbeef + 0x05) == 0x42
+
+def test_ld_reg_indexed_mem_2(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xfd)    # LD (IY-05), 42    Instruction Opcode
+    cpu._machine.write_memory_byte(0x0001, 0x36)
+    cpu._machine.write_memory_byte(0x0002, 0xfb)    # Negative Displacement
+    cpu._machine.write_memory_byte(0x0003, 0x42)    # Value
+    cpu._iy = 0xbeef
     cpu.step()
     assert cpu._cycles == 19
     assert cpu._machine.read_memory_byte(0xbeef - 0x05) == 0x42

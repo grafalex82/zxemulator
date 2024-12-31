@@ -831,6 +831,19 @@ class CPU:
 
         self._log_2b_instruction(f"LD {self._reg_symb(dst)}, ({self._get_index_reg_symb()}{displacement:+03x})")
 
+    def _store_value_to_indexed_mem(self):
+        """ Store immediate 8-bit value to memory indexed by IX/IY registers """
+        displacement = self._fetch_displacement()
+        value = self._fetch_next_byte()
+
+        addr = self._get_index_reg() + displacement
+        self._machine.write_memory_byte(addr, value)
+
+        self._cycles += 19
+
+        self._log_3b_instruction(f"LD ({self._get_index_reg_symb()}{displacement:+03x}), {value:02x}")
+
+
 
     # 16-bit data transfer instructions
 
@@ -2316,7 +2329,7 @@ class CPU:
         self._instructions_0xdd[0x33] = None
         self._instructions_0xdd[0x34] = self._inc_mem_indexed
         self._instructions_0xdd[0x35] = self._dec_mem_indexed
-        self._instructions_0xdd[0x36] = None
+        self._instructions_0xdd[0x36] = self._store_value_to_indexed_mem
         self._instructions_0xdd[0x37] = None
         self._instructions_0xdd[0x38] = None
         self._instructions_0xdd[0x39] = None
@@ -2872,7 +2885,7 @@ class CPU:
         self._instructions_0xfd[0x33] = None
         self._instructions_0xfd[0x34] = self._inc_mem_indexed
         self._instructions_0xfd[0x35] = self._dec_mem_indexed
-        self._instructions_0xfd[0x36] = None
+        self._instructions_0xfd[0x36] = self._store_value_to_indexed_mem
         self._instructions_0xfd[0x37] = None
         self._instructions_0xfd[0x38] = None
         self._instructions_0xfd[0x39] = None
