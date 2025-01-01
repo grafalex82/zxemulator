@@ -305,6 +305,7 @@ def test_ld_reg_indexed_mem_2(cpu):
     assert cpu._cycles == 19
     assert cpu._machine.read_memory_byte(0xbeef - 0x05) == 0x42
 
+
 # 16-bit data transfer instructions tests
 
 def test_ld_bc(cpu):
@@ -705,6 +706,461 @@ def test_ret(cpu):
     assert cpu.sp == 0x1236
     assert cpu._cycles == 10
 
+def test_jp_z_1(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xca)    # JP Z, beef  Instruction Opcode
+    cpu._machine.write_memory_word(0x0001, 0xbeef)  # Address
+    cpu._zero = True
+    cpu.step()
+    assert cpu.pc == 0xbeef
+    assert cpu._cycles == 10
+
+def test_jp_z_2(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xca)    # JP Z, beef  Instruction Opcode
+    cpu._machine.write_memory_word(0x0001, 0xbeef)  # Address
+    cpu._zero = False
+    cpu.step()
+    assert cpu.pc == 0x0003
+    assert cpu._cycles == 10
+
+def test_jp_nz_1(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xc2)    # JP NZ, beef  Instruction Opcode
+    cpu._machine.write_memory_word(0x0001, 0xbeef)  # Address
+    cpu._zero = True
+    cpu.step()
+    assert cpu.pc == 0x0003
+    assert cpu._cycles == 10
+
+def test_jp_nz_2(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xc2)    # JP NZ, beef  Instruction Opcode
+    cpu._machine.write_memory_word(0x0001, 0xbeef)  # Address
+    cpu._zero = False
+    cpu.step()
+    assert cpu.pc == 0xbeef
+    assert cpu._cycles == 10
+
+def test_jp_c_1(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xda)    # JP C, beef  Instruction Opcode
+    cpu._machine.write_memory_word(0x0001, 0xbeef)  # Address
+    cpu._carry = True
+    cpu.step()
+    assert cpu.pc == 0xbeef
+    assert cpu._cycles == 10
+
+def test_jp_c_2(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xda)    # JP C, beef  Instruction Opcode
+    cpu._machine.write_memory_word(0x0001, 0xbeef)  # Address
+    cpu._carry = False
+    cpu.step()
+    assert cpu.pc == 0x0003
+    assert cpu._cycles == 10
+
+def test_jp_nc_1(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xd2)    # JP NC, beef  Instruction Opcode
+    cpu._machine.write_memory_word(0x0001, 0xbeef)  # Address
+    cpu._carry = True
+    cpu.step()
+    assert cpu.pc == 0x0003
+    assert cpu._cycles == 10
+
+def test_jp_nc_2(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xd2)    # JP NC, beef  Instruction Opcode
+    cpu._machine.write_memory_word(0x0001, 0xbeef)  # Address
+    cpu._carry = False
+    cpu.step()
+    assert cpu.pc == 0xbeef
+    assert cpu._cycles == 10
+
+def test_jp_pe_1(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xea)    # JP PE, beef  Instruction Opcode
+    cpu._machine.write_memory_word(0x0001, 0xbeef)  # Address
+    cpu._parity = True
+    cpu.step()
+    assert cpu.pc == 0xbeef
+    assert cpu._cycles == 10
+
+def test_jp_pe_2(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xea)    # JP PE, beef  Instruction Opcode
+    cpu._machine.write_memory_word(0x0001, 0xbeef)  # Address
+    cpu._parity = False
+    cpu.step()
+    assert cpu.pc == 0x0003
+    assert cpu._cycles == 10
+
+def test_jp_po_1(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xe2)    # JP PO, beef  Instruction Opcode
+    cpu._machine.write_memory_word(0x0001, 0xbeef)  # Address
+    cpu._parity = True
+    cpu.step()
+    assert cpu.pc == 0x0003
+    assert cpu._cycles == 10
+
+def test_jp_po_2(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xe2)    # JP PO, beef  Instruction Opcode
+    cpu._machine.write_memory_word(0x0001, 0xbeef)  # Address
+    cpu._parity = False
+    cpu.step()
+    assert cpu.pc == 0xbeef
+    assert cpu._cycles == 10
+
+def test_jp_m_1(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xfa)    # JP M, beef  Instruction Opcode
+    cpu._machine.write_memory_word(0x0001, 0xbeef)  # Address
+    cpu._sign = True
+    cpu.step()
+    assert cpu.pc == 0xbeef
+    assert cpu._cycles == 10
+
+def test_jp_m_2(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xfa)    # JP M, beef  Instruction Opcode
+    cpu._machine.write_memory_word(0x0001, 0xbeef)  # Address
+    cpu._sign = False
+    cpu.step()
+    assert cpu.pc == 0x0003
+    assert cpu._cycles == 10
+
+def test_jp_p_1(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xf2)    # JP P, beef  Instruction Opcode
+    cpu._machine.write_memory_word(0x0001, 0xbeef)  # Address
+    cpu._sign = True
+    cpu.step()
+    assert cpu.pc == 0x0003
+    assert cpu._cycles == 10
+
+def test_jp_p_2(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xf2)    # JP P, beef  Instruction Opcode
+    cpu._machine.write_memory_word(0x0001, 0xbeef)  # Address
+    cpu._sign = False
+    cpu.step()
+    assert cpu.pc == 0xbeef
+    assert cpu._cycles == 10
+
+def test_call_nz_1(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xc4)    # CALL NZ, beef  Instruction Opcode
+    cpu._machine.write_memory_word(0x0001, 0xbeef)  # Subroutine address
+    cpu.sp = 0x1234
+    cpu._zero = True
+    cpu.step()
+    assert cpu.pc == 0x0003
+    assert cpu.sp == 0x1234
+    assert cpu._cycles == 10
+
+def test_call_nz_2(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xc4)    # CALL NZ, beef  Instruction Opcode
+    cpu._machine.write_memory_word(0x0001, 0xbeef)  # Subroutine address
+    cpu.sp = 0x1234
+    cpu._zero = False
+    cpu.step()
+    assert cpu.pc == 0xbeef
+    assert cpu.sp == 0x1232
+    assert cpu._machine.read_memory_word(0x1232) == 0x0003 # Return address
+    assert cpu._cycles == 17
+
+def test_call_z_1(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xcc)    # CALL Z, beef  Instruction Opcode
+    cpu._machine.write_memory_word(0x0001, 0xbeef)  # Subroutine address
+    cpu.sp = 0x1234
+    cpu._zero = False
+    cpu.step()
+    assert cpu.pc == 0x0003
+    assert cpu.sp == 0x1234
+    assert cpu._cycles == 10
+
+def test_call_z_2(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xcc)    # CALL Z, beef  Instruction Opcode
+    cpu._machine.write_memory_word(0x0001, 0xbeef)  # Subroutine address
+    cpu.sp = 0x1234
+    cpu._zero = True
+    cpu.step()
+    assert cpu.pc == 0xbeef
+    assert cpu.sp == 0x1232
+    assert cpu._machine.read_memory_word(0x1232) == 0x0003 # Return address
+    assert cpu._cycles == 17
+
+def test_call_nc_1(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xd4)    # CALL NC, beef  Instruction Opcode
+    cpu._machine.write_memory_word(0x0001, 0xbeef)  # Subroutine address
+    cpu.sp = 0x1234
+    cpu._carry = True
+    cpu.step()
+    assert cpu.pc == 0x0003
+    assert cpu.sp == 0x1234
+    assert cpu._cycles == 10
+
+def test_call_nc_2(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xd4)    # CALL NC, beef  Instruction Opcode
+    cpu._machine.write_memory_word(0x0001, 0xbeef)  # Subroutine address
+    cpu.sp = 0x1234
+    cpu._carry = False
+    cpu.step()
+    assert cpu.pc == 0xbeef
+    assert cpu.sp == 0x1232
+    assert cpu._machine.read_memory_word(0x1232) == 0x0003 # Return address
+    assert cpu._cycles == 17
+
+def test_call_c_1(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xdc)    # CALL C, beef  Instruction Opcode
+    cpu._machine.write_memory_word(0x0001, 0xbeef)  # Subroutine address
+    cpu.sp = 0x1234
+    cpu._carry = False
+    cpu.step()
+    assert cpu.pc == 0x0003
+    assert cpu.sp == 0x1234
+    assert cpu._cycles == 10
+
+def test_call_c_2(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xdc)    # CALL C, beef  Instruction Opcode
+    cpu._machine.write_memory_word(0x0001, 0xbeef)  # Subroutine address
+    cpu.sp = 0x1234
+    cpu._carry = True
+    cpu.step()
+    assert cpu.pc == 0xbeef
+    assert cpu.sp == 0x1232
+    assert cpu._machine.read_memory_word(0x1232) == 0x0003 # Return address
+    assert cpu._cycles == 17
+
+def test_call_po_1(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xe4)    # CALL PO, beef  Instruction Opcode
+    cpu._machine.write_memory_word(0x0001, 0xbeef)  # Subroutine address
+    cpu.sp = 0x1234
+    cpu._parity = True
+    cpu.step()
+    assert cpu.pc == 0x0003
+    assert cpu.sp == 0x1234
+    assert cpu._cycles == 10
+
+def test_call_po_2(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xe4)    # CALL PO, beef  Instruction Opcode
+    cpu._machine.write_memory_word(0x0001, 0xbeef)  # Subroutine address
+    cpu.sp = 0x1234
+    cpu._parity = False
+    cpu.step()
+    assert cpu.pc == 0xbeef
+    assert cpu.sp == 0x1232
+    assert cpu._machine.read_memory_word(0x1232) == 0x0003 # Return address
+    assert cpu._cycles == 17
+
+def test_call_pe_1(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xec)    # CALL PE, beef  Instruction Opcode
+    cpu._machine.write_memory_word(0x0001, 0xbeef)  # Subroutine address
+    cpu.sp = 0x1234
+    cpu._parity = False
+    cpu.step()
+    assert cpu.pc == 0x0003
+    assert cpu.sp == 0x1234
+    assert cpu._cycles == 10
+
+def test_call_pe_2(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xec)    # CALL PE, beef  Instruction Opcode
+    cpu._machine.write_memory_word(0x0001, 0xbeef)  # Subroutine address
+    cpu.sp = 0x1234
+    cpu._parity = True
+    cpu.step()
+    assert cpu.pc == 0xbeef
+    assert cpu.sp == 0x1232
+    assert cpu._machine.read_memory_word(0x1232) == 0x0003 # Return address
+    assert cpu._cycles == 17
+
+def test_call_p_1(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xf4)    # CALL P, beef  Instruction Opcode
+    cpu._machine.write_memory_word(0x0001, 0xbeef)  # Subroutine address
+    cpu.sp = 0x1234
+    cpu._sign = True
+    cpu.step()
+    assert cpu.pc == 0x0003
+    assert cpu.sp == 0x1234
+    assert cpu._cycles == 10
+
+def test_call_p_2(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xf4)    # CALL P, beef  Instruction Opcode
+    cpu._machine.write_memory_word(0x0001, 0xbeef)  # Subroutine address
+    cpu.sp = 0x1234
+    cpu._sign = False
+    cpu.step()
+    assert cpu.pc == 0xbeef
+    assert cpu.sp == 0x1232
+    assert cpu._machine.read_memory_word(0x1232) == 0x0003 # Return address
+    assert cpu._cycles == 17
+
+def test_call_m_1(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xfc)    # CALL M, beef  Instruction Opcode
+    cpu._machine.write_memory_word(0x0001, 0xbeef)  # Subroutine address
+    cpu.sp = 0x1234
+    cpu._sign = False
+    cpu.step()
+    assert cpu.pc == 0x0003
+    assert cpu.sp == 0x1234
+    assert cpu._cycles == 10
+
+def test_call_m_2(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xfc)    # CALL M, beef  Instruction Opcode
+    cpu._machine.write_memory_word(0x0001, 0xbeef)  # Subroutine address
+    cpu.sp = 0x1234
+    cpu._sign = True
+    cpu.step()
+    assert cpu.pc == 0xbeef
+    assert cpu.sp == 0x1232
+    assert cpu._machine.read_memory_word(0x1232) == 0x0003 # Return address
+    assert cpu._cycles == 17
+
+def test_ret_nz_1(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xc0)    # RET NZ  Instruction Opcode
+    cpu._machine.write_memory_word(0x1234, 0xbeef)  # Return address
+    cpu.sp = 0x1234
+    cpu._zero = True
+    cpu.step()
+    assert cpu.pc == 0x0001
+    assert cpu.sp == 0x1234
+    assert cpu._cycles == 5
+
+def test_ret_nz_2(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xc0)    # RET NZ  Instruction Opcode
+    cpu._machine.write_memory_word(0x1234, 0xbeef)  # Return address
+    cpu.sp = 0x1234
+    cpu._zero = False
+    cpu.step()
+    assert cpu.pc == 0xbeef
+    assert cpu.sp == 0x1236
+    assert cpu._cycles == 11
+
+def test_ret_z_1(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xc8)    # RET Z  Instruction Opcode
+    cpu._machine.write_memory_word(0x1234, 0xbeef)  # Return address
+    cpu.sp = 0x1234
+    cpu._zero = False
+    cpu.step()
+    assert cpu.pc == 0x0001
+    assert cpu.sp == 0x1234
+    assert cpu._cycles == 5
+
+def test_ret_z_2(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xc8)    # RET Z  Instruction Opcode
+    cpu._machine.write_memory_word(0x1234, 0xbeef)  # Return address
+    cpu.sp = 0x1234
+    cpu._zero = True
+    cpu.step()
+    assert cpu.pc == 0xbeef
+    assert cpu.sp == 0x1236
+    assert cpu._cycles == 11
+
+def test_ret_nc_1(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xd0)    # RET NC  Instruction Opcode
+    cpu._machine.write_memory_word(0x1234, 0xbeef)  # Return address
+    cpu.sp = 0x1234
+    cpu._carry = True
+    cpu.step()
+    assert cpu.pc == 0x0001
+    assert cpu.sp == 0x1234
+    assert cpu._cycles == 5
+
+def test_ret_nc_2(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xd0)    # RET NC  Instruction Opcode
+    cpu._machine.write_memory_word(0x1234, 0xbeef)  # Return address
+    cpu.sp = 0x1234
+    cpu._carry = False
+    cpu.step()
+    assert cpu.pc == 0xbeef
+    assert cpu.sp == 0x1236
+    assert cpu._cycles == 11
+
+def test_ret_c_1(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xd8)    # RET C  Instruction Opcode
+    cpu._machine.write_memory_word(0x1234, 0xbeef)  # Return address
+    cpu.sp = 0x1234
+    cpu._carry = False
+    cpu.step()
+    assert cpu.pc == 0x0001
+    assert cpu.sp == 0x1234
+    assert cpu._cycles == 5
+
+def test_ret_c_2(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xd8)    # RET C  Instruction Opcode
+    cpu._machine.write_memory_word(0x1234, 0xbeef)  # Return address
+    cpu.sp = 0x1234
+    cpu._carry = True
+    cpu.step()
+    assert cpu.pc == 0xbeef
+    assert cpu.sp == 0x1236
+    assert cpu._cycles == 11
+
+def test_ret_po_1(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xe0)    # RET PO  Instruction Opcode
+    cpu._machine.write_memory_word(0x1234, 0xbeef)  # Return address
+    cpu.sp = 0x1234
+    cpu._parity = True
+    cpu.step()
+    assert cpu.pc == 0x0001
+    assert cpu.sp == 0x1234
+    assert cpu._cycles == 5
+
+def test_ret_po_2(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xe0)    # RET PO  Instruction Opcode
+    cpu._machine.write_memory_word(0x1234, 0xbeef)  # Return address
+    cpu.sp = 0x1234
+    cpu._parity = False
+    cpu.step()
+    assert cpu.pc == 0xbeef
+    assert cpu.sp == 0x1236
+    assert cpu._cycles == 11
+
+def test_ret_pe_1(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xe8)    # RET PE  Instruction Opcode
+    cpu._machine.write_memory_word(0x1234, 0xbeef)  # Return address
+    cpu.sp = 0x1234
+    cpu._parity = False
+    cpu.step()
+    assert cpu.pc == 0x0001
+    assert cpu.sp == 0x1234
+    assert cpu._cycles == 5
+
+def test_ret_pe_2(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xe8)    # RET PE  Instruction Opcode
+    cpu._machine.write_memory_word(0x1234, 0xbeef)  # Return address
+    cpu.sp = 0x1234
+    cpu._parity = True
+    cpu.step()
+    assert cpu.pc == 0xbeef
+    assert cpu.sp == 0x1236
+    assert cpu._cycles == 11
+
+def test_ret_p_1(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xf0)    # RET P  Instruction Opcode
+    cpu._machine.write_memory_word(0x1234, 0xbeef)  # Return address
+    cpu.sp = 0x1234
+    cpu._sign = True
+    cpu.step()
+    assert cpu.pc == 0x0001
+    assert cpu.sp == 0x1234
+    assert cpu._cycles == 5
+
+def test_ret_p_2(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xf0)    # RET P  Instruction Opcode
+    cpu._machine.write_memory_word(0x1234, 0xbeef)  # Return address
+    cpu.sp = 0x1234
+    cpu._sign = False
+    cpu.step()
+    assert cpu.pc == 0xbeef
+    assert cpu.sp == 0x1236
+    assert cpu._cycles == 11
+
+def test_ret_m_1(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xf8)    # RET M  Instruction Opcode
+    cpu._machine.write_memory_word(0x1234, 0xbeef)  # Return address
+    cpu.sp = 0x1234
+    cpu._sign = False
+    cpu.step()
+    assert cpu.pc == 0x0001
+    assert cpu.sp == 0x1234
+    assert cpu._cycles == 5
+
+def test_ret_m_2(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xf8)    # RET M  Instruction Opcode
+    cpu._machine.write_memory_word(0x1234, 0xbeef)  # Return address
+    cpu.sp = 0x1234
+    cpu._sign = True
+    cpu.step()
+    assert cpu.pc == 0xbeef
+    assert cpu.sp == 0x1236
+    assert cpu._cycles == 11
 
 
 # ALU instructions tests

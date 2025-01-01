@@ -1048,12 +1048,14 @@ class CPU:
         self._pc = addr
         self._cycles += 10
 
+
     def _jp_hl(self):
         """ Jump to address in HL """
         self._log_3b_instruction(f"JP (HL)")
 
         self._pc = self.hl
         self._cycles += 4
+
 
     def _jr(self):
         """ Unconditional relative jump """
@@ -1063,6 +1065,7 @@ class CPU:
         self._pc += displacement
 
         self._cycles += 12
+
 
     def _jr_cond(self):
         """ Conditional relative jump """
@@ -1090,6 +1093,7 @@ class CPU:
         else:
             self._cycles += 7
 
+
     def _djnz(self):
         """ Decrease counter and jump if not zero """
         self._b = (self._b - 1) & 0xff
@@ -1104,6 +1108,7 @@ class CPU:
         else:
             self._cycles += 8
 
+
     def _call(self):
         """ Call a subroutine """
         addr = self._fetch_next_word()
@@ -1114,6 +1119,7 @@ class CPU:
         self._pc = addr
         self._cycles += 17
 
+
     def _ret(self):
         """ Return from a subroutine """
 
@@ -1122,6 +1128,69 @@ class CPU:
         self._pc = self._pop_from_stack()
         self._cycles += 10
 
+
+    def _check_condition(self, op):
+        """ Helper function to check condition on conditional JP, CALL, and RET """
+        if op == 0:
+            return not self._zero
+        if op == 1:
+            return self._zero
+        if op == 2:
+            return not self._carry
+        if op == 3:
+            return self._carry
+        if op == 4:
+            return not self._parity
+        if op == 5:
+            return self._parity
+        if op == 6:
+            return not self._sign
+        if op == 7:
+            return self._sign
+
+
+    def _jmp_cond(self):
+        """ Conditional jump """
+        addr = self._fetch_next_word()
+        op = (self._current_inst & 0x38) >> 3
+        op_symb = ["JP NZ", "JP Z", "JP NC", "JP C", "JP PO", "JP PE", "JP P", "JP M"][op]
+
+        self._log_3b_instruction(f"{op_symb}, {addr:04x}")
+
+        if self._check_condition(op):
+            self._pc = addr
+
+        self._cycles += 10
+
+
+    def _call_cond(self):
+        """ Conditional call """
+        addr = self._fetch_next_word()
+        op = (self._current_inst & 0x38) >> 3
+        op_symb = ["CALL NZ", "CALL Z", "CALL NC", "CALL C", "CALL PO", "CALL PE", "CALL P", "CALL M"][op]
+
+        self._log_3b_instruction(f"{op_symb}, {addr:04x}")
+
+        if self._check_condition(op):
+            self._push_to_stack(self._pc)
+            self._pc = addr
+            self._cycles += 17
+        else:
+            self._cycles += 10
+
+
+    def _ret_cond(self):
+        """ Conditional return """
+        op = (self._current_inst & 0x38) >> 3
+        op_symb = ["RET NZ", "RET Z", "RET NC", "RET C", "RET PO", "RET PE", "RET P", "RET M"][op]
+
+        self._log_1b_instruction(f"{op_symb}")
+
+        if self._check_condition(op):
+            self._pc = self._pop_from_stack()
+            self._cycles += 11
+        else:
+            self._cycles += 5
 
 
 
@@ -1642,70 +1711,70 @@ class CPU:
         self._instructions[0xbe] = self._alu                    # CP (HL)
         self._instructions[0xbf] = self._alu                    # CP A
 
-        self._instructions[0xc0] = None                         # RET NZ
+        self._instructions[0xc0] = self._ret_cond               # RET NZ
         self._instructions[0xc1] = None                         # POP BC
-        self._instructions[0xc2] = None                         # JP NZ, nn
+        self._instructions[0xc2] = self._jmp_cond               # JP NZ, nn
         self._instructions[0xc3] = self._jp                     # JP nn
-        self._instructions[0xc4] = None                         # CALL NZ, nn
+        self._instructions[0xc4] = self._call_cond              # CALL NZ, nn
         self._instructions[0xc5] = None                         # PUSH BC
         self._instructions[0xc6] = self._alu_immediate          # ADD A, n
         self._instructions[0xc7] = None                         # RST 00
-        self._instructions[0xc8] = None                         # RET Z
+        self._instructions[0xc8] = self._ret_cond               # RET Z
         self._instructions[0xc9] = self._ret                    # RET
-        self._instructions[0xca] = None                         # JP Z, nn
+        self._instructions[0xca] = self._jmp_cond               # JP Z, nn
         self._instructions[0xcb] = None                         # Bit instruction set
-        self._instructions[0xcc] = None                         # CALL Z, nn
+        self._instructions[0xcc] = self._call_cond              # CALL Z, nn
         self._instructions[0xcd] = self._call                   # CALL nn
         self._instructions[0xce] = self._alu_immediate          # ADC A, n
         self._instructions[0xcf] = None                         # RST 08
 
-        self._instructions[0xd0] = None                         # RET NC
+        self._instructions[0xd0] = self._ret_cond               # RET NC
         self._instructions[0xd1] = None                         # POP DE
-        self._instructions[0xd2] = None                         # JP NC, nn
+        self._instructions[0xd2] = self._jmp_cond               # JP NC, nn
         self._instructions[0xd3] = self._out                    # OUT (n), A
-        self._instructions[0xd4] = None                         # CALL NC, nn
+        self._instructions[0xd4] = self._call_cond              # CALL NC, nn
         self._instructions[0xd5] = None                         # PUSH DE
         self._instructions[0xd6] = self._alu_immediate          # SUB n
         self._instructions[0xd7] = None                         # RST 10
-        self._instructions[0xd8] = None                         # RET C
+        self._instructions[0xd8] = self._ret_cond               # RET C
         self._instructions[0xd9] = self._exchange_register_set  # EXX
-        self._instructions[0xda] = None                         # JP C, nn
+        self._instructions[0xda] = self._jmp_cond               # JP C, nn
         self._instructions[0xdb] = self._in                     # IN A, (n)
-        self._instructions[0xdc] = None                         # CALL C, nn
+        self._instructions[0xdc] = self._call_cond              # CALL C, nn
         self._instructions[0xdd] = None                         # IX instructions set
         self._instructions[0xde] = self._alu_immediate          # SBC A, n
         self._instructions[0xdf] = None                         # RST 18
 
-        self._instructions[0xe0] = None                         # RET PO
+        self._instructions[0xe0] = self._ret_cond               # RET PO
         self._instructions[0xe1] = None                         # POP HL
-        self._instructions[0xe2] = None                         # JP PO, nn
+        self._instructions[0xe2] = self._jmp_cond               # JP PO, nn
         self._instructions[0xe3] = self._exchange_hl_stack      # EX (SP), HL
-        self._instructions[0xe4] = None                         # CALL PO, nn
+        self._instructions[0xe4] = self._call_cond              # CALL PO, nn
         self._instructions[0xe5] = None                         # PUSH HL
         self._instructions[0xe6] = self._alu_immediate          # AND n
         self._instructions[0xe7] = None                         # RST 20
-        self._instructions[0xe8] = None                         # RET PE
+        self._instructions[0xe8] = self._ret_cond               # RET PE
         self._instructions[0xe9] = self._jp_hl                  # JP (HL)
-        self._instructions[0xea] = None                         # JP PE, nn
+        self._instructions[0xea] = self._jmp_cond               # JP PE, nn
         self._instructions[0xeb] = self._exchange_de_hl         # EX DE, HL
-        self._instructions[0xec] = None                         # CALL PE, nn
+        self._instructions[0xec] = self._call_cond              # CALL PE, nn
         self._instructions[0xed] = None                         # Advanced instruction set
         self._instructions[0xee] = self._alu_immediate          # XOR n
         self._instructions[0xef] = None                         # RST 28
 
-        self._instructions[0xf0] = None                         # RET P
+        self._instructions[0xf0] = self._ret_cond               # RET P
         self._instructions[0xf1] = None                         # POP AF
-        self._instructions[0xf2] = None                         # JP P, nn
+        self._instructions[0xf2] = self._jmp_cond               # JP P, nn
         self._instructions[0xf3] = self._di                     # DI
-        self._instructions[0xf4] = None                         # CALL P, nn
+        self._instructions[0xf4] = self._call_cond              # CALL P, nn
         self._instructions[0xf5] = None                         # PUSH AF
         self._instructions[0xf6] = self._alu_immediate          # OR n
         self._instructions[0xf7] = None                         # RST 30
-        self._instructions[0xf8] = None                         # RET M
+        self._instructions[0xf8] = self._ret_cond               # RET M
         self._instructions[0xf9] = self._ld_sp_hl               # LD SP, HL
-        self._instructions[0xfa] = None                         # JP M, nn
+        self._instructions[0xfa] = self._jmp_cond               # JP M, nn
         self._instructions[0xfb] = self._ei                     # EI
-        self._instructions[0xfc] = None                         # CALL M, nn
+        self._instructions[0xfc] = self._call_cond              # CALL M, nn
         self._instructions[0xfd] = None                         # IY instruction set
         self._instructions[0xfe] = self._alu_immediate          # CP n
         self._instructions[0xff] = None                         # RST 38
