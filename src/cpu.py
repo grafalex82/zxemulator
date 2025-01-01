@@ -1521,6 +1521,54 @@ class CPU:
 
         self._log_1b_instruction(f"SBC HL, {self._reg_pair_symb(reg_pair)}")
 
+    # Rotate and shift instructions
+
+    def _rlca(self):
+        """ Rotate accumulator left """
+        self._carry = is_bit_set(self._a, 7)
+        self._a = ((self._a << 1) & 0xff) | (self._a >> 7)
+        self._half_carry = False
+        self._add_subtract = False
+
+        self._cycles += 4
+
+        self._log_1b_instruction(f"RLCA")
+
+
+    def _rrca(self):
+        """ Rotate accumulator right """
+        self._carry = is_bit_set(self._a, 0)
+        self._a = ((self._a >> 1) & 0xff) | ((self._a << 7) & 0xff)
+        self._half_carry = False
+        self._add_subtract = False
+
+        self._cycles += 4
+
+        self._log_1b_instruction(f"RRCA")
+
+
+    def _rla(self):
+        """ Rotate accumulator left through carry """
+        temp = self._a
+        self._a = (self._a << 1) & 0xff
+        if self._carry: self._a = set_bit(self._a, 0)
+        self._carry = is_bit_set(temp, 7)
+        self._cycles += 4
+
+        self._log_1b_instruction(f"RLA")
+
+
+    def _rra(self):
+        """ Rotate accumulator right through carry """
+        temp = self._a
+        self._a >>= 1
+        if self._carry: self._a = set_bit(self._a, 7)
+        self._carry = is_bit_set(temp, 0)
+        self._cycles += 4
+
+        self._log_1b_instruction(f"RRA")
+    
+
 
     # Bit instructions
 
@@ -1607,7 +1655,7 @@ class CPU:
         self._instructions[0x04] = self._inc_reg8               # INC B
         self._instructions[0x05] = self._dec_reg8               # DEC B
         self._instructions[0x06] = self._load_reg8_immediate    # LD B, n
-        self._instructions[0x07] = None                         # RLCA
+        self._instructions[0x07] = self._rlca                   # RLCA
         self._instructions[0x08] = self._exchange_af_afx        # EX AF, AF'
         self._instructions[0x09] = self._add_hl                 # ADD HL, BC
         self._instructions[0x0a] = None                         # LD A, (BC)
@@ -1615,7 +1663,7 @@ class CPU:
         self._instructions[0x0c] = self._inc_reg8               # INC C
         self._instructions[0x0d] = self._dec_reg8               # DEC C
         self._instructions[0x0e] = self._load_reg8_immediate    # LD C, n
-        self._instructions[0x0f] = None                         # RRCA
+        self._instructions[0x0f] = self._rrca                   # RRCA
 
         self._instructions[0x10] = self._djnz                   # DJNZ d
         self._instructions[0x11] = self._load_immediate_16b     # LD DE, nn
@@ -1624,7 +1672,7 @@ class CPU:
         self._instructions[0x14] = self._inc_reg8               # INC D
         self._instructions[0x15] = self._dec_reg8               # DEC D
         self._instructions[0x16] = self._load_reg8_immediate    # LD D, n
-        self._instructions[0x17] = None                         # RLA
+        self._instructions[0x17] = self._rla                    # RLA
         self._instructions[0x18] = self._jr                     # JR d
         self._instructions[0x19] = self._add_hl                 # ADD HL, DE
         self._instructions[0x1a] = None                         # LD A, (DE)
@@ -1632,7 +1680,7 @@ class CPU:
         self._instructions[0x1c] = self._inc_reg8               # INC E
         self._instructions[0x1d] = self._dec_reg8               # DEC E
         self._instructions[0x1e] = self._load_reg8_immediate    # LD E, n
-        self._instructions[0x1f] = None                         # RRA
+        self._instructions[0x1f] = self._rra                    # RRA
 
         self._instructions[0x20] = self._jr_cond                # JR NZ, d
         self._instructions[0x21] = self._load_immediate_16b     # LD HL, nn
