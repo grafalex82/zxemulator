@@ -1193,6 +1193,15 @@ class CPU:
             self._cycles += 5
 
 
+    def _rst(self):
+        """ Restart (special subroutine call) """
+        rst_addr = self._current_inst & 0x38
+        self._log_1b_instruction(f"RST {rst_addr:02x}")
+
+        self._push_to_stack(self._pc)
+        self._pc = rst_addr
+        self._cycles += 11
+
 
     # ALU instructions
 
@@ -1718,7 +1727,7 @@ class CPU:
         self._instructions[0xc4] = self._call_cond              # CALL NZ, nn
         self._instructions[0xc5] = None                         # PUSH BC
         self._instructions[0xc6] = self._alu_immediate          # ADD A, n
-        self._instructions[0xc7] = None                         # RST 00
+        self._instructions[0xc7] = self._rst                    # RST 00
         self._instructions[0xc8] = self._ret_cond               # RET Z
         self._instructions[0xc9] = self._ret                    # RET
         self._instructions[0xca] = self._jmp_cond               # JP Z, nn
@@ -1726,7 +1735,7 @@ class CPU:
         self._instructions[0xcc] = self._call_cond              # CALL Z, nn
         self._instructions[0xcd] = self._call                   # CALL nn
         self._instructions[0xce] = self._alu_immediate          # ADC A, n
-        self._instructions[0xcf] = None                         # RST 08
+        self._instructions[0xcf] = self._rst                    # RST 08
 
         self._instructions[0xd0] = self._ret_cond               # RET NC
         self._instructions[0xd1] = None                         # POP DE
@@ -1735,7 +1744,7 @@ class CPU:
         self._instructions[0xd4] = self._call_cond              # CALL NC, nn
         self._instructions[0xd5] = None                         # PUSH DE
         self._instructions[0xd6] = self._alu_immediate          # SUB n
-        self._instructions[0xd7] = None                         # RST 10
+        self._instructions[0xd7] = self._rst                    # RST 10
         self._instructions[0xd8] = self._ret_cond               # RET C
         self._instructions[0xd9] = self._exchange_register_set  # EXX
         self._instructions[0xda] = self._jmp_cond               # JP C, nn
@@ -1743,7 +1752,7 @@ class CPU:
         self._instructions[0xdc] = self._call_cond              # CALL C, nn
         self._instructions[0xdd] = None                         # IX instructions set
         self._instructions[0xde] = self._alu_immediate          # SBC A, n
-        self._instructions[0xdf] = None                         # RST 18
+        self._instructions[0xdf] = self._rst                    # RST 18
 
         self._instructions[0xe0] = self._ret_cond               # RET PO
         self._instructions[0xe1] = None                         # POP HL
@@ -1752,7 +1761,7 @@ class CPU:
         self._instructions[0xe4] = self._call_cond              # CALL PO, nn
         self._instructions[0xe5] = None                         # PUSH HL
         self._instructions[0xe6] = self._alu_immediate          # AND n
-        self._instructions[0xe7] = None                         # RST 20
+        self._instructions[0xe7] = self._rst                    # RST 20
         self._instructions[0xe8] = self._ret_cond               # RET PE
         self._instructions[0xe9] = self._jp_hl                  # JP (HL)
         self._instructions[0xea] = self._jmp_cond               # JP PE, nn
@@ -1760,7 +1769,7 @@ class CPU:
         self._instructions[0xec] = self._call_cond              # CALL PE, nn
         self._instructions[0xed] = None                         # Advanced instruction set
         self._instructions[0xee] = self._alu_immediate          # XOR n
-        self._instructions[0xef] = None                         # RST 28
+        self._instructions[0xef] = self._rst                    # RST 28
 
         self._instructions[0xf0] = self._ret_cond               # RET P
         self._instructions[0xf1] = None                         # POP AF
@@ -1769,7 +1778,7 @@ class CPU:
         self._instructions[0xf4] = self._call_cond              # CALL P, nn
         self._instructions[0xf5] = None                         # PUSH AF
         self._instructions[0xf6] = self._alu_immediate          # OR n
-        self._instructions[0xf7] = None                         # RST 30
+        self._instructions[0xf7] = self._rst                    # RST 30
         self._instructions[0xf8] = self._ret_cond               # RET M
         self._instructions[0xf9] = self._ld_sp_hl               # LD SP, HL
         self._instructions[0xfa] = self._jmp_cond               # JP M, nn
@@ -1777,7 +1786,7 @@ class CPU:
         self._instructions[0xfc] = self._call_cond              # CALL M, nn
         self._instructions[0xfd] = None                         # IY instruction set
         self._instructions[0xfe] = self._alu_immediate          # CP n
-        self._instructions[0xff] = None                         # RST 38
+        self._instructions[0xff] = self._rst                    # RST 38
 
 
     def _init_ed_instruction_table(self):
