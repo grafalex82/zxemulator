@@ -1350,6 +1350,28 @@ class CPU:
         self._log_2b_instruction(f"{op_name} {value:02x}")
 
 
+    def _alu_mem_indexed(self):
+        """ Perform ALU operation between accumulator and memory indexed by IX/IY register
+            - ADD - add a memory value to the accumulator
+            - ADC - add a memory value to the accumulator with carry
+            - SUB - subtract a memory value from the accumulator
+            - SBC - subtract a memory value from the accumulator with carry
+            - AND - logical AND a memory value with the accumulator
+            - XOR - logical XOR a memory value with the accumulator
+            - OR  - logical OR a memory value with the accumulator
+            - CP  - compare a memory value with the accumulator (set flags, but not change accumulator)
+        """
+        op = (self._current_inst & 0x38) >> 3
+        op_name = ["ADD A,", "ADC A,", "SUB", "SBC A,", "AND", "XOR", "OR", "CP"][op]
+        addr = self._get_index_reg() + self._fetch_displacement()
+        value = self._machine.read_memory_byte(addr)
+
+        self._alu_op(op, value)
+        self._cycles += 19
+
+        self._log_2b_instruction(f"{op_name} ({self._get_index_reg_symb()}{self._displacement:+03x})")
+        
+
     def _inc_8bit_value(self, value):
         """ Increment a 8-bit value and update flags """
         value = (value + 1) & 0xff
@@ -2554,7 +2576,7 @@ class CPU:
         self._instructions_0xdd[0x83] = None
         self._instructions_0xdd[0x84] = None
         self._instructions_0xdd[0x85] = None
-        self._instructions_0xdd[0x86] = None
+        self._instructions_0xdd[0x86] = self._alu_mem_indexed
         self._instructions_0xdd[0x87] = None
         self._instructions_0xdd[0x88] = None
         self._instructions_0xdd[0x89] = None
@@ -2562,7 +2584,7 @@ class CPU:
         self._instructions_0xdd[0x8b] = None
         self._instructions_0xdd[0x8c] = None
         self._instructions_0xdd[0x8d] = None
-        self._instructions_0xdd[0x8e] = None
+        self._instructions_0xdd[0x8e] = self._alu_mem_indexed
         self._instructions_0xdd[0x8f] = None
 
         self._instructions_0xdd[0x90] = None
@@ -2571,7 +2593,7 @@ class CPU:
         self._instructions_0xdd[0x93] = None
         self._instructions_0xdd[0x94] = None
         self._instructions_0xdd[0x95] = None
-        self._instructions_0xdd[0x96] = None
+        self._instructions_0xdd[0x96] = self._alu_mem_indexed
         self._instructions_0xdd[0x97] = None
         self._instructions_0xdd[0x98] = None
         self._instructions_0xdd[0x99] = None
@@ -2579,7 +2601,7 @@ class CPU:
         self._instructions_0xdd[0x9b] = None
         self._instructions_0xdd[0x9c] = None
         self._instructions_0xdd[0x9d] = None
-        self._instructions_0xdd[0x9e] = None
+        self._instructions_0xdd[0x9e] = self._alu_mem_indexed
         self._instructions_0xdd[0x9f] = None
 
         self._instructions_0xdd[0xa0] = None
@@ -2588,7 +2610,7 @@ class CPU:
         self._instructions_0xdd[0xa3] = None
         self._instructions_0xdd[0xa4] = None
         self._instructions_0xdd[0xa5] = None
-        self._instructions_0xdd[0xa6] = None
+        self._instructions_0xdd[0xa6] = self._alu_mem_indexed
         self._instructions_0xdd[0xa7] = None
         self._instructions_0xdd[0xa8] = None
         self._instructions_0xdd[0xa9] = None
@@ -2596,7 +2618,7 @@ class CPU:
         self._instructions_0xdd[0xab] = None
         self._instructions_0xdd[0xac] = None
         self._instructions_0xdd[0xad] = None
-        self._instructions_0xdd[0xae] = None
+        self._instructions_0xdd[0xae] = self._alu_mem_indexed
         self._instructions_0xdd[0xaf] = None
 
         self._instructions_0xdd[0xb0] = None
@@ -2605,7 +2627,7 @@ class CPU:
         self._instructions_0xdd[0xb3] = None
         self._instructions_0xdd[0xb4] = None
         self._instructions_0xdd[0xb5] = None
-        self._instructions_0xdd[0xb6] = None
+        self._instructions_0xdd[0xb6] = self._alu_mem_indexed
         self._instructions_0xdd[0xb7] = None
         self._instructions_0xdd[0xb8] = None
         self._instructions_0xdd[0xb9] = None
@@ -2613,7 +2635,7 @@ class CPU:
         self._instructions_0xdd[0xbb] = None
         self._instructions_0xdd[0xbc] = None
         self._instructions_0xdd[0xbd] = None
-        self._instructions_0xdd[0xbe] = None
+        self._instructions_0xdd[0xbe] = self._alu_mem_indexed
         self._instructions_0xdd[0xbf] = None
 
         self._instructions_0xdd[0xc0] = None
@@ -3110,7 +3132,7 @@ class CPU:
         self._instructions_0xfd[0x83] = None
         self._instructions_0xfd[0x84] = None
         self._instructions_0xfd[0x85] = None
-        self._instructions_0xfd[0x86] = None
+        self._instructions_0xfd[0x86] = self._alu_mem_indexed
         self._instructions_0xfd[0x87] = None
         self._instructions_0xfd[0x88] = None
         self._instructions_0xfd[0x89] = None
@@ -3118,7 +3140,7 @@ class CPU:
         self._instructions_0xfd[0x8b] = None
         self._instructions_0xfd[0x8c] = None
         self._instructions_0xfd[0x8d] = None
-        self._instructions_0xfd[0x8e] = None
+        self._instructions_0xfd[0x8e] = self._alu_mem_indexed
         self._instructions_0xfd[0x8f] = None
 
         self._instructions_0xfd[0x90] = None
@@ -3127,7 +3149,7 @@ class CPU:
         self._instructions_0xfd[0x93] = None
         self._instructions_0xfd[0x94] = None
         self._instructions_0xfd[0x95] = None
-        self._instructions_0xfd[0x96] = None
+        self._instructions_0xfd[0x96] = self._alu_mem_indexed
         self._instructions_0xfd[0x97] = None
         self._instructions_0xfd[0x98] = None
         self._instructions_0xfd[0x99] = None
@@ -3135,7 +3157,7 @@ class CPU:
         self._instructions_0xfd[0x9b] = None
         self._instructions_0xfd[0x9c] = None
         self._instructions_0xfd[0x9d] = None
-        self._instructions_0xfd[0x9e] = None
+        self._instructions_0xfd[0x9e] = self._alu_mem_indexed
         self._instructions_0xfd[0x9f] = None
 
         self._instructions_0xfd[0xa0] = None
@@ -3144,7 +3166,7 @@ class CPU:
         self._instructions_0xfd[0xa3] = None
         self._instructions_0xfd[0xa4] = None
         self._instructions_0xfd[0xa5] = None
-        self._instructions_0xfd[0xa6] = None
+        self._instructions_0xfd[0xa6] = self._alu_mem_indexed
         self._instructions_0xfd[0xa7] = None
         self._instructions_0xfd[0xa8] = None
         self._instructions_0xfd[0xa9] = None
@@ -3152,7 +3174,7 @@ class CPU:
         self._instructions_0xfd[0xab] = None
         self._instructions_0xfd[0xac] = None
         self._instructions_0xfd[0xad] = None
-        self._instructions_0xfd[0xae] = None
+        self._instructions_0xfd[0xae] = self._alu_mem_indexed
         self._instructions_0xfd[0xaf] = None
 
         self._instructions_0xfd[0xb0] = None
@@ -3161,7 +3183,7 @@ class CPU:
         self._instructions_0xfd[0xb3] = None
         self._instructions_0xfd[0xb4] = None
         self._instructions_0xfd[0xb5] = None
-        self._instructions_0xfd[0xb6] = None
+        self._instructions_0xfd[0xb6] = self._alu_mem_indexed
         self._instructions_0xfd[0xb7] = None
         self._instructions_0xfd[0xb8] = None
         self._instructions_0xfd[0xb9] = None
@@ -3169,7 +3191,7 @@ class CPU:
         self._instructions_0xfd[0xbb] = None
         self._instructions_0xfd[0xbc] = None
         self._instructions_0xfd[0xbd] = None
-        self._instructions_0xfd[0xbe] = None
+        self._instructions_0xfd[0xbe] = self._alu_mem_indexed
         self._instructions_0xfd[0xbf] = None
 
         self._instructions_0xfd[0xc0] = None

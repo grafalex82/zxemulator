@@ -1747,6 +1747,303 @@ def test_cmp_zero(cpu):
     assert cpu.carry == False
     assert cpu.half_carry == True
 
+def test_add_indexed_ix(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xdd)    # ADD A, (IX + 5) Instruction Opcode
+    cpu._machine.write_memory_byte(0x0001, 0x86)    
+    cpu._machine.write_memory_byte(0x0002, 0x05)    # Offset
+    cpu._machine.write_memory_byte(0x1234 + 0x05, 0x14)    # Operand at IX + 5
+
+    cpu.a = 0x1c
+    cpu.ix = 0x1234
+    cpu.step()
+
+    assert cpu.a == 0x30        # Adding 2 positive integers resulting a positive number
+    assert cpu._cycles == 19
+    assert cpu.zero == False
+    assert cpu.sign == False
+    assert cpu.overflow == False
+    assert cpu.carry == False
+    assert cpu.half_carry == True
+
+def test_add_indexed_iy(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xfd)    # ADD A, (IY - 5) Instruction Opcode
+    cpu._machine.write_memory_byte(0x0001, 0x86)    
+    cpu._machine.write_memory_byte(0x0002, 0xfb)    # Offset
+    cpu._machine.write_memory_byte(0x1234 - 0x05, 0xcd)    # Operand at IX + 5
+
+    cpu.a = 0xab
+    cpu.iy = 0x1234
+    cpu.step()
+
+    assert cpu.a == 0x78        # Adding 2 positive integers resulting a positive number
+    assert cpu._cycles == 19
+    assert cpu.zero == False
+    assert cpu.sign == False
+    assert cpu.overflow == True
+    assert cpu.carry == True
+    assert cpu.half_carry == True
+
+def test_adc_indexed_ix(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xdd)    # ADC A, (IX - 5) Instruction Opcode
+    cpu._machine.write_memory_byte(0x0001, 0x8e)    
+    cpu._machine.write_memory_byte(0x0002, 0xfb)    # Offset
+    cpu._machine.write_memory_byte(0x1234 - 0x05, 0xab)    # Operand at IX + 5
+
+    cpu.a = 0x54
+    cpu.ix = 0x1234
+    cpu.carry = True
+    cpu.step()
+
+    assert cpu.a == 0x00        # Adding positive and negative integers resulting a zero
+    assert cpu._cycles == 19
+    assert cpu.zero == True
+    assert cpu.sign == False
+    assert cpu.overflow == False
+    assert cpu.carry == True
+    assert cpu.half_carry == True
+
+def test_adc_indexed_iy(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xfd)    # ADC A, (IY + 5) Instruction Opcode
+    cpu._machine.write_memory_byte(0x0001, 0x8e)    
+    cpu._machine.write_memory_byte(0x0002, 0x05)    # Offset
+    cpu._machine.write_memory_byte(0x1234 + 0x05, 0xcd)    # Operand at IX + 5
+
+    cpu.a = 0xab
+    cpu.iy = 0x1234
+    cpu.carry = True
+    cpu.step()
+
+    assert cpu.a == 0x79        # Adding 2 negative integers resulting an overflow
+    assert cpu._cycles == 19
+    assert cpu.zero == False
+    assert cpu.sign == False
+    assert cpu.overflow == True
+    assert cpu.carry == True
+    assert cpu.half_carry == True
+ 
+def test_sub_indexed_ix(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xdd)    # SUB A, (IX + 5) Instruction Opcode
+    cpu._machine.write_memory_byte(0x0001, 0x96)    
+    cpu._machine.write_memory_byte(0x0002, 0x05)    # Offset
+    cpu._machine.write_memory_byte(0x1234 + 0x05, 0x42)    # Operand at IX + 5
+
+    cpu.a = 0x56
+    cpu.ix = 0x1234
+    cpu.step()
+
+    assert cpu.a == 0x14
+    assert cpu._cycles == 19
+    assert cpu.zero == False
+    assert cpu.sign == False
+    assert cpu.overflow == False
+    assert cpu.carry == False
+    assert cpu.half_carry == True
+
+def test_sub_indexed_iy(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xfd)    # SUB A, (IY - 5) Instruction Opcode
+    cpu._machine.write_memory_byte(0x0001, 0x96)    
+    cpu._machine.write_memory_byte(0x0002, 0xfb)    # Offset
+    cpu._machine.write_memory_byte(0x1234 - 0x05, 0x42)    # Operand at IY - 5
+
+    cpu.a = 0x42
+    cpu.iy = 0x1234
+    cpu.step()
+
+    assert cpu.a == 0x00
+    assert cpu._cycles == 19
+    assert cpu.zero == True
+    assert cpu.sign == False
+    assert cpu.overflow == False
+    assert cpu.carry == False
+    assert cpu.half_carry == True
+
+def test_sbc_indexed_ix(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xdd)    # SBC A, (IX - 5) Instruction Opcode
+    cpu._machine.write_memory_byte(0x0001, 0x9e)    
+    cpu._machine.write_memory_byte(0x0002, 0xfb)    # Offset
+    cpu._machine.write_memory_byte(0x1234 - 0x05, 0x24)    # Operand at IX - 5
+
+    cpu.a = 0xbc
+    cpu.ix = 0x1234
+    cpu.carry = True
+    cpu.step()
+
+    assert cpu.a == 0x97        # Subtracting positive and negative integers resulting no overflow
+    assert cpu._cycles == 19
+    assert cpu.zero == False
+    assert cpu.sign == True
+    assert cpu.overflow == False
+    assert cpu.carry == False
+    assert cpu.half_carry == True
+
+def test_sbc_indexed_iy(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xfd)    # SBC A, (IY + 5) Instruction Opcode
+    cpu._machine.write_memory_byte(0x0001, 0x9e)    
+    cpu._machine.write_memory_byte(0x0002, 0x05)    # Offset
+    cpu._machine.write_memory_byte(0x1234 + 0x05, 0x42)    # Operand at IY + 5
+
+    cpu.a = 0xbc
+    cpu.iy = 0x1234
+    cpu.carry = True
+    cpu.step()
+
+    assert cpu.a == 0x79        # Subtracting positive from negative may result an overflow
+    assert cpu._cycles == 19
+    assert cpu.zero == False
+    assert cpu.sign == False
+    assert cpu.overflow == True
+    assert cpu.carry == False
+    assert cpu.half_carry == True
+
+def test_and_indexed_ix(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xdd)    # AND (IX + 5) Instruction Opcode
+    cpu._machine.write_memory_byte(0x0001, 0xa6)    
+    cpu._machine.write_memory_byte(0x0002, 0x05)    # Offset
+    cpu._machine.write_memory_byte(0x1234 + 0x05, 0x0f)    # Operand at IX + 5
+
+    cpu.a = 0xfc
+    cpu.ix = 0x1234
+    cpu.step()
+
+    assert cpu.a == 0x0c
+    assert cpu._cycles == 19
+    assert cpu.zero == False
+    assert cpu.sign == False
+    assert cpu.parity == True
+    assert cpu.carry == False
+    assert cpu.half_carry == False
+
+def test_and_indexed_iy(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xfd)    # AND (IY - 5) Instruction Opcode
+    cpu._machine.write_memory_byte(0x0001, 0xa6)    
+    cpu._machine.write_memory_byte(0x0002, 0xfb)    # Offset
+    cpu._machine.write_memory_byte(0x1234 - 0x05, 0x14)    # Operand at IY - 5
+
+    cpu.a = 0x73
+    cpu.iy = 0x1234
+    cpu.step()
+
+    assert cpu.a == 0x10
+    assert cpu._cycles == 19
+    assert cpu.zero == False
+    assert cpu.sign == False
+    assert cpu.parity == False
+    assert cpu.carry == False
+    assert cpu.half_carry == False
+
+def test_xor_indexed_ix(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xdd)    # XOR (IX - 5) Instruction Opcode
+    cpu._machine.write_memory_byte(0x0001, 0xae)    
+    cpu._machine.write_memory_byte(0x0002, 0xfb)    # Offset
+    cpu._machine.write_memory_byte(0x1234 - 0x05, 0x78)    # Operand at IX - 5
+
+    cpu.a = 0x5c
+    cpu.ix = 0x1234
+    cpu.carry = True
+    cpu.step()
+
+    assert cpu.a == 0x24
+    assert cpu._cycles == 19
+    assert cpu.zero == False
+    assert cpu.sign == False
+    assert cpu.parity == True
+    assert cpu.carry == False
+    assert cpu.half_carry == False
+
+def test_xor_indexed_iy(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xfd)    # XOR (IY + 5) Instruction Opcode
+    cpu._machine.write_memory_byte(0x0001, 0xae)
+    cpu._machine.write_memory_byte(0x0002, 0x05)    # Offset
+    cpu._machine.write_memory_byte(0x1234 + 0x05, 0x42)    # Operand at IY + 5
+
+    cpu.a = 0x42
+    cpu.iy = 0x1234
+    cpu.carry = True
+    cpu.step()
+
+    assert cpu.a == 0x00
+    assert cpu._cycles == 19
+    assert cpu.zero == True
+    assert cpu.sign == False
+    assert cpu.parity == True
+    assert cpu.carry == False
+    assert cpu.half_carry == False
+
+def test_or_indexed_ix(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xdd)    # OR (IX + 5) Instruction Opcode
+    cpu._machine.write_memory_byte(0x0001, 0xb6)    
+    cpu._machine.write_memory_byte(0x0002, 0x05)    # Offset
+    cpu._machine.write_memory_byte(0x1234 + 0x05, 0x0f)    # Operand at IX + 5
+
+    cpu.a = 0x33
+    cpu.ix = 0x1234
+    cpu.step()
+
+    assert cpu.a == 0x3f
+    assert cpu._cycles == 19
+    assert cpu.zero == False
+    assert cpu.sign == False
+    assert cpu.parity == True
+    assert cpu.carry == False
+    assert cpu.half_carry == False
+
+def test_or_indexed_iy(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xfd)    # OR (IY - 5) Instruction Opcode
+    cpu._machine.write_memory_byte(0x0001, 0xb6)    
+    cpu._machine.write_memory_byte(0x0002, 0xfb)    # Offset
+    cpu._machine.write_memory_byte(0x1234 - 0x05, 0x55)    # Operand at IY - 5
+
+    cpu.a = 0xaa
+    cpu.iy = 0x1234
+    cpu.step()
+
+    assert cpu.a == 0xff
+    assert cpu._cycles == 19
+    assert cpu.zero == False
+    assert cpu.sign == True
+    assert cpu.parity == True
+    assert cpu.carry == False
+    assert cpu.half_carry == False
+
+def test_cp_indexed_ix(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xdd)    # CP (IX - 5) Instruction Opcode
+    cpu._machine.write_memory_byte(0x0001, 0xbe)    
+    cpu._machine.write_memory_byte(0x0002, 0xfb)    # Offset
+    cpu._machine.write_memory_byte(0x1234 - 0x05, 0x42)    # Operand at IX - 5
+
+    cpu.a = 0x43
+    cpu.ix = 0x1234
+    cpu.carry = True
+    cpu.step()
+
+    assert cpu.a == 0x43    # Does not change
+    assert cpu._cycles == 19
+    assert cpu.zero == False
+    assert cpu.sign == False
+    assert cpu.overflow == False
+    assert cpu.carry == False
+    assert cpu.half_carry == True
+
+def test_cp_indexed_iy(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xfd)    # CP (IY + 5) Instruction Opcode
+    cpu._machine.write_memory_byte(0x0001, 0xbe)
+    cpu._machine.write_memory_byte(0x0002, 0x05)    # Offset
+    cpu._machine.write_memory_byte(0x1234 + 0x05, 0x42)    # Operand at IY + 5
+
+    cpu.a = 0x42
+    cpu.iy = 0x1234
+    cpu.carry = True
+    cpu.step()
+
+    assert cpu.a == 0x42
+    assert cpu._cycles == 19
+    assert cpu.zero == True         # Operands are equal
+    assert cpu.sign == False
+    assert cpu.overflow == False
+    assert cpu.carry == False
+    assert cpu.half_carry == True
+
+
 def test_dec_a(cpu):
     cpu._machine.write_memory_byte(0x0000, 0x3d)    # DEC A Instruction Opcode
     cpu.a = 0x42
