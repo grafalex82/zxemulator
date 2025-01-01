@@ -66,7 +66,7 @@ def test_reset_values(cpu):
 
 def test_machine_reset(cpu):
     # This is actually a Machine test, but it is more convenient to do it here
-    cpu._machine.write_memory_byte(0x0000, 0x00)    # NOP Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0x00)    # NOP
     cpu.step()
     cpu._machine.reset()
     assert cpu.pc == 0x0000
@@ -76,15 +76,15 @@ def test_machine_reset(cpu):
 # CPU Control instructions tests
 
 def test_nop(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0x00)    # NOP Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0x00)    # NOP
     cpu.step()
     assert cpu.pc == 0x0001
     assert cpu._cycles == 4
 
 
 def test_ei_di(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xfb)    # EI Instruction Opcode
-    cpu._machine.write_memory_byte(0x0001, 0xf3)    # DI Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xfb)    # EI
+    cpu._machine.write_memory_byte(0x0001, 0xf3)    # DI
     
     cpu.step() # EI
     assert cpu.iff1 == True
@@ -97,21 +97,21 @@ def test_ei_di(cpu):
     assert cpu._cycles == 8     # 4 more cycles
 
 def test_im_0(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xed)    # IM 0 Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xed)    # IM 0
     cpu._machine.write_memory_byte(0x0001, 0x46)
     cpu.step()
     assert cpu._cycles == 8
     assert cpu._interrupt_mode == 0
 
 def test_im_1(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xed)    # IM 1 Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xed)    # IM 1
     cpu._machine.write_memory_byte(0x0001, 0x56)
     cpu.step()
     assert cpu._cycles == 8
     assert cpu._interrupt_mode == 1
 
 def test_im_2(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xed)    # IM 2 Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xed)    # IM 2
     cpu._machine.write_memory_byte(0x0001, 0x5e)
     cpu.step()
     assert cpu._cycles == 8
@@ -122,7 +122,7 @@ def test_in(cpu):
     mock.read_byte = MagicMock(return_value=0x55)
 
     cpu._machine.add_io(IODevice(mock, 0x42))
-    cpu._machine.write_memory_byte(0x0000, 0xdb)    # IN A, $42 Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xdb)    # IN A, $42
     cpu._machine.write_memory_byte(0x0001, 0x42)    # Operand (IO port address)
     cpu.step()
     assert cpu.a == 0x55
@@ -133,7 +133,7 @@ def test_out(cpu):
     mock.write_byte = MagicMock()
 
     cpu._machine.add_io(IODevice(mock, 0x42))
-    cpu._machine.write_memory_byte(0x0000, 0xd3)    # OUT #42, A Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xd3)    # OUT #42, A
     cpu._machine.write_memory_byte(0x0001, 0x42)    # Operand (IO port address)
     cpu.a = 0x55
     cpu.step()
@@ -145,21 +145,21 @@ def test_out(cpu):
 # 8-bit data transfer instructions tests
 
 def test_ld_a_h(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0x7c)    # LD A, H Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0x7c)    # LD A, H
     cpu.h = 0x42
     cpu.step()
     assert cpu._cycles == 4
     assert cpu.a == 0x42
 
 def test_ld_b_e(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0x43)    # LD B, E Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0x43)    # LD B, E
     cpu.e = 0x42
     cpu.step()
     assert cpu._cycles == 4
     assert cpu.b == 0x42
 
 def test_ld_mem_d(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0x72)    # LD (HL), D Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0x72)    # LD (HL), D
     cpu.d = 0x42
     cpu.hl = 0x1234
     cpu.step()
@@ -167,7 +167,7 @@ def test_ld_mem_d(cpu):
     assert cpu._machine.read_memory_byte(0x1234) == 0x42
 
 def test_ld_l_mem(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0x6e)    # LD L, (HL) Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0x6e)    # LD L, (HL)
     cpu._machine.write_memory_byte(0x1234, 0x42)    # Data
     cpu.hl = 0x1234
     cpu.step()
@@ -175,21 +175,21 @@ def test_ld_l_mem(cpu):
     assert cpu.l == 0x42
 
 def test_ld_a_val(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0x3e)    # LD A, #42 Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0x3e)    # LD A, #42
     cpu._machine.write_memory_byte(0x0001, 0x42)    # Immediate value
     cpu.step()
     assert cpu.a == 0x42
     assert cpu._cycles == 7
 
 def test_ld_b_val(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0x06)    # LD B, #42 Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0x06)    # LD B, #42
     cpu._machine.write_memory_byte(0x0001, 0x42)    # Immediate value
     cpu.step()
     assert cpu.b == 0x42
     assert cpu._cycles == 7
 
 def test_ld_mem_val(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0x36)    # LD (HL), #42 Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0x36)    # LD (HL), #42
     cpu._machine.write_memory_byte(0x0001, 0x42)    # Immediate Value
     cpu.hl = 0x1234
     cpu.step()
@@ -197,7 +197,7 @@ def test_ld_mem_val(cpu):
     assert cpu._cycles == 10
 
 def test_ld_i_a(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xed)    # LD I, A Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xed)    # LD I, A
     cpu._machine.write_memory_byte(0x0001, 0x47)
     cpu.a = 0x42
     cpu.step()
@@ -205,7 +205,7 @@ def test_ld_i_a(cpu):
     assert cpu._cycles == 9
 
 def test_ld_r_a(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xed)    # LD R, A Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xed)    # LD R, A
     cpu._machine.write_memory_byte(0x0001, 0x4f)
     cpu.a = 0x42
     cpu.step()
@@ -213,7 +213,7 @@ def test_ld_r_a(cpu):
     assert cpu._cycles == 9
 
 def test_ld_a_i(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xed)    # LD A, I Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xed)    # LD A, I
     cpu._machine.write_memory_byte(0x0001, 0x57)
     cpu.i = 0x42
     cpu.step()
@@ -221,7 +221,7 @@ def test_ld_a_i(cpu):
     assert cpu._cycles == 9
 
 def test_ld_a_r(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xed)    # LD A, R Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xed)    # LD A, R
     cpu._machine.write_memory_byte(0x0001, 0x5f)
     cpu.r = 0x42
     cpu.step()
@@ -230,14 +230,14 @@ def test_ld_a_r(cpu):
 
 def test_ld_mem_a(cpu):
     cpu.a = 0x42   # Value to write
-    cpu._machine.write_memory_byte(0x0000, 0x32)    # LD (#beef), A Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0x32)    # LD (#beef), A
     cpu._machine.write_memory_word(0x0001, 0xbeef)  # Address
     cpu.step()
     assert cpu._machine.read_memory_byte(0xbeef) == 0x42
     assert cpu._cycles == 13
 
 def test_ld_a_mem(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0x3a)    # LD A, (#beef) Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0x3a)    # LD A, (#beef)
     cpu._machine.write_memory_word(0x0001, 0xbeef)  # Address
     cpu._machine.write_memory_byte(0xbeef, 0x42)    # Data to read
     cpu.step()
@@ -246,7 +246,7 @@ def test_ld_a_mem(cpu):
 
 
 def test_ld_reg_indexed_mem_1(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xdd)    # LD C, (IX+05) Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xdd)    # LD C, (IX+05)
     cpu._machine.write_memory_byte(0x0001, 0x4e)    # C register is a destination
     cpu._machine.write_memory_byte(0x0002, 0x05)    # Displacement
     cpu._machine.write_memory_byte(0xbeef + 0x05, 0x42) # Data to load
@@ -256,7 +256,7 @@ def test_ld_reg_indexed_mem_1(cpu):
     assert cpu._cycles == 19
 
 def test_ld_reg_indexed_mem_2(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xfd)    # LD H, (IY-05) Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xfd)    # LD H, (IY-05)
     cpu._machine.write_memory_byte(0x0001, 0x66)    # H register is a destination
     cpu._machine.write_memory_byte(0x0002, 0xfb)    # Negative Displacement
     cpu._machine.write_memory_byte(0xbeef - 0x05, 0x42) # Data to load
@@ -266,7 +266,7 @@ def test_ld_reg_indexed_mem_2(cpu):
     assert cpu._cycles == 19
 
 def test_ld_indexed_mem_reg_1(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xdd)    # LD (IX+05), C Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xdd)    # LD (IX+05), C
     cpu._machine.write_memory_byte(0x0001, 0x71)    # C register is a source
     cpu._machine.write_memory_byte(0x0002, 0x05)    # Displacement
     cpu._ix = 0xbeef
@@ -276,7 +276,7 @@ def test_ld_indexed_mem_reg_1(cpu):
     assert cpu._machine.read_memory_byte(0xbeef + 0x05) == 0x42
 
 def test_ld_indexed_mem_reg_2(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xfd)    # LD (IY-05), H Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xfd)    # LD (IY-05), H
     cpu._machine.write_memory_byte(0x0001, 0x74)    # H register is a source
     cpu._machine.write_memory_byte(0x0002, 0xfb)    # Negative Displacement
     cpu._iy = 0xbeef
@@ -286,7 +286,7 @@ def test_ld_indexed_mem_reg_2(cpu):
     assert cpu._machine.read_memory_byte(0xbeef - 0x05) == 0x42
 
 def test_ld_reg_indexed_mem_1(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xdd)    # LD (IX+05), 42    Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xdd)    # LD (IX+05), 42  
     cpu._machine.write_memory_byte(0x0001, 0x36)
     cpu._machine.write_memory_byte(0x0002, 0x05)    # Displacement
     cpu._machine.write_memory_byte(0x0003, 0x42)    # Value
@@ -296,7 +296,7 @@ def test_ld_reg_indexed_mem_1(cpu):
     assert cpu._machine.read_memory_byte(0xbeef + 0x05) == 0x42
 
 def test_ld_reg_indexed_mem_2(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xfd)    # LD (IY-05), 42    Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xfd)    # LD (IY-05), 42  
     cpu._machine.write_memory_byte(0x0001, 0x36)
     cpu._machine.write_memory_byte(0x0002, 0xfb)    # Negative Displacement
     cpu._machine.write_memory_byte(0x0003, 0x42)    # Value
@@ -309,7 +309,7 @@ def test_ld_reg_indexed_mem_2(cpu):
 # 16-bit data transfer instructions tests
 
 def test_ld_a_bc(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0x0a)    # LD A, (BC)  Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0x0a)    # LD A, (BC)
     cpu._machine.write_memory_byte(0xbeef, 0x42)    # Data to load
     cpu.bc = 0xbeef
     cpu.step()
@@ -317,7 +317,7 @@ def test_ld_a_bc(cpu):
     assert cpu._cycles == 7
 
 def test_ld_a_de(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0x1a)    # LD A, (DE)  Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0x1a)    # LD A, (DE)
     cpu._machine.write_memory_byte(0xbeef, 0x42)    # Data to load
     cpu.de = 0xbeef
     cpu.step()
@@ -325,7 +325,7 @@ def test_ld_a_de(cpu):
     assert cpu._cycles == 7
 
 def test_ld_bc_a(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0x02)    # LD (BC), A  Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0x02)    # LD (BC), A
     cpu.a = 0x42
     cpu.bc = 0xbeef
     cpu.step()
@@ -333,7 +333,7 @@ def test_ld_bc_a(cpu):
     assert cpu._cycles == 7
 
 def test_ld_de_a(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0x12)    # LD (DE), A  Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0x12)    # LD (DE), A
     cpu.a = 0x42
     cpu.de = 0xbeef
     cpu.step()
@@ -341,7 +341,7 @@ def test_ld_de_a(cpu):
     assert cpu._cycles == 7
 
 def test_ld_bc(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0x01)    # LD BC, #beef Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0x01)    # LD BC, #beef
     cpu._machine.write_memory_word(0x0001, 0xbeef)  # Immediate argument
     cpu.step() 
     assert cpu.pc == 0x0003
@@ -350,7 +350,7 @@ def test_ld_bc(cpu):
     assert cpu._cycles == 10
 
 def test_ld_de(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0x11)    # LD DE, #beef Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0x11)    # LD DE, #beef
     cpu._machine.write_memory_word(0x0001, 0xbeef)  # Immediate argument
     cpu.step() 
     assert cpu.pc == 0x0003
@@ -359,7 +359,7 @@ def test_ld_de(cpu):
     assert cpu._cycles == 10
     
 def test_ld_hl(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0x21)    # LD HL, #beef Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0x21)    # LD HL, #beef
     cpu._machine.write_memory_word(0x0001, 0xbeef)  # Immediate argument
     cpu.step() 
     assert cpu.pc == 0x0003
@@ -368,7 +368,7 @@ def test_ld_hl(cpu):
     assert cpu._cycles == 10
     
 def test_ld_sp(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0x31)    # LD SP, #beef Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0x31)    # LD SP, #beef
     cpu._machine.write_memory_word(0x0001, 0xbeef)  # Immediate argument
     cpu.step() 
     assert cpu.pc == 0x0003
@@ -376,7 +376,7 @@ def test_ld_sp(cpu):
     assert cpu._cycles == 10
 
 def test_ld_iy(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xfd)    # LD IY, #beef Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xfd)    # LD IY, #beef
     cpu._machine.write_memory_byte(0x0001, 0x21)
     cpu._machine.write_memory_word(0x0002, 0xbeef)  # Immediate argument
     cpu.step() 
@@ -386,7 +386,7 @@ def test_ld_iy(cpu):
 
 def test_ld_mem_hl(cpu):
     cpu.hl = 0x1234   # Value to write
-    cpu._machine.write_memory_byte(0x0000, 0x22)    # LD (beef), HL Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0x22)    # LD (beef), HL
     cpu._machine.write_memory_word(0x0001, 0xbeef)  # Address
     cpu.step()
     assert cpu._machine.read_memory_word(0xbeef) == 0x1234
@@ -394,7 +394,7 @@ def test_ld_mem_hl(cpu):
 
 def test_ld_mem_reg16(cpu):
     cpu.de = 0x1234   # Value to write
-    cpu._machine.write_memory_byte(0x0000, 0xed)    # LD (beef), DE Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xed)    # LD (beef), DE
     cpu._machine.write_memory_byte(0x0001, 0x53)    
     cpu._machine.write_memory_word(0x0002, 0xbeef)  # Address
     cpu.step()
@@ -402,7 +402,7 @@ def test_ld_mem_reg16(cpu):
     assert cpu._cycles == 20
 
 def test_ld_hl_mem(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0x2a)    # LD HL, (beef) Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0x2a)    # LD HL, (beef)
     cpu._machine.write_memory_word(0x0001, 0xbeef)  # Address
     cpu._machine.write_memory_word(0xbeef, 0x1234)  # Value to read
     cpu.step()
@@ -410,7 +410,7 @@ def test_ld_hl_mem(cpu):
     assert cpu._cycles == 16
 
 def test_ld_reg16_mem(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xed)    # LD BC, (beef) Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xed)    # LD BC, (beef)
     cpu._machine.write_memory_byte(0x0001, 0x4b)    
     cpu._machine.write_memory_word(0x0002, 0xbeef)  # Address
     cpu._machine.write_memory_word(0xbeef, 0x1234)  # Value to read
@@ -419,14 +419,14 @@ def test_ld_reg16_mem(cpu):
     assert cpu._cycles == 20
 
 def test_ld_sp_hl(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xf9)    # LD SP, HL Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xf9)    # LD SP, HL
     cpu.hl = 0x1234
     cpu.step()
     assert cpu.sp == 0x1234
     assert cpu._cycles == 6
 
 def test_push_bc(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xc5)    # PUSH BC  Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xc5)    # PUSH BC
     cpu.sp = 0x1234
     cpu.bc = 0xbeef
     cpu.step()
@@ -435,7 +435,7 @@ def test_push_bc(cpu):
     assert cpu._machine.read_memory_word(0x1232) == 0xbeef
 
 def test_push_de(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xd5)    # PUSH DE  Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xd5)    # PUSH DE
     cpu.sp = 0x1234
     cpu.de = 0xbeef
     cpu.step()
@@ -444,7 +444,7 @@ def test_push_de(cpu):
     assert cpu._machine.read_memory_word(0x1232) == 0xbeef
 
 def test_push_hl(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xe5)    # PUSH HL  Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xe5)    # PUSH HL
     cpu.sp = 0x1234
     cpu.hl = 0xbeef
     cpu.step()
@@ -453,7 +453,7 @@ def test_push_hl(cpu):
     assert cpu._machine.read_memory_word(0x1232) == 0xbeef
 
 def test_push_af_1(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xf5)    # PUSH AF  Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xf5)    # PUSH AF
     cpu.sp = 0x1234
     cpu.a = 0x42
     cpu.step()
@@ -462,7 +462,7 @@ def test_push_af_1(cpu):
     assert cpu._machine.read_memory_word(0x1232) == 0x4200  # All flag bits are zero
 
 def test_push_af_2(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xf5)    # PUSH AF  Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xf5)    # PUSH AF
     cpu.sp = 0x1234
     cpu.a = 0x42
     cpu.sign = True
@@ -477,7 +477,7 @@ def test_push_af_2(cpu):
     assert cpu._machine.read_memory_word(0x1232) == 0x42d7 # bit1 of the PSW is always 1
 
 def test_pop_bc(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xc1)    # POP BC  Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xc1)    # POP BC
     cpu._machine.write_memory_word(0x1234, 0xbeef)  # Data to pop
     cpu.sp = 0x1234
     cpu.step()
@@ -486,7 +486,7 @@ def test_pop_bc(cpu):
     assert cpu.bc == 0xbeef
 
 def test_pop_de(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xd1)    # POP DE  Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xd1)    # POP DE
     cpu._machine.write_memory_word(0x1234, 0xbeef)  # Data to pop
     cpu.sp = 0x1234
     cpu.step()
@@ -495,7 +495,7 @@ def test_pop_de(cpu):
     assert cpu.de == 0xbeef
 
 def test_pop_hl(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xe1)    # POP HL  Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xe1)    # POP HL
     cpu._machine.write_memory_word(0x1234, 0xbeef)  # Data to pop
     cpu.sp = 0x1234
     cpu.step()
@@ -504,7 +504,7 @@ def test_pop_hl(cpu):
     assert cpu.hl == 0xbeef
 
 def test_pop_af_1(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xf1)    # POP AF  Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xf1)    # POP AF
     cpu._machine.write_memory_word(0x1234, 0xbe00)  # Data to pop (A=0xbe, all flags are off)
     cpu.sp = 0x1234
     cpu.step()
@@ -519,7 +519,7 @@ def test_pop_af_1(cpu):
     assert cpu.add_subtract == False
 
 def test_pop_af_2(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xf1)    # POP AF  Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xf1)    # POP AF
     cpu._machine.write_memory_word(0x1234, 0xbed7)  # Data to pop (A=0xbe, all flags are on)
     cpu.sp = 0x1234
     cpu.step()
@@ -537,7 +537,7 @@ def test_pop_af_2(cpu):
 # Exchange instructions tests
 
 def test_ex_de_hl(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xeb)    # EX DE, HL Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xeb)    # EX DE, HL
     cpu.hl = 0x1234
     cpu.de = 0xbeef
     cpu.step()
@@ -546,7 +546,7 @@ def test_ex_de_hl(cpu):
     assert cpu._cycles == 4
 
 def test_ex_stack_hl(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xe3)    # EX (SP), HL Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xe3)    # EX (SP), HL
     cpu._machine.write_memory_word(0x4321, 0xbeef)  # data to be exchanged
     cpu.hl = 0x1234
     cpu.sp = 0x4321
@@ -556,7 +556,7 @@ def test_ex_stack_hl(cpu):
     assert cpu._cycles == 19
 
 def test_ex_af_afx(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0x08)    # EX AF, AF' Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0x08)    # EX AF, AF'
     cpu.af = 0x1234
     cpu.afx = 0xbeef
     cpu.step()
@@ -565,7 +565,7 @@ def test_ex_af_afx(cpu):
     assert cpu._cycles == 4
 
 def test_exx(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xd9)    # EXX Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xd9)    # EXX
     cpu.bc = 0x1234
     cpu.de = 0x5678
     cpu.hl = 0x9abc
@@ -584,7 +584,7 @@ def test_exx(cpu):
 # Block transfer instructions tests
 
 def test_ldi(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xed)    # LDI Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xed)    # LDI
     cpu._machine.write_memory_byte(0x0001, 0xa0)
     cpu.hl = 0x1234     # Source address
     cpu.de = 0x4321     # Destination address
@@ -599,7 +599,7 @@ def test_ldi(cpu):
     assert cpu.overflow == True # There are still bytes to copy
 
 def test_ldi_last(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xed)    # LDI Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xed)    # LDI
     cpu._machine.write_memory_byte(0x0001, 0xa0)
     cpu.hl = 0x1234     # Source address
     cpu.de = 0x4321     # Destination address
@@ -614,7 +614,7 @@ def test_ldi_last(cpu):
     assert cpu.overflow == False    # Reached last byte to copy
 
 def test_ldd(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xed)    # LDD Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xed)    # LDD
     cpu._machine.write_memory_byte(0x0001, 0xa8)
     cpu.hl = 0x1234     # Source address
     cpu.de = 0x4321     # Destination address
@@ -629,7 +629,7 @@ def test_ldd(cpu):
     assert cpu.overflow == True # There are still bytes to copy
 
 def test_ldd_last(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xed)    # LDD Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xed)    # LDD
     cpu._machine.write_memory_byte(0x0001, 0xa8)
     cpu.hl = 0x1234     # Source address
     cpu.de = 0x4321     # Destination address
@@ -644,7 +644,7 @@ def test_ldd_last(cpu):
     assert cpu.overflow == False    # Reached last byte to copy
 
 def test_ldir(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xed)    # LDIR Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xed)    # LDIR
     cpu._machine.write_memory_byte(0x0001, 0xb0)
     cpu.hl = 0x1234     # Source address
     cpu.de = 0x4321     # Destination address
@@ -670,7 +670,7 @@ def test_ldir(cpu):
     assert cpu.overflow == False    # No more bytes to copy
 
 def test_lddr(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xed)    # LDDR Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xed)    # LDDR
     cpu._machine.write_memory_byte(0x0001, 0xb8)
     cpu.hl = 0x1234     # Source address
     cpu.de = 0x4321     # Destination address
@@ -699,28 +699,28 @@ def test_lddr(cpu):
 # Execution flow instruction tests
 
 def test_jp(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xc3)    # JP #beef Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xc3)    # JP #beef
     cpu._machine.write_memory_word(0x0001, 0xbeef)  # Target Address
     cpu.step()
     assert cpu.pc == 0xbeef
     assert cpu._cycles == 10
 
 def test_jp_hl(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xe9)    # JP (HL) Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xe9)    # JP (HL)
     cpu.hl = 0x1234
     cpu.step()
     assert cpu.pc == 0x1234
     assert cpu._cycles == 4
 
 def test_jr(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0x18)    # JR $+5 Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0x18)    # JR $+5
     cpu._machine.write_memory_byte(0x0001, 0x03)    # relative offset
     cpu.step()
     assert cpu.pc == 0x0005
     assert cpu._cycles == 12
 
 def test_jr_negative_offset(cpu):
-    cpu._machine.write_memory_byte(0x1234, 0x18)    # JR $-66 Instruction Opcode
+    cpu._machine.write_memory_byte(0x1234, 0x18)    # JR $-66
     cpu._machine.write_memory_byte(0x1235, 0x9a)    # relative offset
     cpu.pc = 0x1234
     cpu.step()
@@ -728,7 +728,7 @@ def test_jr_negative_offset(cpu):
     assert cpu._cycles == 12
 
 def test_jr_nz_positive(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0x20)    # JR NZ, $+5 Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0x20)    # JR NZ, $+5
     cpu._machine.write_memory_byte(0x0001, 0x03)    # relative offset
     cpu.zero = False
     cpu.step()
@@ -736,7 +736,7 @@ def test_jr_nz_positive(cpu):
     assert cpu._cycles == 12
 
 def test_jr_nz_negative(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0x20)    # JR NZ, $+5 Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0x20)    # JR NZ, $+5
     cpu._machine.write_memory_byte(0x0001, 0x03)    # relative offset
     cpu.zero = True
     cpu.step()
@@ -744,7 +744,7 @@ def test_jr_nz_negative(cpu):
     assert cpu._cycles == 7
 
 def test_jr_z_positive(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0x28)    # JR Z, $+5 Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0x28)    # JR Z, $+5
     cpu._machine.write_memory_byte(0x0001, 0x03)    # relative offset
     cpu.zero = True
     cpu.step()
@@ -752,7 +752,7 @@ def test_jr_z_positive(cpu):
     assert cpu._cycles == 12
 
 def test_jr_z_negative(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0x28)    # JR Z, $+5 Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0x28)    # JR Z, $+5
     cpu._machine.write_memory_byte(0x0001, 0x03)    # relative offset
     cpu.zero = False
     cpu.step()
@@ -760,7 +760,7 @@ def test_jr_z_negative(cpu):
     assert cpu._cycles == 7
 
 def test_jr_z_negative_offset(cpu):
-    cpu._machine.write_memory_byte(0x1234, 0x28)    # JR Z, $-66 Instruction Opcode
+    cpu._machine.write_memory_byte(0x1234, 0x28)    # JR Z, $-66
     cpu._machine.write_memory_byte(0x1235, 0x9a)    # relative offset
     cpu.zero = True
     cpu.pc = 0x1234
@@ -769,7 +769,7 @@ def test_jr_z_negative_offset(cpu):
     assert cpu._cycles == 12
 
 def test_jr_nc_positive(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0x30)    # JR NC, $+5 Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0x30)    # JR NC, $+5
     cpu._machine.write_memory_byte(0x0001, 0x03)    # relative offset
     cpu.carry = False
     cpu.step()
@@ -777,7 +777,7 @@ def test_jr_nc_positive(cpu):
     assert cpu._cycles == 12
 
 def test_jr_nc_negative(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0x30)    # JR NC, $+5 Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0x30)    # JR NC, $+5
     cpu._machine.write_memory_byte(0x0001, 0x03)    # relative offset
     cpu.carry = True
     cpu.step()
@@ -785,7 +785,7 @@ def test_jr_nc_negative(cpu):
     assert cpu._cycles == 7
 
 def test_jr_c_positive(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0x38)    # JR C, $+5 Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0x38)    # JR C, $+5
     cpu._machine.write_memory_byte(0x0001, 0x03)    # relative offset
     cpu.carry = True
     cpu.step()
@@ -793,7 +793,7 @@ def test_jr_c_positive(cpu):
     assert cpu._cycles == 12
 
 def test_jr_c_negative(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0x38)    # JR C, $+5 Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0x38)    # JR C, $+5
     cpu._machine.write_memory_byte(0x0001, 0x03)    # relative offset
     cpu.carry = False
     cpu.step()
@@ -801,7 +801,7 @@ def test_jr_c_negative(cpu):
     assert cpu._cycles == 7
 
 def test_djnz_non_zero(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0x10)    # DJNZ $+5 Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0x10)    # DJNZ $+5
     cpu._machine.write_memory_byte(0x0001, 0x03)    # relative offset
     cpu.b = 0x10                # Counter will be non-zero after decrement, expect jump forward
     cpu.step()
@@ -810,7 +810,7 @@ def test_djnz_non_zero(cpu):
     assert cpu._cycles == 13
 
 def test_djnz_zero(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0x10)    # DJNZ $+5 Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0x10)    # DJNZ $+5
     cpu._machine.write_memory_byte(0x0001, 0x03)    # relative offset
     cpu.b = 0x01                # Counter will be zero after decrement, expect no jump
     cpu.step()
@@ -819,7 +819,7 @@ def test_djnz_zero(cpu):
     assert cpu._cycles == 8
 
 def test_djnz_negative_offset(cpu):
-    cpu._machine.write_memory_byte(0x1234, 0x10)    # DJNZ $-66 Instruction Opcode
+    cpu._machine.write_memory_byte(0x1234, 0x10)    # DJNZ $-66
     cpu._machine.write_memory_byte(0x1235, 0x9a)    # relative offset
     cpu.b = 0x10                # Counter will be non-zero after decrement, expect jump backwards
     cpu.pc = 0x1234
@@ -829,7 +829,7 @@ def test_djnz_negative_offset(cpu):
     assert cpu._cycles == 13
 
 def test_call(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xcd)    # CALL BEEF Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xcd)    # CALL BEEF
     cpu._machine.write_memory_word(0x0001, 0xbeef)  # Address
     cpu.sp = 0x1234
     cpu.step()
@@ -838,7 +838,7 @@ def test_call(cpu):
     assert cpu._machine.read_memory_word(0x1232) == 0x0003 # address of the next instruction
 
 def test_ret(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xc9)    # RET Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xc9)    # RET
     cpu._machine.write_memory_word(0x1234, 0xbeef)  # Return address
     cpu.sp = 0x1234
     cpu.step()
@@ -847,7 +847,7 @@ def test_ret(cpu):
     assert cpu._cycles == 10
 
 def test_jp_z_1(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xca)    # JP Z, beef  Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xca)    # JP Z, beef
     cpu._machine.write_memory_word(0x0001, 0xbeef)  # Address
     cpu._zero = True
     cpu.step()
@@ -855,7 +855,7 @@ def test_jp_z_1(cpu):
     assert cpu._cycles == 10
 
 def test_jp_z_2(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xca)    # JP Z, beef  Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xca)    # JP Z, beef
     cpu._machine.write_memory_word(0x0001, 0xbeef)  # Address
     cpu._zero = False
     cpu.step()
@@ -863,7 +863,7 @@ def test_jp_z_2(cpu):
     assert cpu._cycles == 10
 
 def test_jp_nz_1(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xc2)    # JP NZ, beef  Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xc2)    # JP NZ, beef
     cpu._machine.write_memory_word(0x0001, 0xbeef)  # Address
     cpu._zero = True
     cpu.step()
@@ -871,7 +871,7 @@ def test_jp_nz_1(cpu):
     assert cpu._cycles == 10
 
 def test_jp_nz_2(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xc2)    # JP NZ, beef  Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xc2)    # JP NZ, beef
     cpu._machine.write_memory_word(0x0001, 0xbeef)  # Address
     cpu._zero = False
     cpu.step()
@@ -879,7 +879,7 @@ def test_jp_nz_2(cpu):
     assert cpu._cycles == 10
 
 def test_jp_c_1(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xda)    # JP C, beef  Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xda)    # JP C, beef
     cpu._machine.write_memory_word(0x0001, 0xbeef)  # Address
     cpu._carry = True
     cpu.step()
@@ -887,7 +887,7 @@ def test_jp_c_1(cpu):
     assert cpu._cycles == 10
 
 def test_jp_c_2(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xda)    # JP C, beef  Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xda)    # JP C, beef
     cpu._machine.write_memory_word(0x0001, 0xbeef)  # Address
     cpu._carry = False
     cpu.step()
@@ -895,7 +895,7 @@ def test_jp_c_2(cpu):
     assert cpu._cycles == 10
 
 def test_jp_nc_1(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xd2)    # JP NC, beef  Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xd2)    # JP NC, beef
     cpu._machine.write_memory_word(0x0001, 0xbeef)  # Address
     cpu._carry = True
     cpu.step()
@@ -903,7 +903,7 @@ def test_jp_nc_1(cpu):
     assert cpu._cycles == 10
 
 def test_jp_nc_2(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xd2)    # JP NC, beef  Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xd2)    # JP NC, beef
     cpu._machine.write_memory_word(0x0001, 0xbeef)  # Address
     cpu._carry = False
     cpu.step()
@@ -911,7 +911,7 @@ def test_jp_nc_2(cpu):
     assert cpu._cycles == 10
 
 def test_jp_pe_1(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xea)    # JP PE, beef  Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xea)    # JP PE, beef
     cpu._machine.write_memory_word(0x0001, 0xbeef)  # Address
     cpu._parity = True
     cpu.step()
@@ -919,7 +919,7 @@ def test_jp_pe_1(cpu):
     assert cpu._cycles == 10
 
 def test_jp_pe_2(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xea)    # JP PE, beef  Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xea)    # JP PE, beef
     cpu._machine.write_memory_word(0x0001, 0xbeef)  # Address
     cpu._parity = False
     cpu.step()
@@ -927,7 +927,7 @@ def test_jp_pe_2(cpu):
     assert cpu._cycles == 10
 
 def test_jp_po_1(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xe2)    # JP PO, beef  Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xe2)    # JP PO, beef
     cpu._machine.write_memory_word(0x0001, 0xbeef)  # Address
     cpu._parity = True
     cpu.step()
@@ -935,7 +935,7 @@ def test_jp_po_1(cpu):
     assert cpu._cycles == 10
 
 def test_jp_po_2(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xe2)    # JP PO, beef  Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xe2)    # JP PO, beef
     cpu._machine.write_memory_word(0x0001, 0xbeef)  # Address
     cpu._parity = False
     cpu.step()
@@ -943,7 +943,7 @@ def test_jp_po_2(cpu):
     assert cpu._cycles == 10
 
 def test_jp_m_1(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xfa)    # JP M, beef  Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xfa)    # JP M, beef
     cpu._machine.write_memory_word(0x0001, 0xbeef)  # Address
     cpu._sign = True
     cpu.step()
@@ -951,7 +951,7 @@ def test_jp_m_1(cpu):
     assert cpu._cycles == 10
 
 def test_jp_m_2(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xfa)    # JP M, beef  Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xfa)    # JP M, beef
     cpu._machine.write_memory_word(0x0001, 0xbeef)  # Address
     cpu._sign = False
     cpu.step()
@@ -959,7 +959,7 @@ def test_jp_m_2(cpu):
     assert cpu._cycles == 10
 
 def test_jp_p_1(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xf2)    # JP P, beef  Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xf2)    # JP P, beef
     cpu._machine.write_memory_word(0x0001, 0xbeef)  # Address
     cpu._sign = True
     cpu.step()
@@ -967,7 +967,7 @@ def test_jp_p_1(cpu):
     assert cpu._cycles == 10
 
 def test_jp_p_2(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xf2)    # JP P, beef  Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xf2)    # JP P, beef
     cpu._machine.write_memory_word(0x0001, 0xbeef)  # Address
     cpu._sign = False
     cpu.step()
@@ -975,7 +975,7 @@ def test_jp_p_2(cpu):
     assert cpu._cycles == 10
 
 def test_call_nz_1(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xc4)    # CALL NZ, beef  Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xc4)    # CALL NZ, beef
     cpu._machine.write_memory_word(0x0001, 0xbeef)  # Subroutine address
     cpu.sp = 0x1234
     cpu._zero = True
@@ -985,7 +985,7 @@ def test_call_nz_1(cpu):
     assert cpu._cycles == 10
 
 def test_call_nz_2(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xc4)    # CALL NZ, beef  Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xc4)    # CALL NZ, beef
     cpu._machine.write_memory_word(0x0001, 0xbeef)  # Subroutine address
     cpu.sp = 0x1234
     cpu._zero = False
@@ -996,7 +996,7 @@ def test_call_nz_2(cpu):
     assert cpu._cycles == 17
 
 def test_call_z_1(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xcc)    # CALL Z, beef  Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xcc)    # CALL Z, beef
     cpu._machine.write_memory_word(0x0001, 0xbeef)  # Subroutine address
     cpu.sp = 0x1234
     cpu._zero = False
@@ -1006,7 +1006,7 @@ def test_call_z_1(cpu):
     assert cpu._cycles == 10
 
 def test_call_z_2(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xcc)    # CALL Z, beef  Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xcc)    # CALL Z, beef
     cpu._machine.write_memory_word(0x0001, 0xbeef)  # Subroutine address
     cpu.sp = 0x1234
     cpu._zero = True
@@ -1017,7 +1017,7 @@ def test_call_z_2(cpu):
     assert cpu._cycles == 17
 
 def test_call_nc_1(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xd4)    # CALL NC, beef  Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xd4)    # CALL NC, beef
     cpu._machine.write_memory_word(0x0001, 0xbeef)  # Subroutine address
     cpu.sp = 0x1234
     cpu._carry = True
@@ -1027,7 +1027,7 @@ def test_call_nc_1(cpu):
     assert cpu._cycles == 10
 
 def test_call_nc_2(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xd4)    # CALL NC, beef  Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xd4)    # CALL NC, beef
     cpu._machine.write_memory_word(0x0001, 0xbeef)  # Subroutine address
     cpu.sp = 0x1234
     cpu._carry = False
@@ -1038,7 +1038,7 @@ def test_call_nc_2(cpu):
     assert cpu._cycles == 17
 
 def test_call_c_1(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xdc)    # CALL C, beef  Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xdc)    # CALL C, beef
     cpu._machine.write_memory_word(0x0001, 0xbeef)  # Subroutine address
     cpu.sp = 0x1234
     cpu._carry = False
@@ -1048,7 +1048,7 @@ def test_call_c_1(cpu):
     assert cpu._cycles == 10
 
 def test_call_c_2(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xdc)    # CALL C, beef  Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xdc)    # CALL C, beef
     cpu._machine.write_memory_word(0x0001, 0xbeef)  # Subroutine address
     cpu.sp = 0x1234
     cpu._carry = True
@@ -1059,7 +1059,7 @@ def test_call_c_2(cpu):
     assert cpu._cycles == 17
 
 def test_call_po_1(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xe4)    # CALL PO, beef  Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xe4)    # CALL PO, beef
     cpu._machine.write_memory_word(0x0001, 0xbeef)  # Subroutine address
     cpu.sp = 0x1234
     cpu._parity = True
@@ -1069,7 +1069,7 @@ def test_call_po_1(cpu):
     assert cpu._cycles == 10
 
 def test_call_po_2(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xe4)    # CALL PO, beef  Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xe4)    # CALL PO, beef
     cpu._machine.write_memory_word(0x0001, 0xbeef)  # Subroutine address
     cpu.sp = 0x1234
     cpu._parity = False
@@ -1080,7 +1080,7 @@ def test_call_po_2(cpu):
     assert cpu._cycles == 17
 
 def test_call_pe_1(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xec)    # CALL PE, beef  Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xec)    # CALL PE, beef
     cpu._machine.write_memory_word(0x0001, 0xbeef)  # Subroutine address
     cpu.sp = 0x1234
     cpu._parity = False
@@ -1090,7 +1090,7 @@ def test_call_pe_1(cpu):
     assert cpu._cycles == 10
 
 def test_call_pe_2(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xec)    # CALL PE, beef  Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xec)    # CALL PE, beef
     cpu._machine.write_memory_word(0x0001, 0xbeef)  # Subroutine address
     cpu.sp = 0x1234
     cpu._parity = True
@@ -1101,7 +1101,7 @@ def test_call_pe_2(cpu):
     assert cpu._cycles == 17
 
 def test_call_p_1(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xf4)    # CALL P, beef  Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xf4)    # CALL P, beef
     cpu._machine.write_memory_word(0x0001, 0xbeef)  # Subroutine address
     cpu.sp = 0x1234
     cpu._sign = True
@@ -1111,7 +1111,7 @@ def test_call_p_1(cpu):
     assert cpu._cycles == 10
 
 def test_call_p_2(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xf4)    # CALL P, beef  Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xf4)    # CALL P, beef
     cpu._machine.write_memory_word(0x0001, 0xbeef)  # Subroutine address
     cpu.sp = 0x1234
     cpu._sign = False
@@ -1122,7 +1122,7 @@ def test_call_p_2(cpu):
     assert cpu._cycles == 17
 
 def test_call_m_1(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xfc)    # CALL M, beef  Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xfc)    # CALL M, beef
     cpu._machine.write_memory_word(0x0001, 0xbeef)  # Subroutine address
     cpu.sp = 0x1234
     cpu._sign = False
@@ -1132,7 +1132,7 @@ def test_call_m_1(cpu):
     assert cpu._cycles == 10
 
 def test_call_m_2(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xfc)    # CALL M, beef  Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xfc)    # CALL M, beef
     cpu._machine.write_memory_word(0x0001, 0xbeef)  # Subroutine address
     cpu.sp = 0x1234
     cpu._sign = True
@@ -1143,7 +1143,7 @@ def test_call_m_2(cpu):
     assert cpu._cycles == 17
 
 def test_ret_nz_1(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xc0)    # RET NZ  Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xc0)    # RET NZ
     cpu._machine.write_memory_word(0x1234, 0xbeef)  # Return address
     cpu.sp = 0x1234
     cpu._zero = True
@@ -1153,7 +1153,7 @@ def test_ret_nz_1(cpu):
     assert cpu._cycles == 5
 
 def test_ret_nz_2(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xc0)    # RET NZ  Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xc0)    # RET NZ
     cpu._machine.write_memory_word(0x1234, 0xbeef)  # Return address
     cpu.sp = 0x1234
     cpu._zero = False
@@ -1163,7 +1163,7 @@ def test_ret_nz_2(cpu):
     assert cpu._cycles == 11
 
 def test_ret_z_1(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xc8)    # RET Z  Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xc8)    # RET Z
     cpu._machine.write_memory_word(0x1234, 0xbeef)  # Return address
     cpu.sp = 0x1234
     cpu._zero = False
@@ -1173,7 +1173,7 @@ def test_ret_z_1(cpu):
     assert cpu._cycles == 5
 
 def test_ret_z_2(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xc8)    # RET Z  Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xc8)    # RET Z
     cpu._machine.write_memory_word(0x1234, 0xbeef)  # Return address
     cpu.sp = 0x1234
     cpu._zero = True
@@ -1183,7 +1183,7 @@ def test_ret_z_2(cpu):
     assert cpu._cycles == 11
 
 def test_ret_nc_1(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xd0)    # RET NC  Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xd0)    # RET NC
     cpu._machine.write_memory_word(0x1234, 0xbeef)  # Return address
     cpu.sp = 0x1234
     cpu._carry = True
@@ -1193,7 +1193,7 @@ def test_ret_nc_1(cpu):
     assert cpu._cycles == 5
 
 def test_ret_nc_2(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xd0)    # RET NC  Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xd0)    # RET NC
     cpu._machine.write_memory_word(0x1234, 0xbeef)  # Return address
     cpu.sp = 0x1234
     cpu._carry = False
@@ -1203,7 +1203,7 @@ def test_ret_nc_2(cpu):
     assert cpu._cycles == 11
 
 def test_ret_c_1(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xd8)    # RET C  Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xd8)    # RET C
     cpu._machine.write_memory_word(0x1234, 0xbeef)  # Return address
     cpu.sp = 0x1234
     cpu._carry = False
@@ -1213,7 +1213,7 @@ def test_ret_c_1(cpu):
     assert cpu._cycles == 5
 
 def test_ret_c_2(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xd8)    # RET C  Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xd8)    # RET C
     cpu._machine.write_memory_word(0x1234, 0xbeef)  # Return address
     cpu.sp = 0x1234
     cpu._carry = True
@@ -1223,7 +1223,7 @@ def test_ret_c_2(cpu):
     assert cpu._cycles == 11
 
 def test_ret_po_1(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xe0)    # RET PO  Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xe0)    # RET PO
     cpu._machine.write_memory_word(0x1234, 0xbeef)  # Return address
     cpu.sp = 0x1234
     cpu._parity = True
@@ -1233,7 +1233,7 @@ def test_ret_po_1(cpu):
     assert cpu._cycles == 5
 
 def test_ret_po_2(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xe0)    # RET PO  Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xe0)    # RET PO
     cpu._machine.write_memory_word(0x1234, 0xbeef)  # Return address
     cpu.sp = 0x1234
     cpu._parity = False
@@ -1243,7 +1243,7 @@ def test_ret_po_2(cpu):
     assert cpu._cycles == 11
 
 def test_ret_pe_1(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xe8)    # RET PE  Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xe8)    # RET PE
     cpu._machine.write_memory_word(0x1234, 0xbeef)  # Return address
     cpu.sp = 0x1234
     cpu._parity = False
@@ -1253,7 +1253,7 @@ def test_ret_pe_1(cpu):
     assert cpu._cycles == 5
 
 def test_ret_pe_2(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xe8)    # RET PE  Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xe8)    # RET PE
     cpu._machine.write_memory_word(0x1234, 0xbeef)  # Return address
     cpu.sp = 0x1234
     cpu._parity = True
@@ -1263,7 +1263,7 @@ def test_ret_pe_2(cpu):
     assert cpu._cycles == 11
 
 def test_ret_p_1(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xf0)    # RET P  Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xf0)    # RET P
     cpu._machine.write_memory_word(0x1234, 0xbeef)  # Return address
     cpu.sp = 0x1234
     cpu._sign = True
@@ -1273,7 +1273,7 @@ def test_ret_p_1(cpu):
     assert cpu._cycles == 5
 
 def test_ret_p_2(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xf0)    # RET P  Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xf0)    # RET P
     cpu._machine.write_memory_word(0x1234, 0xbeef)  # Return address
     cpu.sp = 0x1234
     cpu._sign = False
@@ -1283,7 +1283,7 @@ def test_ret_p_2(cpu):
     assert cpu._cycles == 11
 
 def test_ret_m_1(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xf8)    # RET M  Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xf8)    # RET M
     cpu._machine.write_memory_word(0x1234, 0xbeef)  # Return address
     cpu.sp = 0x1234
     cpu._sign = False
@@ -1293,7 +1293,7 @@ def test_ret_m_1(cpu):
     assert cpu._cycles == 5
 
 def test_ret_m_2(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xf8)    # RET M  Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xf8)    # RET M
     cpu._machine.write_memory_word(0x1234, 0xbeef)  # Return address
     cpu.sp = 0x1234
     cpu._sign = True
@@ -1306,7 +1306,7 @@ def test_ret_m_2(cpu):
     [(0xc7, 0x0000), (0xcf, 0x0008), (0xd7, 0x0010), (0xdf, 0x0018),
      (0xe7, 0x0020), (0xef, 0x0028), (0xf7, 0x0030), (0xff, 0x0038)])
 def test_rst(cpu, opcode, rstaddr):
-    cpu._machine.write_memory_byte(0x0000, opcode)    # RST nn  Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, opcode)    # RST nn
     cpu.sp = 0x1234
     cpu.step()
     assert cpu.pc == rstaddr
@@ -1322,7 +1322,7 @@ def test_rst(cpu, opcode, rstaddr):
 # resulting flags
 
 def test_add(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0x80)    # ADD A, B Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0x80)    # ADD A, B
     cpu.a = 0x1c
     cpu.b = 0x2e
     cpu.step()
@@ -1335,7 +1335,7 @@ def test_add(cpu):
     assert cpu.half_carry == True
 
 def test_add_zero(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0x87)    # ADD A, A Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0x87)    # ADD A, A
     cpu.a = 0x00
     cpu.step()
     assert cpu.a == 0x00        # Adding 2 zeroes results a zero
@@ -1347,7 +1347,7 @@ def test_add_zero(cpu):
     assert cpu.half_carry == False
 
 def test_add_zero2(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0x82)    # ADD A, D Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0x82)    # ADD A, D
     cpu.a = 0x42
     cpu.d = 0xbe
     cpu.step()
@@ -1360,7 +1360,7 @@ def test_add_zero2(cpu):
     assert cpu.half_carry == True
 
 def test_add_overflow(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xc6)    # ADD A, #2F Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xc6)    # ADD A, #2F
     cpu._machine.write_memory_byte(0x0001, 0x2f)    # argument
     cpu.a = 0x6c
     cpu.step()
@@ -1373,7 +1373,7 @@ def test_add_overflow(cpu):
     assert cpu.half_carry == True
 
 def test_add_negative_overflow(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0x84)    # ADD A, H Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0x84)    # ADD A, H
     cpu.a = 0x9a
     cpu.h = 0xbc
     cpu.step()
@@ -1386,7 +1386,7 @@ def test_add_negative_overflow(cpu):
     assert cpu.half_carry == True
 
 def test_add_negative_no_overflow(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0x86)    # ADD A, (HL) Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0x86)    # ADD A, (HL)
     cpu._machine.write_memory_byte(0xbeef, 0x42)    # operand at (HL)
     cpu.a = 0x9c
     cpu.hl = 0xbeef
@@ -1400,7 +1400,7 @@ def test_add_negative_no_overflow(cpu):
     assert cpu.half_carry == False
 
 def test_adc_no_carry(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0x89)    # ADC A, C Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0x89)    # ADC A, C
     cpu.a = 0x3d
     cpu.c = 0x42
     cpu._carry = False      # No carry
@@ -1414,7 +1414,7 @@ def test_adc_no_carry(cpu):
     assert cpu.half_carry == False
 
 def test_adc_with_carry(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0x8a)    # ADC A, D Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0x8a)    # ADC A, D
     cpu.a = 0x3d
     cpu.d = 0x42
     cpu._carry = True       # Carry
@@ -1428,7 +1428,7 @@ def test_adc_with_carry(cpu):
     assert cpu.half_carry == True
 
 def test_adc_negative_overflow(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0x8e)    # ADC A, (HL) Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0x8e)    # ADC A, (HL)
     cpu._machine.write_memory_byte(0xbeef, 0xcd)    # Argument at (HL)
     cpu.a = 0xab
     cpu.hl = 0xbeef
@@ -1443,7 +1443,7 @@ def test_adc_negative_overflow(cpu):
     assert cpu.half_carry == True
 
 def test_adc_negative_no_overflow(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0x88)    # ADC A, B Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0x88)    # ADC A, B
     cpu.a = 0x42
     cpu.b = 0x9a
     cpu._carry = True       # Carry
@@ -1457,7 +1457,7 @@ def test_adc_negative_no_overflow(cpu):
     assert cpu.half_carry == False
 
 def test_adc_zero(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0x88)    # ADC A, B Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0x88)    # ADC A, B
     cpu.a = 0x54
     cpu.b = 0xab
     cpu._carry = True       # Carry
@@ -1471,7 +1471,7 @@ def test_adc_zero(cpu):
     assert cpu.half_carry == True
 
 def test_adc_immediate(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xce)    # ADC A, #42 Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xce)    # ADC A, #42
     cpu._machine.write_memory_byte(0x0001, 0x42)    # value
     cpu.a = 0x14
     cpu._carry = True
@@ -1485,7 +1485,7 @@ def test_adc_immediate(cpu):
     assert cpu.half_carry == False
 
 def test_sub(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0x90)    # SUB A, B Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0x90)    # SUB A, B
     cpu.a = 0x56
     cpu.b = 0x42
     cpu.step()
@@ -1498,7 +1498,7 @@ def test_sub(cpu):
     assert cpu.half_carry == True
 
 def test_sub_zero(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0x97)    # SUB A, A Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0x97)    # SUB A, A
     cpu.a = 0x42
     cpu.step()
     assert cpu.a == 0x00
@@ -1510,7 +1510,7 @@ def test_sub_zero(cpu):
     assert cpu.half_carry == True   # ??? Not really sure whether this is correct
 
 def test_sub_zero_2(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0x95)    # SUB A, E Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0x95)    # SUB A, E
     cpu.a = 0x00
     cpu.e = 0x00
     cpu.step()
@@ -1523,7 +1523,7 @@ def test_sub_zero_2(cpu):
     assert cpu.half_carry == False
 
 def test_sub_negative_no_overflow(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0x96)    # SUB A, (HL) Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0x96)    # SUB A, (HL)
     cpu._machine.write_memory_byte(0xbeef, 0x14)    # second operand at (HL)
     cpu.a = 0xab
     cpu.hl = 0xbeef
@@ -1537,7 +1537,7 @@ def test_sub_negative_no_overflow(cpu):
     assert cpu.half_carry == True
 
 def test_sub_negative_overflow(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xd6)    # SUB A, #42 Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xd6)    # SUB A, #42
     cpu._machine.write_memory_byte(0x0001, 0x42)    # Immediate operand
     cpu.a = 0xab
     cpu.step()
@@ -1550,7 +1550,7 @@ def test_sub_negative_overflow(cpu):
     assert cpu.half_carry == True
 
 def test_sbc_no_carry(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0x9b)    # SBC A, E Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0x9b)    # SBC A, E
     cpu.a = 0x04
     cpu.e = 0x02
     cpu._carry = False
@@ -1564,7 +1564,7 @@ def test_sbc_no_carry(cpu):
     assert cpu.half_carry == True
 
 def test_sbc_with_carry(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0x9c)    # SBC A, H Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0x9c)    # SBC A, H
     cpu.a = 0x04
     cpu.h = 0x02
     cpu._carry = True
@@ -1578,7 +1578,7 @@ def test_sbc_with_carry(cpu):
     assert cpu.half_carry == True
 
 def test_sbc_negative_no_overflow(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xde)    # SBC A, #24 Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xde)    # SBC A, #24
     cpu._machine.write_memory_byte(0x0001, 0x24)    # Immadiate operand
     cpu.a = 0xbc
     cpu._carry = True
@@ -1592,7 +1592,7 @@ def test_sbc_negative_no_overflow(cpu):
     assert cpu.half_carry == True
 
 def test_sbc_negative_overflow(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0x9e)    # SBC A, (HL) Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0x9e)    # SBC A, (HL)
     cpu._machine.write_memory_byte(0xbeef, 0x42)    # data operand
     cpu.a = 0xbc
     cpu.hl = 0xbeef
@@ -1607,7 +1607,7 @@ def test_sbc_negative_overflow(cpu):
     assert cpu.half_carry == True
 
 def test_sbc_zero(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0x9c)    # SBC A, H Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0x9c)    # SBC A, H
     cpu.a = 0x42
     cpu.h = 0x41
     cpu._carry = True
@@ -1621,7 +1621,7 @@ def test_sbc_zero(cpu):
     assert cpu.half_carry == True
 
 def test_and(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xa5)    # AND A, L Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xa5)    # AND A, L
     cpu.a = 0xfc
     cpu.l = 0x0f
     cpu.step()
@@ -1634,7 +1634,7 @@ def test_and(cpu):
     assert cpu.half_carry == False
 
 def test_and_memory(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xa6)    # AND A, (HL) Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xa6)    # AND A, (HL)
     cpu._machine.write_memory_byte(0xbeef, 0x14)    # Operand at (HL)
     cpu.a = 0x73
     cpu.hl = 0xbeef
@@ -1648,7 +1648,7 @@ def test_and_memory(cpu):
     assert cpu.half_carry == False
 
 def test_and_zero(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xe6)    # AND A, #13 Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xe6)    # AND A, #13
     cpu._machine.write_memory_byte(0x0001, 0x13)    # Immediate operand
     cpu.a = 0xec
     cpu.step()
@@ -1661,7 +1661,7 @@ def test_and_zero(cpu):
     assert cpu.half_carry == False
 
 def test_xor(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xac)    # XOR A, H Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xac)    # XOR A, H
     cpu.a = 0x5c
     cpu.h = 0x78
     cpu.step()
@@ -1674,7 +1674,7 @@ def test_xor(cpu):
     assert cpu.half_carry == False
 
 def test_xor_same_values(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xae)    # XOR A, (HL) Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xae)    # XOR A, (HL)
     cpu._machine.write_memory_byte(0xbeef, 0x42)    # Operand at (HL)
     cpu.a = 0x42
     cpu.hl = 0xbeef
@@ -1688,7 +1688,7 @@ def test_xor_same_values(cpu):
     assert cpu.half_carry == False
 
 def test_xor_zero(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xee)    # XOR A, #55 Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xee)    # XOR A, #55
     cpu._machine.write_memory_byte(0x0001, 0x55)    # Immediate operand
     cpu.a = 0xaa
     cpu.step()
@@ -1701,7 +1701,7 @@ def test_xor_zero(cpu):
     assert cpu.half_carry == False
 
 def test_or(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xb6)    # OR A, (HL) Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xb6)    # OR A, (HL)
     cpu._machine.write_memory_byte(0x1234, 0x0f)    # Operand at (HL)
     cpu.a = 0x33
     cpu.hl = 0x1234
@@ -1715,7 +1715,7 @@ def test_or(cpu):
     assert cpu.half_carry == False
 
 def test_or_zero(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xb7)    # OR A, A Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xb7)    # OR A, A
     cpu.a = 0x00
     cpu.step()
     assert cpu.a == 0x00
@@ -1727,7 +1727,7 @@ def test_or_zero(cpu):
     assert cpu.half_carry == False
 
 def test_or_all_ones(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xf6)    # OR A, #55 Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xf6)    # OR A, #55
     cpu._machine.write_memory_byte(0x0001, 0x55)    # Immediate operand
     cpu.a = 0xaa
     cpu.step()
@@ -1740,7 +1740,7 @@ def test_or_all_ones(cpu):
     assert cpu.half_carry == False
 
 def test_cmp_1(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xb8)    # CP A, B Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xb8)    # CP A, B
     cpu.a = 0x0a
     cpu.b = 0x05
     cpu.step()
@@ -1753,7 +1753,7 @@ def test_cmp_1(cpu):
     assert cpu.half_carry == True
 
 def test_cmp_2(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xfe)    # CP a, #5 Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xfe)    # CP a, #5
     cpu._machine.write_memory_byte(0x0001, 0xb8)    # Immediate operand
     cpu.a = 0x02
     cpu.step()
@@ -1766,8 +1766,8 @@ def test_cmp_2(cpu):
     assert cpu.half_carry == False
 
 def test_cmp_zero(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xbe)    # CP A, (HL) Instruction Opcode
-    cpu._machine.write_memory_byte(0x1234, 0x42)    # CP A, (HL) Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xbe)    # CP A, (HL)
+    cpu._machine.write_memory_byte(0x1234, 0x42)    # CP A, (HL)
     cpu.a = 0x42
     cpu.hl = 0x1234
     cpu.step()
@@ -1780,7 +1780,7 @@ def test_cmp_zero(cpu):
     assert cpu.half_carry == True
 
 def test_add_indexed_ix(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xdd)    # ADD A, (IX + 5) Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xdd)    # ADD A, (IX + 5)
     cpu._machine.write_memory_byte(0x0001, 0x86)    
     cpu._machine.write_memory_byte(0x0002, 0x05)    # Offset
     cpu._machine.write_memory_byte(0x1234 + 0x05, 0x14)    # Operand at IX + 5
@@ -1798,7 +1798,7 @@ def test_add_indexed_ix(cpu):
     assert cpu.half_carry == True
 
 def test_add_indexed_iy(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xfd)    # ADD A, (IY - 5) Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xfd)    # ADD A, (IY - 5)
     cpu._machine.write_memory_byte(0x0001, 0x86)    
     cpu._machine.write_memory_byte(0x0002, 0xfb)    # Offset
     cpu._machine.write_memory_byte(0x1234 - 0x05, 0xcd)    # Operand at IX + 5
@@ -1816,7 +1816,7 @@ def test_add_indexed_iy(cpu):
     assert cpu.half_carry == True
 
 def test_adc_indexed_ix(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xdd)    # ADC A, (IX - 5) Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xdd)    # ADC A, (IX - 5)
     cpu._machine.write_memory_byte(0x0001, 0x8e)    
     cpu._machine.write_memory_byte(0x0002, 0xfb)    # Offset
     cpu._machine.write_memory_byte(0x1234 - 0x05, 0xab)    # Operand at IX + 5
@@ -1835,7 +1835,7 @@ def test_adc_indexed_ix(cpu):
     assert cpu.half_carry == True
 
 def test_adc_indexed_iy(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xfd)    # ADC A, (IY + 5) Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xfd)    # ADC A, (IY + 5)
     cpu._machine.write_memory_byte(0x0001, 0x8e)    
     cpu._machine.write_memory_byte(0x0002, 0x05)    # Offset
     cpu._machine.write_memory_byte(0x1234 + 0x05, 0xcd)    # Operand at IX + 5
@@ -1854,7 +1854,7 @@ def test_adc_indexed_iy(cpu):
     assert cpu.half_carry == True
  
 def test_sub_indexed_ix(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xdd)    # SUB A, (IX + 5) Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xdd)    # SUB A, (IX + 5)
     cpu._machine.write_memory_byte(0x0001, 0x96)    
     cpu._machine.write_memory_byte(0x0002, 0x05)    # Offset
     cpu._machine.write_memory_byte(0x1234 + 0x05, 0x42)    # Operand at IX + 5
@@ -1872,7 +1872,7 @@ def test_sub_indexed_ix(cpu):
     assert cpu.half_carry == True
 
 def test_sub_indexed_iy(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xfd)    # SUB A, (IY - 5) Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xfd)    # SUB A, (IY - 5)
     cpu._machine.write_memory_byte(0x0001, 0x96)    
     cpu._machine.write_memory_byte(0x0002, 0xfb)    # Offset
     cpu._machine.write_memory_byte(0x1234 - 0x05, 0x42)    # Operand at IY - 5
@@ -1890,7 +1890,7 @@ def test_sub_indexed_iy(cpu):
     assert cpu.half_carry == True
 
 def test_sbc_indexed_ix(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xdd)    # SBC A, (IX - 5) Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xdd)    # SBC A, (IX - 5)
     cpu._machine.write_memory_byte(0x0001, 0x9e)    
     cpu._machine.write_memory_byte(0x0002, 0xfb)    # Offset
     cpu._machine.write_memory_byte(0x1234 - 0x05, 0x24)    # Operand at IX - 5
@@ -1909,7 +1909,7 @@ def test_sbc_indexed_ix(cpu):
     assert cpu.half_carry == True
 
 def test_sbc_indexed_iy(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xfd)    # SBC A, (IY + 5) Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xfd)    # SBC A, (IY + 5)
     cpu._machine.write_memory_byte(0x0001, 0x9e)    
     cpu._machine.write_memory_byte(0x0002, 0x05)    # Offset
     cpu._machine.write_memory_byte(0x1234 + 0x05, 0x42)    # Operand at IY + 5
@@ -1928,7 +1928,7 @@ def test_sbc_indexed_iy(cpu):
     assert cpu.half_carry == True
 
 def test_and_indexed_ix(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xdd)    # AND (IX + 5) Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xdd)    # AND (IX + 5)
     cpu._machine.write_memory_byte(0x0001, 0xa6)    
     cpu._machine.write_memory_byte(0x0002, 0x05)    # Offset
     cpu._machine.write_memory_byte(0x1234 + 0x05, 0x0f)    # Operand at IX + 5
@@ -1946,7 +1946,7 @@ def test_and_indexed_ix(cpu):
     assert cpu.half_carry == False
 
 def test_and_indexed_iy(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xfd)    # AND (IY - 5) Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xfd)    # AND (IY - 5)
     cpu._machine.write_memory_byte(0x0001, 0xa6)    
     cpu._machine.write_memory_byte(0x0002, 0xfb)    # Offset
     cpu._machine.write_memory_byte(0x1234 - 0x05, 0x14)    # Operand at IY - 5
@@ -1964,7 +1964,7 @@ def test_and_indexed_iy(cpu):
     assert cpu.half_carry == False
 
 def test_xor_indexed_ix(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xdd)    # XOR (IX - 5) Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xdd)    # XOR (IX - 5)
     cpu._machine.write_memory_byte(0x0001, 0xae)    
     cpu._machine.write_memory_byte(0x0002, 0xfb)    # Offset
     cpu._machine.write_memory_byte(0x1234 - 0x05, 0x78)    # Operand at IX - 5
@@ -1983,7 +1983,7 @@ def test_xor_indexed_ix(cpu):
     assert cpu.half_carry == False
 
 def test_xor_indexed_iy(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xfd)    # XOR (IY + 5) Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xfd)    # XOR (IY + 5)
     cpu._machine.write_memory_byte(0x0001, 0xae)
     cpu._machine.write_memory_byte(0x0002, 0x05)    # Offset
     cpu._machine.write_memory_byte(0x1234 + 0x05, 0x42)    # Operand at IY + 5
@@ -2002,7 +2002,7 @@ def test_xor_indexed_iy(cpu):
     assert cpu.half_carry == False
 
 def test_or_indexed_ix(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xdd)    # OR (IX + 5) Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xdd)    # OR (IX + 5)
     cpu._machine.write_memory_byte(0x0001, 0xb6)    
     cpu._machine.write_memory_byte(0x0002, 0x05)    # Offset
     cpu._machine.write_memory_byte(0x1234 + 0x05, 0x0f)    # Operand at IX + 5
@@ -2020,7 +2020,7 @@ def test_or_indexed_ix(cpu):
     assert cpu.half_carry == False
 
 def test_or_indexed_iy(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xfd)    # OR (IY - 5) Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xfd)    # OR (IY - 5)
     cpu._machine.write_memory_byte(0x0001, 0xb6)    
     cpu._machine.write_memory_byte(0x0002, 0xfb)    # Offset
     cpu._machine.write_memory_byte(0x1234 - 0x05, 0x55)    # Operand at IY - 5
@@ -2038,7 +2038,7 @@ def test_or_indexed_iy(cpu):
     assert cpu.half_carry == False
 
 def test_cp_indexed_ix(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xdd)    # CP (IX - 5) Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xdd)    # CP (IX - 5)
     cpu._machine.write_memory_byte(0x0001, 0xbe)    
     cpu._machine.write_memory_byte(0x0002, 0xfb)    # Offset
     cpu._machine.write_memory_byte(0x1234 - 0x05, 0x42)    # Operand at IX - 5
@@ -2057,7 +2057,7 @@ def test_cp_indexed_ix(cpu):
     assert cpu.half_carry == True
 
 def test_cp_indexed_iy(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xfd)    # CP (IY + 5) Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xfd)    # CP (IY + 5)
     cpu._machine.write_memory_byte(0x0001, 0xbe)
     cpu._machine.write_memory_byte(0x0002, 0x05)    # Offset
     cpu._machine.write_memory_byte(0x1234 + 0x05, 0x42)    # Operand at IY + 5
@@ -2077,7 +2077,7 @@ def test_cp_indexed_iy(cpu):
 
 
 def test_dec_a(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0x3d)    # DEC A Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0x3d)    # DEC A
     cpu.a = 0x42
     cpu.step()
     assert cpu._cycles == 4
@@ -2089,7 +2089,7 @@ def test_dec_a(cpu):
     assert cpu.add_subtract == True
 
 def test_dec_b(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0x05)    # DEC B Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0x05)    # DEC B
     cpu.b = 0xa2
     cpu.step()
     assert cpu._cycles == 4
@@ -2101,7 +2101,7 @@ def test_dec_b(cpu):
     assert cpu.add_subtract == True
 
 def test_dec_c(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0x0d)    # DEC C Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0x0d)    # DEC C
     cpu.c = 0x01
     cpu.step()
     assert cpu._cycles == 4
@@ -2113,7 +2113,7 @@ def test_dec_c(cpu):
     assert cpu.add_subtract == True
 
 def test_dec_d(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0x15)    # DEC D Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0x15)    # DEC D
     cpu.d = 0x00
     cpu.step()
     assert cpu._cycles == 4
@@ -2125,7 +2125,7 @@ def test_dec_d(cpu):
     assert cpu.add_subtract == True
 
 def test_dec_e(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0x1d)    # DEC E Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0x1d)    # DEC E
     cpu.e = 0x10
     cpu.step()
     assert cpu._cycles == 4
@@ -2137,7 +2137,7 @@ def test_dec_e(cpu):
     assert cpu.add_subtract == True
 
 def test_dec_h(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0x25)    # DEC H Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0x25)    # DEC H
     cpu.h = 0x80
     cpu.step()
     assert cpu._cycles == 4
@@ -2149,7 +2149,7 @@ def test_dec_h(cpu):
     assert cpu.add_subtract == True
 
 def test_dec_m(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0x35)    # DEC (HL) Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0x35)    # DEC (HL)
     cpu._machine.write_memory_byte(0xbeef, 0x42)    # Data byte
     cpu.hl = 0xbeef
     cpu.step()
@@ -2162,7 +2162,7 @@ def test_dec_m(cpu):
     assert cpu.add_subtract == True
 
 def test_dec_iy_d(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xfd)    # DEC (IY + 5) Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xfd)    # DEC (IY + 5)
     cpu._machine.write_memory_byte(0x0001, 0x35)
     cpu._machine.write_memory_byte(0x0002, 0x05)
     cpu._machine.write_memory_byte(0x1234 + 5, 0x42)    # Data byte
@@ -2177,7 +2177,7 @@ def test_dec_iy_d(cpu):
     assert cpu.add_subtract == True
 
 def test_dec_iy_d_negative_offset(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xfd)    # DEC (IY - 5) Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xfd)    # DEC (IY - 5)
     cpu._machine.write_memory_byte(0x0001, 0x35)
     cpu._machine.write_memory_byte(0x0002, 0xfb)
     cpu._machine.write_memory_byte(0x1234 - 5, 0x80)    # Data byte
@@ -2192,7 +2192,7 @@ def test_dec_iy_d_negative_offset(cpu):
     assert cpu.add_subtract == True
 
 def test_inc_a(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0x3c)    # INC A Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0x3c)    # INC A
     cpu.a = 0x42
     cpu.step()
     assert cpu._cycles == 4
@@ -2204,7 +2204,7 @@ def test_inc_a(cpu):
     assert cpu.add_subtract == False
 
 def test_inc_b(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0x04)    # INC B Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0x04)    # INC B
     cpu.b = 0xa2
     cpu.step()
     assert cpu._cycles == 4
@@ -2216,7 +2216,7 @@ def test_inc_b(cpu):
     assert cpu.add_subtract == False
 
 def test_inc_c(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0x0c)    # INC C Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0x0c)    # INC C
     cpu.c = 0xff
     cpu.step()
     assert cpu._cycles == 4
@@ -2228,7 +2228,7 @@ def test_inc_c(cpu):
     assert cpu.add_subtract == False
 
 def test_inc_d(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0x14)    # INC D Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0x14)    # INC D
     cpu.d = 0x00
     cpu.step()
     assert cpu._cycles == 4
@@ -2240,7 +2240,7 @@ def test_inc_d(cpu):
     assert cpu.add_subtract == False
 
 def test_inc_e(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0x1c)    # INC E Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0x1c)    # INC E
     cpu.e = 0x3f
     cpu.step()
     assert cpu._cycles == 4
@@ -2252,7 +2252,7 @@ def test_inc_e(cpu):
     assert cpu.add_subtract == False
 
 def test_inc_h(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0x24)    # INC H Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0x24)    # INC H
     cpu.h = 0x7f
     cpu.step()
     assert cpu._cycles == 4
@@ -2264,7 +2264,7 @@ def test_inc_h(cpu):
     assert cpu.add_subtract == False
 
 def test_inc_m(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0x34)    # INC (HL) Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0x34)    # INC (HL)
     cpu._machine.write_memory_byte(0xbeef, 0x42)    # Data byte
     cpu.hl = 0xbeef
     cpu.step()
@@ -2277,7 +2277,7 @@ def test_inc_m(cpu):
     assert cpu.add_subtract == False
 
 def test_inc_ix_d(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xdd)    # INC (IX + 5) Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xdd)    # INC (IX + 5)
     cpu._machine.write_memory_byte(0x0001, 0x34)
     cpu._machine.write_memory_byte(0x0002, 0x05)
     cpu._machine.write_memory_byte(0x1234 + 5, 0x42)    # Data byte
@@ -2292,7 +2292,7 @@ def test_inc_ix_d(cpu):
     assert cpu.add_subtract == False
 
 def test_inc_iy_d_negative_offset(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xfd)    # INC (IY - 5) Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xfd)    # INC (IY - 5)
     cpu._machine.write_memory_byte(0x0001, 0x34)
     cpu._machine.write_memory_byte(0x0002, 0xfb)
     cpu._machine.write_memory_byte(0x1234 - 5, 0x7f)    # Data byte
@@ -2307,7 +2307,7 @@ def test_inc_iy_d_negative_offset(cpu):
     assert cpu.add_subtract == False
 
 def test_dec_bc(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0x0b)    # DEC BC Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0x0b)    # DEC BC
     cpu.bc = 0xbeef
     cpu.step()
     assert cpu._cycles == 6
@@ -2315,7 +2315,7 @@ def test_dec_bc(cpu):
     assert cpu.c == 0xee
 
 def test_dec_de(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0x1b)    # DEC DE Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0x1b)    # DEC DE
     cpu.de = 0xbeef
     cpu.step()
     assert cpu._cycles == 6
@@ -2323,7 +2323,7 @@ def test_dec_de(cpu):
     assert cpu.e == 0xee
 
 def test_dec_hl(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0x2b)    # DEC HL Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0x2b)    # DEC HL
     cpu.hl = 0xbeef
     cpu.step()
     assert cpu._cycles == 6
@@ -2331,14 +2331,14 @@ def test_dec_hl(cpu):
     assert cpu.l == 0xee
 
 def test_dec_sp(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0x3b)    # DEC SP Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0x3b)    # DEC SP
     cpu.sp = 0xbeef
     cpu.step()
     assert cpu._cycles == 6
     assert cpu.sp == 0xbeee
 
 def test_inc_bc(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0x03)    # INC BC Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0x03)    # INC BC
     cpu.bc = 0xbeef
     cpu.step()
     assert cpu._cycles == 6
@@ -2346,7 +2346,7 @@ def test_inc_bc(cpu):
     assert cpu.c == 0xf0
 
 def test_inc_de(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0x13)    # INC DE Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0x13)    # INC DE
     cpu.de = 0xbeef
     cpu.step()
     assert cpu._cycles == 6
@@ -2354,7 +2354,7 @@ def test_inc_de(cpu):
     assert cpu.e == 0xf0
 
 def test_inc_hl(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0x23)    # INC HL Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0x23)    # INC HL
     cpu.hl = 0xbeef
     cpu.step()
     assert cpu._cycles == 6
@@ -2362,14 +2362,14 @@ def test_inc_hl(cpu):
     assert cpu.l == 0xf0
 
 def test_inc_sp(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0x33)    # INC SP Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0x33)    # INC SP
     cpu.sp = 0xbeef
     cpu.step()
     assert cpu._cycles == 6
     assert cpu.sp == 0xbef0
 
 def test_add_hl_bc(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0x09)    # ADD HL, BC Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0x09)    # ADD HL, BC
     cpu.hl = 0xa17b
     cpu.bc = 0x339f
     cpu.carry = True    # Shall be ignored
@@ -2381,7 +2381,7 @@ def test_add_hl_bc(cpu):
     assert cpu.add_subtract == False
 
 def test_add_hl_de(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0x19)    # ADD HL, DE Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0x19)    # ADD HL, DE
     cpu.hl = 0xa17b
     cpu.de = 0xbeef
     cpu.carry = True    # Shall be ignored
@@ -2393,7 +2393,7 @@ def test_add_hl_de(cpu):
     assert cpu.add_subtract == False
 
 def test_add_hl_hl(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0x29)    # ADD HL, HL Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0x29)    # ADD HL, HL
     cpu.hl = 0xbeef
     cpu.carry = True    # Shall be ignored
     cpu.step()
@@ -2404,7 +2404,7 @@ def test_add_hl_hl(cpu):
     assert cpu.add_subtract == False
 
 def test_add_hl_sp(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0x39)    # ADD HL, SP Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0x39)    # ADD HL, SP
     cpu.hl = 0x1234
     cpu.sp = 0xbeef
     cpu.carry = True    # Shall be ignored
@@ -2416,7 +2416,7 @@ def test_add_hl_sp(cpu):
     assert cpu.add_subtract == False
 
 def test_adc_hl_bc(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xed)    # ADC HL, BC Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xed)    # ADC HL, BC
     cpu._machine.write_memory_byte(0x0001, 0x4a)
     cpu.hl = 0xa17b     # Negative + Positive result no overflow
     cpu.bc = 0x339f
@@ -2431,7 +2431,7 @@ def test_adc_hl_bc(cpu):
     assert cpu.zero == False
 
 def test_adc_hl_de(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xed)    # ADC HL, DE Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xed)    # ADC HL, DE
     cpu._machine.write_memory_byte(0x0001, 0x5a)
     cpu.hl = 0xabcd     # Negative + negative result an overflow
     cpu.de = 0xef12
@@ -2446,7 +2446,7 @@ def test_adc_hl_de(cpu):
     assert cpu.zero == False
 
 def test_adc_hl_hl(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xed)    # ADC HL, HL Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xed)    # ADC HL, HL
     cpu._machine.write_memory_byte(0x0001, 0x6a)
     cpu.hl = 0x4567     # Positive + positive result an overflow
     cpu.carry = True    # Shall be processed
@@ -2460,7 +2460,7 @@ def test_adc_hl_hl(cpu):
     assert cpu.zero == False
 
 def test_adc_hl_hl_zero(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xed)    # ADC HL, HL Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xed)    # ADC HL, HL
     cpu._machine.write_memory_byte(0x0001, 0x6a)
     cpu.hl = 0x0000     # Zero + zero result no overflow
     cpu.carry = False   # No carry
@@ -2474,7 +2474,7 @@ def test_adc_hl_hl_zero(cpu):
     assert cpu.zero == True
 
 def test_adc_hl_sp(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xed)    # ADC HL, SP Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xed)    # ADC HL, SP
     cpu._machine.write_memory_byte(0x0001, 0x7a)
     cpu.hl = 0x4567     # Positive + negative result no overflow
     cpu.sp = 0x89ab
@@ -2489,7 +2489,7 @@ def test_adc_hl_sp(cpu):
     assert cpu.zero == False
 
 def test_adc_hl_sp_zero(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xed)    # ADC HL, SP Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xed)    # ADC HL, SP
     cpu._machine.write_memory_byte(0x0001, 0x7a)
     cpu.hl = 0x4567     # Positive + negative result no overflow
     cpu.sp = 0xba98
@@ -2504,7 +2504,7 @@ def test_adc_hl_sp_zero(cpu):
     assert cpu.zero == True
 
 def test_sbc_hl_bc(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xed)    # SBC HL, BC Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xed)    # SBC HL, BC
     cpu._machine.write_memory_byte(0x0001, 0x42)
     cpu.hl = 0xa17b     # Negative - Positive result an overflow
     cpu.bc = 0x339f
@@ -2519,7 +2519,7 @@ def test_sbc_hl_bc(cpu):
     assert cpu.zero == False
 
 def test_sbc_hl_de(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xed)    # SBC HL, DE Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xed)    # SBC HL, DE
     cpu._machine.write_memory_byte(0x0001, 0x52)
     cpu.hl = 0xabcd     # Negative - negative result no overflow
     cpu.de = 0xef12
@@ -2534,7 +2534,7 @@ def test_sbc_hl_de(cpu):
     assert cpu.zero == False
 
 def test_sbc_hl_hl(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xed)    # SBC HL, HL Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xed)    # SBC HL, HL
     cpu._machine.write_memory_byte(0x0001, 0x62)
     cpu.hl = 0x4567     # Positive - positive result no overflow
     cpu.carry = True    # Shall be processed
@@ -2548,7 +2548,7 @@ def test_sbc_hl_hl(cpu):
     assert cpu.zero == False
 
 def test_sbc_hl_hl_zero(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xed)    # SBC HL, HL Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xed)    # SBC HL, HL
     cpu._machine.write_memory_byte(0x0001, 0x62)
     cpu.hl = 0x0000     # Zero + zero result no overflow
     cpu.carry = False   # No carry
@@ -2562,7 +2562,7 @@ def test_sbc_hl_hl_zero(cpu):
     assert cpu.zero == True
 
 def test_sbc_hl_sp(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xed)    # SBC HL, SP Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xed)    # SBC HL, SP
     cpu._machine.write_memory_byte(0x0001, 0x72)
     cpu.hl = 0x4567     # Positive - negative result no overflow
     cpu.sp = 0x89ab
@@ -2577,7 +2577,7 @@ def test_sbc_hl_sp(cpu):
     assert cpu.zero == False
 
 def test_sbc_hl_sp_zero(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xed)    # SBC HL, SP Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xed)    # SBC HL, SP
     cpu._machine.write_memory_byte(0x0001, 0x72)
     cpu.hl = 0x4567     # Positive - negative result no overflow
     cpu.sp = 0x4566
@@ -2595,7 +2595,7 @@ def test_sbc_hl_sp_zero(cpu):
 # Rotate instructions tests
 
 def test_rlca_1(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0x07)    # RLCA  Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0x07)    # RLCA
     cpu.a = 0x5a
     cpu.step()
     assert cpu.a == 0xb4
@@ -2603,7 +2603,7 @@ def test_rlca_1(cpu):
     assert cpu._carry == False
 
 def test_rlca_2(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0x07)    # RLCA  Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0x07)    # RLCA
     cpu.a = 0xa5
     cpu.step()
     assert cpu.a == 0x4b
@@ -2611,7 +2611,7 @@ def test_rlca_2(cpu):
     assert cpu._carry == True
 
 def test_rrca_1(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0x0f)    # RRCA  Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0x0f)    # RRCA
     cpu.a = 0x5a
     cpu.step()
     assert cpu.a == 0x2d
@@ -2619,7 +2619,7 @@ def test_rrca_1(cpu):
     assert cpu._carry == False
 
 def test_rrca_2(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0x0f)    # RRCA  Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0x0f)    # RRCA
     cpu.a = 0xa5
     cpu.step()
     assert cpu.a == 0xd2
@@ -2627,7 +2627,7 @@ def test_rrca_2(cpu):
     assert cpu._carry == True
 
 def test_rla_1(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0x17)    # RLA  Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0x17)    # RLA
     cpu.a = 0x5a
     cpu._carry = True
     cpu.step()
@@ -2636,7 +2636,7 @@ def test_rla_1(cpu):
     assert cpu._carry == False
 
 def test_rla_2(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0x17)    # RLA  Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0x17)    # RLA
     cpu.a = 0xa5
     cpu._carry = False
     cpu.step()
@@ -2645,7 +2645,7 @@ def test_rla_2(cpu):
     assert cpu._carry == True
 
 def test_rra_1(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0x1f)    # RRA  Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0x1f)    # RRA
     cpu.a = 0x5a
     cpu._carry = True
     cpu.step()
@@ -2654,7 +2654,7 @@ def test_rra_1(cpu):
     assert cpu._carry == False
 
 def test_rra_2(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0x1f)    # RRA  Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0x1f)    # RRA
     cpu.a = 0xa5
     cpu._carry = False
     cpu.step()
@@ -2666,7 +2666,7 @@ def test_rra_2(cpu):
 # Bit instructions tests
 
 def test_cpl(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0x2f)    # CPL  Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0x2f)    # CPL
     cpu.a = 0x51
     cpu.step()
     assert cpu.a == 0xae
@@ -2675,13 +2675,13 @@ def test_cpl(cpu):
     assert cpu.half_carry == True
 
 def test_scf(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0x37)    # SCF  Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0x37)    # SCF
     cpu.step()
     assert cpu.carry == True
     assert cpu._cycles == 4
 
 def test_ccf_1(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0x3f)    # CCF  Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0x3f)    # CCF
     cpu._carry = False
     cpu.step()
     assert cpu.carry == True
@@ -2689,7 +2689,7 @@ def test_ccf_1(cpu):
     assert cpu._cycles == 4
 
 def test_ccf_1(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0x3f)    # CCF  Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0x3f)    # CCF
     cpu._carry = True
     cpu.step()
     assert cpu.carry == False
@@ -2697,7 +2697,7 @@ def test_ccf_1(cpu):
     assert cpu._cycles == 4
 
 def test_get_bit_a(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xcb)    # BIT 3, A  Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xcb)    # BIT 3, A
     cpu._machine.write_memory_byte(0x0001, 0x5f)
 
     cpu.a = 0x08
@@ -2707,7 +2707,7 @@ def test_get_bit_a(cpu):
     assert cpu.zero == False                        # Bit is set (non-zero)
 
 def test_get_bit_h(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xcb)    # BIT 5, H  Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xcb)    # BIT 5, H
     cpu._machine.write_memory_byte(0x0001, 0x6c)
 
     cpu.h = 0x42
@@ -2717,7 +2717,7 @@ def test_get_bit_h(cpu):
     assert cpu.zero == True                         # Bit is not set (zero)
 
 def test_get_bit_mem_1(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xcb)    # BIT 7, (HL)  Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xcb)    # BIT 7, (HL)
     cpu._machine.write_memory_byte(0x0001, 0x7e)
     cpu._machine.write_memory_byte(0x1234, 0x42)    # Bit 7 is not set
     cpu.hl = 0x1234
@@ -2727,7 +2727,7 @@ def test_get_bit_mem_1(cpu):
     assert cpu.zero == True                         # Bit is not set (zero)
 
 def test_get_bit_mem_2(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xcb)    # BIT 7, (HL)  Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xcb)    # BIT 7, (HL)
     cpu._machine.write_memory_byte(0x0001, 0x7e)
     cpu._machine.write_memory_byte(0x1234, 0x80)    # Bit 7 is set
     cpu.hl = 0x1234
@@ -2737,7 +2737,7 @@ def test_get_bit_mem_2(cpu):
     assert cpu.zero == False                         # Bit is set (non-zero)
 
 def test_get_bit_ix_1(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xdd)    # BIT 3, (IX+42) Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xdd)    # BIT 3, (IX+42)
     cpu._machine.write_memory_byte(0x0001, 0xcb)
     cpu._machine.write_memory_byte(0x0002, 0x42)    # Positive displacement
     cpu._machine.write_memory_byte(0x0003, 0x5e)    # Get bit 3
@@ -2751,7 +2751,7 @@ def test_get_bit_ix_1(cpu):
     assert cpu.zero == False                        # Bit is set (non-zero)
 
 def test_get_bit_ix_0(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xdd)    # BIT 3, (IX+42) Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xdd)    # BIT 3, (IX+42)
     cpu._machine.write_memory_byte(0x0001, 0xcb)
     cpu._machine.write_memory_byte(0x0002, 0x42)    # Positive displacement
     cpu._machine.write_memory_byte(0x0003, 0x5e)    # Get bit 3
@@ -2765,7 +2765,7 @@ def test_get_bit_ix_0(cpu):
     assert cpu.zero == True                        # Bit is reset (zero)
 
 def test_set_bit_b(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xcb)    # SET 2, B  Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xcb)    # SET 2, B
     cpu._machine.write_memory_byte(0x0001, 0xd0)
 
     cpu.b = 0x42
@@ -2775,7 +2775,7 @@ def test_set_bit_b(cpu):
     assert cpu.b == 0x46
 
 def test_set_bit_mem(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xcb)    # BIT 4, (HL)  Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xcb)    # BIT 4, (HL)
     cpu._machine.write_memory_byte(0x0001, 0xe6)
     cpu._machine.write_memory_byte(0x1234, 0x24)
 
@@ -2786,7 +2786,7 @@ def test_set_bit_mem(cpu):
     assert cpu._machine.read_memory_byte(0x1234) == 0x34
 
 def test_set_bit_iy(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xfd)    # SET 3, (IY-42) Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xfd)    # SET 3, (IY-42)
     cpu._machine.write_memory_byte(0x0001, 0xcb)
     cpu._machine.write_memory_byte(0x0002, 0xbe)    # Negative displacement (-0x42)
     cpu._machine.write_memory_byte(0x0003, 0x76)    # Get bit 6
@@ -2800,7 +2800,7 @@ def test_set_bit_iy(cpu):
     assert cpu.zero == False                        # Bit is set (non-zero)
 
 def test_set_bit_ix(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xdd)    # SET 3, (IX+42) Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xdd)    # SET 3, (IX+42)
     cpu._machine.write_memory_byte(0x0001, 0xcb)
     cpu._machine.write_memory_byte(0x0002, 0x42)    # Positive displacement
     cpu._machine.write_memory_byte(0x0003, 0xde)    # Set bit 3
@@ -2813,7 +2813,7 @@ def test_set_bit_ix(cpu):
     assert cpu._machine.read_memory_byte(0xbeef + 0x42) == 0x19     # Bit 3 is now set
 
 def test_set_bit_iy(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xfd)    # SET 3, (IY-42) Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xfd)    # SET 3, (IY-42)
     cpu._machine.write_memory_byte(0x0001, 0xcb)
     cpu._machine.write_memory_byte(0x0002, 0xbe)    # Negative displacement (-0x42)
     cpu._machine.write_memory_byte(0x0003, 0xf6)    # Set bit 6
@@ -2827,7 +2827,7 @@ def test_set_bit_iy(cpu):
     assert cpu._machine.read_memory_byte(0xbeef - 0x42) == 0x51     # Bit 6 is now set
 
 def test_res_bit_b(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xcb)    # RES 0, E  Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xcb)    # RES 0, E
     cpu._machine.write_memory_byte(0x0001, 0x83)
 
     cpu.e = 0x43
@@ -2837,7 +2837,7 @@ def test_res_bit_b(cpu):
     assert cpu.e == 0x42
 
 def test_res_bit_mem(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xcb)    # BIT 7, (HL)  Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xcb)    # BIT 7, (HL)
     cpu._machine.write_memory_byte(0x0001, 0xbe)
     cpu._machine.write_memory_byte(0x1234, 0xab)
 
@@ -2848,7 +2848,7 @@ def test_res_bit_mem(cpu):
     assert cpu._machine.read_memory_byte(0x1234) == 0x2b
 
 def test_res_bit_ix(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xdd)    # RES 3, (IX+42) Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xdd)    # RES 3, (IX+42)
     cpu._machine.write_memory_byte(0x0001, 0xcb)
     cpu._machine.write_memory_byte(0x0002, 0x42)    # Positive displacement
     cpu._machine.write_memory_byte(0x0003, 0x9e)    # Reset bit 3
@@ -2861,7 +2861,7 @@ def test_res_bit_ix(cpu):
     assert cpu._machine.read_memory_byte(0xbeef + 0x42) == 0x11     # Bit 3 is now reset
 
 def test_res_bit_iy(cpu):
-    cpu._machine.write_memory_byte(0x0000, 0xfd)    # RES 3, (IY-42) Instruction Opcode
+    cpu._machine.write_memory_byte(0x0000, 0xfd)    # RES 3, (IY-42)
     cpu._machine.write_memory_byte(0x0001, 0xcb)
     cpu._machine.write_memory_byte(0x0002, 0xbe)    # Negative displacement (-0x42)
     cpu._machine.write_memory_byte(0x0003, 0xb6)    # Reset bit 6
