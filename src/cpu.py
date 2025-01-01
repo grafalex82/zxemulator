@@ -1502,6 +1502,23 @@ class CPU:
 
     # Bit instructions
 
+    def _scf(self):
+        """ Set carry flag """
+        self._carry = True
+        self._cycles += 4
+
+        self._log_1b_instruction(f"SCF")
+        
+
+    def _ccf(self):
+        """ Complement carry flag """
+        self._half_carry = self._carry
+        self._carry = not self._carry
+        self._cycles += 4
+
+        self._log_1b_instruction(f"CCF")
+
+
     def _get_bit_indexed(self):
         """ Get bit from a memory byte addressed via IX/IY index registers """
         bit = (self._current_inst & 0x38) >> 3
@@ -1610,7 +1627,7 @@ class CPU:
         self._instructions[0x34] = self._inc_reg8               # INC (HL)
         self._instructions[0x35] = self._dec_reg8               # DEC (HL)
         self._instructions[0x36] = self._load_reg8_immediate    # LD (HL), n
-        self._instructions[0x37] = None                         # SCF
+        self._instructions[0x37] = self._scf                    # SCF
         self._instructions[0x38] = self._jr_cond                # JR C, d
         self._instructions[0x39] = self._add_hl                 # ADD HL, SP
         self._instructions[0x3a] = self._load_a_from_mem        # LD A, (nn)
@@ -1618,7 +1635,7 @@ class CPU:
         self._instructions[0x3c] = self._inc_reg8               # INC A
         self._instructions[0x3d] = self._dec_reg8               # DEC A
         self._instructions[0x3e] = self._load_reg8_immediate    # LD A, n
-        self._instructions[0x3f] = None                         # CCF
+        self._instructions[0x3f] = self._ccf                    # CCF
 
         self._instructions[0x40] = self._load_reg8_to_reg8      # LD B, B
         self._instructions[0x41] = self._load_reg8_to_reg8      # LD B, C

@@ -2265,6 +2265,28 @@ def test_sbc_hl_sp_zero(cpu):
 
 # Bit instructions tests
 
+def test_scf(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0x37)    # SCF  Instruction Opcode
+    cpu.step()
+    assert cpu.carry == True
+    assert cpu._cycles == 4
+
+def test_ccf_1(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0x3f)    # CCF  Instruction Opcode
+    cpu._carry = False
+    cpu.step()
+    assert cpu.carry == True
+    assert cpu.half_carry == False
+    assert cpu._cycles == 4
+
+def test_ccf_1(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0x3f)    # CCF  Instruction Opcode
+    cpu._carry = True
+    cpu.step()
+    assert cpu.carry == False
+    assert cpu.half_carry == True
+    assert cpu._cycles == 4
+
 def test_get_bit_ix_1(cpu):
     cpu._machine.write_memory_byte(0x0000, 0xdd)    # BIT 3, (IX+42) Instruction Opcode
     cpu._machine.write_memory_byte(0x0001, 0xcb)
