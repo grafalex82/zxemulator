@@ -1502,6 +1502,15 @@ class CPU:
 
     # Bit instructions
 
+    def _cpl(self):
+        """ Complement accumulator """
+        self._a = (~self._a) & 0xff
+        self._cycles += 4
+        self._half_carry = True
+        self._add_subtract = True
+
+        self._log_1b_instruction(f"CPL")
+
     def _scf(self):
         """ Set carry flag """
         self._carry = True
@@ -1618,7 +1627,7 @@ class CPU:
         self._instructions[0x2c] = self._inc_reg8               # INC L
         self._instructions[0x2d] = self._dec_reg8               # DEC L
         self._instructions[0x2e] = self._load_reg8_immediate    # LD L, n
-        self._instructions[0x2f] = None                         # CPL
+        self._instructions[0x2f] = self._cpl                    # CPL
 
         self._instructions[0x30] = self._jr_cond                # JR JC, d
         self._instructions[0x31] = self._load_immediate_16b     # LD SP, nn

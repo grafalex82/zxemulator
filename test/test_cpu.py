@@ -2265,6 +2265,15 @@ def test_sbc_hl_sp_zero(cpu):
 
 # Bit instructions tests
 
+def test_cpl(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0x2f)    # CPL  Instruction Opcode
+    cpu.a = 0x51
+    cpu.step()
+    assert cpu.a == 0xae
+    assert cpu._cycles == 4
+    assert cpu.add_subtract == True
+    assert cpu.half_carry == True
+
 def test_scf(cpu):
     cpu._machine.write_memory_byte(0x0000, 0x37)    # SCF  Instruction Opcode
     cpu.step()
