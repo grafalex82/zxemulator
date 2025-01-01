@@ -10,6 +10,7 @@ from interfaces import MemoryDevice, IODevice
 from ram import RAM
 from rom import ROM
 from utils import NestedLogger
+from display import *
 
 resources_dir = os.path.join(os.path.dirname(__file__), "..", "resources")
 tapes_dir = os.path.join(os.path.dirname(__file__), "..", "tapes")
@@ -19,10 +20,15 @@ def breakpoint():
     logging.disable(logging.NOTSET)
 
 
+def dump(machine):
+    with open("dump.bin", "wb") as f:
+        for b in range(65536):
+            f.write(bytes([machine.read_memory_byte(b)]))
+
 class Configuration:
     def __init__(self):
-        # self._screen = pygame.display.set_mode(self.get_screen_size())
-        # self._clock = pygame.time.Clock()
+        self._screen = pygame.display.set_mode(self.get_screen_size())
+        self._clock = pygame.time.Clock()
 
         self._machine = Machine()
         self._emulator = Emulator(self._machine)
@@ -78,13 +84,13 @@ class Configuration:
 
             self._machine.update()
 
-            # surface = pygame.display.get_surface()
-            # surface.fill(pygame.Color('black'))
-            # self.update(surface)
+            surface = pygame.display.get_surface()
+            surface.fill(pygame.Color('black'))
+            self.update(surface)
 
-            # pygame.display.flip()
-            # self._clock.tick(60)
-            # pygame.display.set_caption(f"UT-88 Emulator (FPS={self._clock.get_fps()})")
+            pygame.display.flip()
+            self._clock.tick(60)
+            pygame.display.set_caption(f"ZX Spectrum Emulator (FPS={self._clock.get_fps()})")
 
 
     def suppress_logging(self, startaddr, endaddr, msg):
@@ -129,13 +135,13 @@ class Spectrum48K(Configuration):
  
 
     def create_memories(self):
-        self._machine.add_memory(MemoryDevice(RAM(), 0x4000, 0xffff))
+        self._machine.add_memory(MemoryDevice(RAM(), 0x5b00, 0xffff))
         self._machine.add_memory(MemoryDevice(ROM(f"{resources_dir}/spectrum48.rom"), 0x0000))
 
 
     def create_peripherals(self):
-        # TODO
-        pass
+        self._display = Display()
+        self._machine.add_memory(MemoryDevice(self._display, 0x4000))
 
 
     def configure_logging(self):
@@ -143,13 +149,15 @@ class Spectrum48K(Configuration):
         pass
 
     def get_screen_size(self):
-        # TODO
-        return (450, 294)
+        return (DISPLAY_WIDTH * SCALE, DISPLAY_HEIGHT * SCALE)
 
 
     def update(self, screen):
-        # TODO
-        pass
+        self._display.update(screen)
+
+
+    def setup_special_breakpoints(self):
+        self._emulator.add_breakpoint(0x129c, lambda: dump(self._emulator._machine))
 
 
 def main():
