@@ -42,8 +42,17 @@ class Display(RAM):
 
     def update(self, screen):
         for y in range(DISPLAY_HEIGHT):
-            for x in range(DISPLAY_WIDTH):
-                color = (x + y) % 16
-                self._set_pixel(x, y, self._colors[color])
+            for x_block in range(DISPLAY_WIDTH // 8):
+                # Address is calculated as bit shuffle as follows:
+                # y7 y6 y2 y1 y0  y5 y4 y3 x4 x3 x2 x1 x0
+                # see http://www.breakintoprogram.co.uk/hardware/computers/zx-spectrum/screen-memory-layout
+                addr = ((y >> 6) << 11) | (y & 0x7) << 8 | ((y >> 3) & 0x7) << 5 | x_block
+
+                for bit in range(8):
+                    x = x_block * 8 + bit
+                    mask = 1 << (7 - bit)
+                    color = (255, 255, 255) if self.read_byte(addr) & mask else (0, 0, 0)
+                    self._set_pixel(x, y, color)
+
 
         screen.blit(self._display, (0, 0))
