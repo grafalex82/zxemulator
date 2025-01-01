@@ -2736,7 +2736,6 @@ def test_get_bit_mem_2(cpu):
     assert cpu._cycles == 12
     assert cpu.zero == False                         # Bit is set (non-zero)
 
-
 def test_get_bit_ix_1(cpu):
     cpu._machine.write_memory_byte(0x0000, 0xdd)    # BIT 3, (IX+42) Instruction Opcode
     cpu._machine.write_memory_byte(0x0001, 0xcb)
@@ -2764,6 +2763,27 @@ def test_get_bit_ix_0(cpu):
 
     assert cpu._cycles == 20
     assert cpu.zero == True                        # Bit is reset (zero)
+
+def test_set_bit_b(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xcb)    # SET 2, B  Instruction Opcode
+    cpu._machine.write_memory_byte(0x0001, 0xd0)
+
+    cpu.b = 0x42
+    cpu.step()
+
+    assert cpu._cycles == 8
+    assert cpu.b == 0x46
+
+def test_set_bit_mem(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xcb)    # BIT 4, (HL)  Instruction Opcode
+    cpu._machine.write_memory_byte(0x0001, 0xe6)
+    cpu._machine.write_memory_byte(0x1234, 0x24)
+
+    cpu.hl = 0x1234
+    cpu.step()
+
+    assert cpu._cycles == 15
+    assert cpu._machine.read_memory_byte(0x1234) == 0x34
 
 def test_set_bit_iy(cpu):
     cpu._machine.write_memory_byte(0x0000, 0xfd)    # SET 3, (IY-42) Instruction Opcode
@@ -2805,6 +2825,27 @@ def test_set_bit_iy(cpu):
 
     assert cpu._cycles == 23
     assert cpu._machine.read_memory_byte(0xbeef - 0x42) == 0x51     # Bit 6 is now set
+
+def test_res_bit_b(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xcb)    # RES 0, E  Instruction Opcode
+    cpu._machine.write_memory_byte(0x0001, 0x83)
+
+    cpu.e = 0x43
+    cpu.step()
+
+    assert cpu._cycles == 8
+    assert cpu.e == 0x42
+
+def test_res_bit_mem(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xcb)    # BIT 7, (HL)  Instruction Opcode
+    cpu._machine.write_memory_byte(0x0001, 0xbe)
+    cpu._machine.write_memory_byte(0x1234, 0xab)
+
+    cpu.hl = 0x1234
+    cpu.step()
+
+    assert cpu._cycles == 15
+    assert cpu._machine.read_memory_byte(0x1234) == 0x2b
 
 def test_res_bit_ix(cpu):
     cpu._machine.write_memory_byte(0x0000, 0xdd)    # RES 3, (IX+42) Instruction Opcode

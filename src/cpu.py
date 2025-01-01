@@ -1629,7 +1629,7 @@ class CPU:
 
         self._cycles += 12 if reg == 6 else 8
         
-        self._log_3b_bit_instruction(f"BIT {bit}, ({self._reg_symb(reg)})")
+        self._log_3b_bit_instruction(f"BIT {bit}, {self._reg_symb(reg)}")
 
 
     def _get_bit_indexed(self):
@@ -1646,6 +1646,19 @@ class CPU:
         self._log_3b_bit_instruction(f"BIT {bit}, ({self._get_index_reg_symb()}{self._displacement:+03x})")
 
 
+    def _set_bit(self):
+        """ Set bit in a register """
+        bit = (self._current_inst & 0x38) >> 3
+        mask = 1 << bit
+        reg = self._current_inst & 0x07
+        value = self._get_register(reg)
+        self._set_register(reg, value | mask)
+
+        self._cycles += 15 if reg == 6 else 8
+        
+        self._log_3b_bit_instruction(f"SET {bit}, {self._reg_symb(reg)}")
+
+
     def _set_bit_indexed(self):
         """ Set bit on a memory byte addressed via IX/IY index registers """
         bit = (self._current_inst & 0x38) >> 3
@@ -1658,6 +1671,19 @@ class CPU:
         self._cycles += 23
         
         self._log_3b_bit_instruction(f"SET {bit}, ({self._get_index_reg_symb()}{self._displacement:+03x})")
+
+
+    def _reset_bit(self):
+        """ Reset bit in a register """
+        bit = (self._current_inst & 0x38) >> 3
+        mask = 1 << bit
+        reg = self._current_inst & 0x07
+        value = self._get_register(reg)
+        self._set_register(reg, value & ~mask)
+
+        self._cycles += 15 if reg == 6 else 8
+        
+        self._log_3b_bit_instruction(f"RES {bit}, {self._reg_symb(reg)}")
 
 
     def _reset_bit_indexed(self):
@@ -2374,141 +2400,141 @@ class CPU:
         self._instructions_0xcb[0x7e] = self._get_bit       # BIT 7, (HL)
         self._instructions_0xcb[0x7f] = self._get_bit       # BIT 7, A
 
-        self._instructions_0xcb[0x80] = None        # RES 0, B
-        self._instructions_0xcb[0x81] = None        # RES 0, C
-        self._instructions_0xcb[0x82] = None        # RES 0, D
-        self._instructions_0xcb[0x83] = None        # RES 0, E
-        self._instructions_0xcb[0x84] = None        # RES 0, H
-        self._instructions_0xcb[0x85] = None        # RES 0, L
-        self._instructions_0xcb[0x86] = None        # RES 0, (HL)
-        self._instructions_0xcb[0x87] = None        # RES 0, A
-        self._instructions_0xcb[0x88] = None        # RES 1, B
-        self._instructions_0xcb[0x89] = None        # RES 1, C
-        self._instructions_0xcb[0x8a] = None        # RES 1, D
-        self._instructions_0xcb[0x8b] = None        # RES 1, E
-        self._instructions_0xcb[0x8c] = None        # RES 1, H
-        self._instructions_0xcb[0x8d] = None        # RES 1, L
-        self._instructions_0xcb[0x8e] = None        # RES 1, (HL)
-        self._instructions_0xcb[0x8f] = None        # RES 1, A
+        self._instructions_0xcb[0x80] = self._reset_bit     # RES 0, B
+        self._instructions_0xcb[0x81] = self._reset_bit     # RES 0, C
+        self._instructions_0xcb[0x82] = self._reset_bit     # RES 0, D
+        self._instructions_0xcb[0x83] = self._reset_bit     # RES 0, E
+        self._instructions_0xcb[0x84] = self._reset_bit     # RES 0, H
+        self._instructions_0xcb[0x85] = self._reset_bit     # RES 0, L
+        self._instructions_0xcb[0x86] = self._reset_bit     # RES 0, (HL)
+        self._instructions_0xcb[0x87] = self._reset_bit     # RES 0, A
+        self._instructions_0xcb[0x88] = self._reset_bit     # RES 1, B
+        self._instructions_0xcb[0x89] = self._reset_bit     # RES 1, C
+        self._instructions_0xcb[0x8a] = self._reset_bit     # RES 1, D
+        self._instructions_0xcb[0x8b] = self._reset_bit     # RES 1, E
+        self._instructions_0xcb[0x8c] = self._reset_bit     # RES 1, H
+        self._instructions_0xcb[0x8d] = self._reset_bit     # RES 1, L
+        self._instructions_0xcb[0x8e] = self._reset_bit     # RES 1, (HL)
+        self._instructions_0xcb[0x8f] = self._reset_bit     # RES 1, A
 
-        self._instructions_0xcb[0x90] = None        # RES 2, B
-        self._instructions_0xcb[0x91] = None        # RES 2, C
-        self._instructions_0xcb[0x92] = None        # RES 2, D
-        self._instructions_0xcb[0x93] = None        # RES 2, E
-        self._instructions_0xcb[0x94] = None        # RES 2, H
-        self._instructions_0xcb[0x95] = None        # RES 2, L
-        self._instructions_0xcb[0x96] = None        # RES 2, (HL)
-        self._instructions_0xcb[0x97] = None        # RES 2, A
-        self._instructions_0xcb[0x98] = None        # RES 3, B
-        self._instructions_0xcb[0x99] = None        # RES 3, C
-        self._instructions_0xcb[0x9a] = None        # RES 3, D
-        self._instructions_0xcb[0x9b] = None        # RES 3, E
-        self._instructions_0xcb[0x9c] = None        # RES 3, H
-        self._instructions_0xcb[0x9d] = None        # RES 3, L
-        self._instructions_0xcb[0x9e] = None        # RES 3, (HL)
-        self._instructions_0xcb[0x9f] = None        # RES 3, A
+        self._instructions_0xcb[0x90] = self._reset_bit     # RES 2, B
+        self._instructions_0xcb[0x91] = self._reset_bit     # RES 2, C
+        self._instructions_0xcb[0x92] = self._reset_bit     # RES 2, D
+        self._instructions_0xcb[0x93] = self._reset_bit     # RES 2, E
+        self._instructions_0xcb[0x94] = self._reset_bit     # RES 2, H
+        self._instructions_0xcb[0x95] = self._reset_bit     # RES 2, L
+        self._instructions_0xcb[0x96] = self._reset_bit     # RES 2, (HL)
+        self._instructions_0xcb[0x97] = self._reset_bit     # RES 2, A
+        self._instructions_0xcb[0x98] = self._reset_bit     # RES 3, B
+        self._instructions_0xcb[0x99] = self._reset_bit     # RES 3, C
+        self._instructions_0xcb[0x9a] = self._reset_bit     # RES 3, D
+        self._instructions_0xcb[0x9b] = self._reset_bit     # RES 3, E
+        self._instructions_0xcb[0x9c] = self._reset_bit     # RES 3, H
+        self._instructions_0xcb[0x9d] = self._reset_bit     # RES 3, L
+        self._instructions_0xcb[0x9e] = self._reset_bit     # RES 3, (HL)
+        self._instructions_0xcb[0x9f] = self._reset_bit     # RES 3, A
 
-        self._instructions_0xcb[0xa0] = None        # RES 4, B
-        self._instructions_0xcb[0xa1] = None        # RES 4, C
-        self._instructions_0xcb[0xa2] = None        # RES 4, D
-        self._instructions_0xcb[0xa3] = None        # RES 4, E
-        self._instructions_0xcb[0xa4] = None        # RES 4, H
-        self._instructions_0xcb[0xa5] = None        # RES 4, L
-        self._instructions_0xcb[0xa6] = None        # RES 4, (HL)
-        self._instructions_0xcb[0xa7] = None        # RES 4, A
-        self._instructions_0xcb[0xa8] = None        # RES 5, B
-        self._instructions_0xcb[0xa9] = None        # RES 5, C
-        self._instructions_0xcb[0xaa] = None        # RES 5, D
-        self._instructions_0xcb[0xab] = None        # RES 5, E
-        self._instructions_0xcb[0xac] = None        # RES 5, H
-        self._instructions_0xcb[0xad] = None        # RES 5, L
-        self._instructions_0xcb[0xae] = None        # RES 5, (HL)
-        self._instructions_0xcb[0xaf] = None        # RES 5, A
+        self._instructions_0xcb[0xa0] = self._reset_bit     # RES 4, B
+        self._instructions_0xcb[0xa1] = self._reset_bit     # RES 4, C
+        self._instructions_0xcb[0xa2] = self._reset_bit     # RES 4, D
+        self._instructions_0xcb[0xa3] = self._reset_bit     # RES 4, E
+        self._instructions_0xcb[0xa4] = self._reset_bit     # RES 4, H
+        self._instructions_0xcb[0xa5] = self._reset_bit     # RES 4, L
+        self._instructions_0xcb[0xa6] = self._reset_bit     # RES 4, (HL)
+        self._instructions_0xcb[0xa7] = self._reset_bit     # RES 4, A
+        self._instructions_0xcb[0xa8] = self._reset_bit     # RES 5, B
+        self._instructions_0xcb[0xa9] = self._reset_bit     # RES 5, C
+        self._instructions_0xcb[0xaa] = self._reset_bit     # RES 5, D
+        self._instructions_0xcb[0xab] = self._reset_bit     # RES 5, E
+        self._instructions_0xcb[0xac] = self._reset_bit     # RES 5, H
+        self._instructions_0xcb[0xad] = self._reset_bit     # RES 5, L
+        self._instructions_0xcb[0xae] = self._reset_bit     # RES 5, (HL)
+        self._instructions_0xcb[0xaf] = self._reset_bit     # RES 5, A
 
-        self._instructions_0xcb[0xb0] = None        # RES 6, B
-        self._instructions_0xcb[0xb1] = None        # RES 6, C
-        self._instructions_0xcb[0xb2] = None        # RES 6, D
-        self._instructions_0xcb[0xb3] = None        # RES 6, E
-        self._instructions_0xcb[0xb4] = None        # RES 6, H
-        self._instructions_0xcb[0xb5] = None        # RES 6, L
-        self._instructions_0xcb[0xb6] = None        # RES 6, (HL)
-        self._instructions_0xcb[0xb7] = None        # RES 6, A
-        self._instructions_0xcb[0xb8] = None        # RES 7, B
-        self._instructions_0xcb[0xb9] = None        # RES 7, C
-        self._instructions_0xcb[0xba] = None        # RES 7, D
-        self._instructions_0xcb[0xbb] = None        # RES 7, E
-        self._instructions_0xcb[0xbc] = None        # RES 7, H
-        self._instructions_0xcb[0xbd] = None        # RES 7, L
-        self._instructions_0xcb[0xbe] = None        # RES 7, (HL)
-        self._instructions_0xcb[0xbf] = None        # RES 7, A
+        self._instructions_0xcb[0xb0] = self._reset_bit     # RES 6, B
+        self._instructions_0xcb[0xb1] = self._reset_bit     # RES 6, C
+        self._instructions_0xcb[0xb2] = self._reset_bit     # RES 6, D
+        self._instructions_0xcb[0xb3] = self._reset_bit     # RES 6, E
+        self._instructions_0xcb[0xb4] = self._reset_bit     # RES 6, H
+        self._instructions_0xcb[0xb5] = self._reset_bit     # RES 6, L
+        self._instructions_0xcb[0xb6] = self._reset_bit     # RES 6, (HL)
+        self._instructions_0xcb[0xb7] = self._reset_bit     # RES 6, A
+        self._instructions_0xcb[0xb8] = self._reset_bit     # RES 7, B
+        self._instructions_0xcb[0xb9] = self._reset_bit     # RES 7, C
+        self._instructions_0xcb[0xba] = self._reset_bit     # RES 7, D
+        self._instructions_0xcb[0xbb] = self._reset_bit     # RES 7, E
+        self._instructions_0xcb[0xbc] = self._reset_bit     # RES 7, H
+        self._instructions_0xcb[0xbd] = self._reset_bit     # RES 7, L
+        self._instructions_0xcb[0xbe] = self._reset_bit     # RES 7, (HL)
+        self._instructions_0xcb[0xbf] = self._reset_bit     # RES 7, A
 
-        self._instructions_0xcb[0xc0] = None        # SET 0, B
-        self._instructions_0xcb[0xc1] = None        # SET 0, C
-        self._instructions_0xcb[0xc2] = None        # SET 0, D
-        self._instructions_0xcb[0xc3] = None        # SET 0, E
-        self._instructions_0xcb[0xc4] = None        # SET 0, H
-        self._instructions_0xcb[0xc5] = None        # SET 0, L
-        self._instructions_0xcb[0xc6] = None        # SET 0, (HL)
-        self._instructions_0xcb[0xc7] = None        # SET 0, A
-        self._instructions_0xcb[0xc8] = None        # SET 1, B
-        self._instructions_0xcb[0xc9] = None        # SET 1, C
-        self._instructions_0xcb[0xca] = None        # SET 1, D
-        self._instructions_0xcb[0xcb] = None        # SET 1, E
-        self._instructions_0xcb[0xcc] = None        # SET 1, H
-        self._instructions_0xcb[0xcd] = None        # SET 1, L
-        self._instructions_0xcb[0xce] = None        # SET 1, (HL)
-        self._instructions_0xcb[0xcf] = None        # SET 1, A
+        self._instructions_0xcb[0xc0] = self._set_bit       # SET 0, B
+        self._instructions_0xcb[0xc1] = self._set_bit       # SET 0, C
+        self._instructions_0xcb[0xc2] = self._set_bit       # SET 0, D
+        self._instructions_0xcb[0xc3] = self._set_bit       # SET 0, E
+        self._instructions_0xcb[0xc4] = self._set_bit       # SET 0, H
+        self._instructions_0xcb[0xc5] = self._set_bit       # SET 0, L
+        self._instructions_0xcb[0xc6] = self._set_bit       # SET 0, (HL)
+        self._instructions_0xcb[0xc7] = self._set_bit       # SET 0, A
+        self._instructions_0xcb[0xc8] = self._set_bit       # SET 1, B
+        self._instructions_0xcb[0xc9] = self._set_bit       # SET 1, C
+        self._instructions_0xcb[0xca] = self._set_bit       # SET 1, D
+        self._instructions_0xcb[0xcb] = self._set_bit       # SET 1, E
+        self._instructions_0xcb[0xcc] = self._set_bit       # SET 1, H
+        self._instructions_0xcb[0xcd] = self._set_bit       # SET 1, L
+        self._instructions_0xcb[0xce] = self._set_bit       # SET 1, (HL)
+        self._instructions_0xcb[0xcf] = self._set_bit       # SET 1, A
 
-        self._instructions_0xcb[0xd0] = None        # SET 2, B
-        self._instructions_0xcb[0xd1] = None        # SET 2, C
-        self._instructions_0xcb[0xd2] = None        # SET 2, D
-        self._instructions_0xcb[0xd3] = None        # SET 2, E
-        self._instructions_0xcb[0xd4] = None        # SET 2, H
-        self._instructions_0xcb[0xd5] = None        # SET 2, L
-        self._instructions_0xcb[0xd6] = None        # SET 2, (HL)
-        self._instructions_0xcb[0xd7] = None        # SET 2, A
-        self._instructions_0xcb[0xd8] = None        # SET 3, B
-        self._instructions_0xcb[0xd9] = None        # SET 3, C
-        self._instructions_0xcb[0xda] = None        # SET 3, D
-        self._instructions_0xcb[0xdb] = None        # SET 3, E
-        self._instructions_0xcb[0xdc] = None        # SET 3, H
-        self._instructions_0xcb[0xdd] = None        # SET 3, L
-        self._instructions_0xcb[0xde] = None        # SET 3, (HL)
-        self._instructions_0xcb[0xdf] = None        # SET 3, A
+        self._instructions_0xcb[0xd0] = self._set_bit       # SET 2, B
+        self._instructions_0xcb[0xd1] = self._set_bit       # SET 2, C
+        self._instructions_0xcb[0xd2] = self._set_bit       # SET 2, D
+        self._instructions_0xcb[0xd3] = self._set_bit       # SET 2, E
+        self._instructions_0xcb[0xd4] = self._set_bit       # SET 2, H
+        self._instructions_0xcb[0xd5] = self._set_bit       # SET 2, L
+        self._instructions_0xcb[0xd6] = self._set_bit       # SET 2, (HL)
+        self._instructions_0xcb[0xd7] = self._set_bit       # SET 2, A
+        self._instructions_0xcb[0xd8] = self._set_bit       # SET 3, B
+        self._instructions_0xcb[0xd9] = self._set_bit       # SET 3, C
+        self._instructions_0xcb[0xda] = self._set_bit       # SET 3, D
+        self._instructions_0xcb[0xdb] = self._set_bit       # SET 3, E
+        self._instructions_0xcb[0xdc] = self._set_bit       # SET 3, H
+        self._instructions_0xcb[0xdd] = self._set_bit       # SET 3, L
+        self._instructions_0xcb[0xde] = self._set_bit       # SET 3, (HL)
+        self._instructions_0xcb[0xdf] = self._set_bit       # SET 3, A
 
-        self._instructions_0xcb[0xe0] = None        # SET 4, B
-        self._instructions_0xcb[0xe1] = None        # SET 4, C
-        self._instructions_0xcb[0xe2] = None        # SET 4, D
-        self._instructions_0xcb[0xe3] = None        # SET 4, E
-        self._instructions_0xcb[0xe4] = None        # SET 4, H
-        self._instructions_0xcb[0xe5] = None        # SET 4, L
-        self._instructions_0xcb[0xe6] = None        # SET 4, (HL)
-        self._instructions_0xcb[0xe7] = None        # SET 4, A
-        self._instructions_0xcb[0xe8] = None        # SET 5, B
-        self._instructions_0xcb[0xe9] = None        # SET 5, C
-        self._instructions_0xcb[0xea] = None        # SET 5, D
-        self._instructions_0xcb[0xeb] = None        # SET 5, E
-        self._instructions_0xcb[0xec] = None        # SET 5, H
-        self._instructions_0xcb[0xed] = None        # SET 5, L
-        self._instructions_0xcb[0xee] = None        # SET 5, (HL)
-        self._instructions_0xcb[0xef] = None        # SET 5, A
+        self._instructions_0xcb[0xe0] = self._set_bit       # SET 4, B
+        self._instructions_0xcb[0xe1] = self._set_bit       # SET 4, C
+        self._instructions_0xcb[0xe2] = self._set_bit       # SET 4, D
+        self._instructions_0xcb[0xe3] = self._set_bit       # SET 4, E
+        self._instructions_0xcb[0xe4] = self._set_bit       # SET 4, H
+        self._instructions_0xcb[0xe5] = self._set_bit       # SET 4, L
+        self._instructions_0xcb[0xe6] = self._set_bit       # SET 4, (HL)
+        self._instructions_0xcb[0xe7] = self._set_bit       # SET 4, A
+        self._instructions_0xcb[0xe8] = self._set_bit       # SET 5, B
+        self._instructions_0xcb[0xe9] = self._set_bit       # SET 5, C
+        self._instructions_0xcb[0xea] = self._set_bit       # SET 5, D
+        self._instructions_0xcb[0xeb] = self._set_bit       # SET 5, E
+        self._instructions_0xcb[0xec] = self._set_bit       # SET 5, H
+        self._instructions_0xcb[0xed] = self._set_bit       # SET 5, L
+        self._instructions_0xcb[0xee] = self._set_bit       # SET 5, (HL)
+        self._instructions_0xcb[0xef] = self._set_bit       # SET 5, A
 
-        self._instructions_0xcb[0xf0] = None        # SET 6, B
-        self._instructions_0xcb[0xf1] = None        # SET 6, C
-        self._instructions_0xcb[0xf2] = None        # SET 6, D
-        self._instructions_0xcb[0xf3] = None        # SET 6, E
-        self._instructions_0xcb[0xf4] = None        # SET 6, H
-        self._instructions_0xcb[0xf5] = None        # SET 6, L
-        self._instructions_0xcb[0xf6] = None        # SET 6, (HL)
-        self._instructions_0xcb[0xf7] = None        # SET 6, A
-        self._instructions_0xcb[0xf8] = None        # SET 7, B
-        self._instructions_0xcb[0xf9] = None        # SET 7, C
-        self._instructions_0xcb[0xfa] = None        # SET 7, D
-        self._instructions_0xcb[0xfb] = None        # SET 7, E
-        self._instructions_0xcb[0xfc] = None        # SET 7, H
-        self._instructions_0xcb[0xfd] = None        # SET 7, L
-        self._instructions_0xcb[0xfe] = None        # SET 7, (HL)
-        self._instructions_0xcb[0xff] = None        # SET 7, A
+        self._instructions_0xcb[0xf0] = self._set_bit       # SET 6, B
+        self._instructions_0xcb[0xf1] = self._set_bit       # SET 6, C
+        self._instructions_0xcb[0xf2] = self._set_bit       # SET 6, D
+        self._instructions_0xcb[0xf3] = self._set_bit       # SET 6, E
+        self._instructions_0xcb[0xf4] = self._set_bit       # SET 6, H
+        self._instructions_0xcb[0xf5] = self._set_bit       # SET 6, L
+        self._instructions_0xcb[0xf6] = self._set_bit       # SET 6, (HL)
+        self._instructions_0xcb[0xf7] = self._set_bit       # SET 6, A
+        self._instructions_0xcb[0xf8] = self._set_bit       # SET 7, B
+        self._instructions_0xcb[0xf9] = self._set_bit       # SET 7, C
+        self._instructions_0xcb[0xfa] = self._set_bit       # SET 7, D
+        self._instructions_0xcb[0xfb] = self._set_bit       # SET 7, E
+        self._instructions_0xcb[0xfc] = self._set_bit       # SET 7, H
+        self._instructions_0xcb[0xfd] = self._set_bit       # SET 7, L
+        self._instructions_0xcb[0xfe] = self._set_bit       # SET 7, (HL)
+        self._instructions_0xcb[0xff] = self._set_bit       # SET 7, A
 
 
     def _init_dd_instruction_table(self):
