@@ -48,11 +48,22 @@ class Display(RAM):
                 # see http://www.breakintoprogram.co.uk/hardware/computers/zx-spectrum/screen-memory-layout
                 addr = ((y >> 6) << 11) | (y & 0x7) << 8 | ((y >> 3) & 0x7) << 5 | x_block
 
+                # Get color attributes for the block
+                addr_color = 0x1800 + (y // 8) * (DISPLAY_WIDTH // 8) + x_block
+                attr = self.read_byte(addr_color)
+                bg = (attr & 0x78) >> 3
+                bg_color = self._colors[bg]
+                fg = attr & 0x7 | ((attr & 0x40) >> 3)
+                fg_color = self._colors[fg]
+
+                # TODO: respect blinking attribute
+
+                # Draw the block with the colors calculated
+                block_data = self.read_byte(addr)
                 for bit in range(8):
                     x = x_block * 8 + bit
                     mask = 1 << (7 - bit)
-                    color = (255, 255, 255) if self.read_byte(addr) & mask else (0, 0, 0)
+                    color = fg_color if block_data & mask else bg_color
                     self._set_pixel(x, y, color)
-
 
         screen.blit(self._display, (0, 0))
