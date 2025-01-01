@@ -847,6 +847,26 @@ class CPU:
 
     # 16-bit data transfer instructions
 
+    def _ld_a_mem_regpair(self):
+        """ Load accumulator from memory pointed by a regpair """
+        reg_pair = (self._current_inst & 0x10) >> 4
+        addr = self._get_register_pair(reg_pair)
+        self._a = self._machine.read_memory_byte(addr)
+        self._cycles += 7
+
+        self._log_1b_instruction(f"LD A, ({self._reg_pair_symb(reg_pair)})")
+
+
+    def _ld_mem_regpair_a(self):
+        """ Store accumulator to memory pointed by a regpair """
+        reg_pair = (self._current_inst & 0x10) >> 4
+        addr = self._get_register_pair(reg_pair)
+        self._machine.write_memory_byte(addr, self._a)
+        self._cycles += 7
+
+        self._log_1b_instruction(f"LD ({self._reg_pair_symb(reg_pair)}), A")
+
+
     def _load_immediate_16b(self):
         """ Load register pair with immediate value"""
         reg_pair = (self._current_inst & 0x30) >> 4
@@ -1650,7 +1670,7 @@ class CPU:
 
         self._instructions[0x00] = self._nop                    # NOP
         self._instructions[0x01] = self._load_immediate_16b     # LD BC, nn
-        self._instructions[0x02] = None                         # LD (BC), A
+        self._instructions[0x02] = self._ld_mem_regpair_a       # LD (BC), A
         self._instructions[0x03] = self._inc16                  # INC BC
         self._instructions[0x04] = self._inc_reg8               # INC B
         self._instructions[0x05] = self._dec_reg8               # DEC B
@@ -1658,7 +1678,7 @@ class CPU:
         self._instructions[0x07] = self._rlca                   # RLCA
         self._instructions[0x08] = self._exchange_af_afx        # EX AF, AF'
         self._instructions[0x09] = self._add_hl                 # ADD HL, BC
-        self._instructions[0x0a] = None                         # LD A, (BC)
+        self._instructions[0x0a] = self._ld_a_mem_regpair       # LD A, (BC)
         self._instructions[0x0b] = self._dec16                  # DEC BC
         self._instructions[0x0c] = self._inc_reg8               # INC C
         self._instructions[0x0d] = self._dec_reg8               # DEC C
@@ -1667,7 +1687,7 @@ class CPU:
 
         self._instructions[0x10] = self._djnz                   # DJNZ d
         self._instructions[0x11] = self._load_immediate_16b     # LD DE, nn
-        self._instructions[0x12] = None                         # LD (DE), A
+        self._instructions[0x12] = self._ld_mem_regpair_a       # LD (DE), A
         self._instructions[0x13] = self._inc16                  # INC DE
         self._instructions[0x14] = self._inc_reg8               # INC D
         self._instructions[0x15] = self._dec_reg8               # DEC D
@@ -1675,7 +1695,7 @@ class CPU:
         self._instructions[0x17] = self._rla                    # RLA
         self._instructions[0x18] = self._jr                     # JR d
         self._instructions[0x19] = self._add_hl                 # ADD HL, DE
-        self._instructions[0x1a] = None                         # LD A, (DE)
+        self._instructions[0x1a] = self._ld_a_mem_regpair       # LD A, (DE)
         self._instructions[0x1b] = self._dec16                  # DEC DE
         self._instructions[0x1c] = self._inc_reg8               # INC E
         self._instructions[0x1d] = self._dec_reg8               # DEC E

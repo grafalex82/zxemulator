@@ -308,6 +308,38 @@ def test_ld_reg_indexed_mem_2(cpu):
 
 # 16-bit data transfer instructions tests
 
+def test_ld_a_bc(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0x0a)    # LD A, (BC)  Instruction Opcode
+    cpu._machine.write_memory_byte(0xbeef, 0x42)    # Data to load
+    cpu.bc = 0xbeef
+    cpu.step()
+    assert cpu.a == 0x42
+    assert cpu._cycles == 7
+
+def test_ld_a_de(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0x1a)    # LD A, (DE)  Instruction Opcode
+    cpu._machine.write_memory_byte(0xbeef, 0x42)    # Data to load
+    cpu.de = 0xbeef
+    cpu.step()
+    assert cpu.a == 0x42
+    assert cpu._cycles == 7
+
+def test_ld_bc_a(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0x02)    # LD (BC), A  Instruction Opcode
+    cpu.a = 0x42
+    cpu.bc = 0xbeef
+    cpu.step()
+    assert cpu._machine.read_memory_byte(0xbeef) == 0x42
+    assert cpu._cycles == 7
+
+def test_ld_de_a(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0x12)    # LD (DE), A  Instruction Opcode
+    cpu.a = 0x42
+    cpu.de = 0xbeef
+    cpu.step()
+    assert cpu._machine.read_memory_byte(0xbeef) == 0x42
+    assert cpu._cycles == 7
+
 def test_ld_bc(cpu):
     cpu._machine.write_memory_byte(0x0000, 0x01)    # LD BC, #beef Instruction Opcode
     cpu._machine.write_memory_word(0x0001, 0xbeef)  # Immediate argument
