@@ -119,7 +119,7 @@ class CPU:
         self._a = value
 
     def get_f(self):
-        flags = 2 # bit1 is always 1 (at least in i8080)
+        flags = 0
         if self._sign: flags = set_bit(flags, 7)
         if self._zero: flags = set_bit(flags, 6)
         if self._half_carry: flags = set_bit(flags, 4)
@@ -204,12 +204,12 @@ class CPU:
         self._l = value & 0xff
 
     def get_af(self):
-        return (self._a << 8) | self._f
+        return (self._a << 8) | self.f
     
     def set_af(self, value):
         self._validate_word_value(value)
         self._a = value >> 8
-        self._f = value & 0xff
+        self.f = value & 0xff
 
 
     def get_ax(self):
@@ -907,11 +907,47 @@ class CPU:
 
         self._log_3b_instruction(f"LD {self._reg_pair_symb(reg_pair)}, ({addr:04x})")
 
+
     def _ld_sp_hl(self):
         """ Load HL value to SP register """
         self._sp = self.hl
         self._cycles += 6
         self._log_1b_instruction(f"LD SP, HL")
+
+
+    def _push(self):
+        """ Push register pair to stack """
+        reg_pair = (self._current_inst & 0x30) >> 4
+
+        if reg_pair != 3:
+            reg_pair_name = self._reg_pair_symb(reg_pair)
+            value = self._get_register_pair(reg_pair)
+        else:
+            reg_pair_name = "AF"
+            value = self.af
+
+        self._push_to_stack(value)
+        self._cycles += 11
+
+        self._log_1b_instruction(f"PUSH {reg_pair_name}")
+
+
+    def _pop(self):
+        """ Pop register pair from stack """
+        reg_pair = (self._current_inst & 0x30) >> 4
+
+        value = self._pop_from_stack()
+
+        if reg_pair != 3:
+            reg_pair_name = self._reg_pair_symb(reg_pair)
+            self._set_register_pair(reg_pair, value)
+        else:
+            reg_pair_name = "AF"
+            self.af = value
+
+        self._cycles += 10
+
+        self._log_1b_instruction(f"POP {reg_pair_name}")
 
 
     # Exchange instructions
@@ -1721,11 +1757,11 @@ class CPU:
         self._instructions[0xbf] = self._alu                    # CP A
 
         self._instructions[0xc0] = self._ret_cond               # RET NZ
-        self._instructions[0xc1] = None                         # POP BC
+        self._instructions[0xc1] = self._pop                    # POP BC
         self._instructions[0xc2] = self._jmp_cond               # JP NZ, nn
         self._instructions[0xc3] = self._jp                     # JP nn
         self._instructions[0xc4] = self._call_cond              # CALL NZ, nn
-        self._instructions[0xc5] = None                         # PUSH BC
+        self._instructions[0xc5] = self._push                   # PUSH BC
         self._instructions[0xc6] = self._alu_immediate          # ADD A, n
         self._instructions[0xc7] = self._rst                    # RST 00
         self._instructions[0xc8] = self._ret_cond               # RET Z
@@ -1738,11 +1774,11 @@ class CPU:
         self._instructions[0xcf] = self._rst                    # RST 08
 
         self._instructions[0xd0] = self._ret_cond               # RET NC
-        self._instructions[0xd1] = None                         # POP DE
+        self._instructions[0xd1] = self._pop                    # POP DE
         self._instructions[0xd2] = self._jmp_cond               # JP NC, nn
         self._instructions[0xd3] = self._out                    # OUT (n), A
         self._instructions[0xd4] = self._call_cond              # CALL NC, nn
-        self._instructions[0xd5] = None                         # PUSH DE
+        self._instructions[0xd5] = self._push                   # PUSH DE
         self._instructions[0xd6] = self._alu_immediate          # SUB n
         self._instructions[0xd7] = self._rst                    # RST 10
         self._instructions[0xd8] = self._ret_cond               # RET C
@@ -1755,11 +1791,11 @@ class CPU:
         self._instructions[0xdf] = self._rst                    # RST 18
 
         self._instructions[0xe0] = self._ret_cond               # RET PO
-        self._instructions[0xe1] = None                         # POP HL
+        self._instructions[0xe1] = self._pop                    # POP HL
         self._instructions[0xe2] = self._jmp_cond               # JP PO, nn
         self._instructions[0xe3] = self._exchange_hl_stack      # EX (SP), HL
         self._instructions[0xe4] = self._call_cond              # CALL PO, nn
-        self._instructions[0xe5] = None                         # PUSH HL
+        self._instructions[0xe5] = self._push                   # PUSH HL
         self._instructions[0xe6] = self._alu_immediate          # AND n
         self._instructions[0xe7] = self._rst                    # RST 20
         self._instructions[0xe8] = self._ret_cond               # RET PE
@@ -1772,11 +1808,11 @@ class CPU:
         self._instructions[0xef] = self._rst                    # RST 28
 
         self._instructions[0xf0] = self._ret_cond               # RET P
-        self._instructions[0xf1] = None                         # POP AF
+        self._instructions[0xf1] = self._pop                    # POP AF
         self._instructions[0xf2] = self._jmp_cond               # JP P, nn
         self._instructions[0xf3] = self._di                     # DI
         self._instructions[0xf4] = self._call_cond              # CALL P, nn
-        self._instructions[0xf5] = None                         # PUSH AF
+        self._instructions[0xf5] = self._push                   # PUSH AF
         self._instructions[0xf6] = self._alu_immediate          # OR n
         self._instructions[0xf7] = self._rst                    # RST 30
         self._instructions[0xf8] = self._ret_cond               # RET M

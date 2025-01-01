@@ -393,6 +393,114 @@ def test_ld_sp_hl(cpu):
     assert cpu.sp == 0x1234
     assert cpu._cycles == 6
 
+def test_push_bc(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xc5)    # PUSH BC  Instruction Opcode
+    cpu.sp = 0x1234
+    cpu.bc = 0xbeef
+    cpu.step()
+    assert cpu._cycles == 11
+    assert cpu.sp == 0x1232
+    assert cpu._machine.read_memory_word(0x1232) == 0xbeef
+
+def test_push_de(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xd5)    # PUSH DE  Instruction Opcode
+    cpu.sp = 0x1234
+    cpu.de = 0xbeef
+    cpu.step()
+    assert cpu._cycles == 11
+    assert cpu.sp == 0x1232
+    assert cpu._machine.read_memory_word(0x1232) == 0xbeef
+
+def test_push_hl(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xe5)    # PUSH HL  Instruction Opcode
+    cpu.sp = 0x1234
+    cpu.hl = 0xbeef
+    cpu.step()
+    assert cpu._cycles == 11
+    assert cpu.sp == 0x1232
+    assert cpu._machine.read_memory_word(0x1232) == 0xbeef
+
+def test_push_af_1(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xf5)    # PUSH AF  Instruction Opcode
+    cpu.sp = 0x1234
+    cpu.a = 0x42
+    cpu.step()
+    assert cpu._cycles == 11
+    assert cpu.sp == 0x1232
+    assert cpu._machine.read_memory_word(0x1232) == 0x4200  # All flag bits are zero
+
+def test_push_af_2(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xf5)    # PUSH AF  Instruction Opcode
+    cpu.sp = 0x1234
+    cpu.a = 0x42
+    cpu.sign = True
+    cpu.zero = True
+    cpu.half_carry = True
+    cpu.parity = True
+    cpu.carry = True
+    cpu.add_subtract = True
+    cpu.step()
+    assert cpu._cycles == 11
+    assert cpu.sp == 0x1232
+    assert cpu._machine.read_memory_word(0x1232) == 0x42d7 # bit1 of the PSW is always 1
+
+def test_pop_bc(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xc1)    # POP BC  Instruction Opcode
+    cpu._machine.write_memory_word(0x1234, 0xbeef)  # Data to pop
+    cpu.sp = 0x1234
+    cpu.step()
+    assert cpu._cycles == 10
+    assert cpu.sp == 0x1236
+    assert cpu.bc == 0xbeef
+
+def test_pop_de(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xd1)    # POP DE  Instruction Opcode
+    cpu._machine.write_memory_word(0x1234, 0xbeef)  # Data to pop
+    cpu.sp = 0x1234
+    cpu.step()
+    assert cpu._cycles == 10
+    assert cpu.sp == 0x1236
+    assert cpu.de == 0xbeef
+
+def test_pop_hl(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xe1)    # POP HL  Instruction Opcode
+    cpu._machine.write_memory_word(0x1234, 0xbeef)  # Data to pop
+    cpu.sp = 0x1234
+    cpu.step()
+    assert cpu._cycles == 10
+    assert cpu.sp == 0x1236
+    assert cpu.hl == 0xbeef
+
+def test_pop_af_1(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xf1)    # POP AF  Instruction Opcode
+    cpu._machine.write_memory_word(0x1234, 0xbe00)  # Data to pop (A=0xbe, all flags are off)
+    cpu.sp = 0x1234
+    cpu.step()
+    assert cpu._cycles == 10
+    assert cpu.sp == 0x1236
+    assert cpu.a == 0xbe
+    assert cpu.carry == False
+    assert cpu.half_carry == False
+    assert cpu.zero == False
+    assert cpu.sign == False
+    assert cpu.parity == False
+    assert cpu.add_subtract == False
+
+def test_pop_af_2(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xf1)    # POP AF  Instruction Opcode
+    cpu._machine.write_memory_word(0x1234, 0xbed7)  # Data to pop (A=0xbe, all flags are on)
+    cpu.sp = 0x1234
+    cpu.step()
+    assert cpu._cycles == 10
+    assert cpu.sp == 0x1236
+    assert cpu.a == 0xbe
+    assert cpu.carry == True
+    assert cpu.half_carry == True
+    assert cpu.zero == True
+    assert cpu.sign == True
+    assert cpu.parity == True
+    assert cpu.add_subtract == True
+
 
 # Exchange instructions tests
 
@@ -420,8 +528,8 @@ def test_ex_af_afx(cpu):
     cpu.af = 0x1234
     cpu.afx = 0xbeef
     cpu.step()
-    assert cpu.af == 0xbeef
-    assert cpu.afx == 0x1234
+    assert cpu.af == 0xbec7     # Bits 3 and 5 of the F register are not copied
+    assert cpu.afx == 0x1214    # Bits 3 and 5 of the F register are not copied
     assert cpu._cycles == 4
 
 def test_exx(cpu):
