@@ -691,7 +691,8 @@ class CPU:
         """ Do nothing """
         self._cycles += 4
 
-        self._log_1b_instruction("NOP")
+        if logger.level <= logging.DEBUG:
+            self._log_1b_instruction("NOP")
 
 
     def _ei(self):
@@ -700,7 +701,8 @@ class CPU:
         self._iff2 = True
         self._cycles += 4
 
-        self._log_1b_instruction("EI")
+        if logger.level <= logging.DEBUG:
+            self._log_1b_instruction("EI")
 
 
     def _di(self):
@@ -709,7 +711,8 @@ class CPU:
         self._iff2 = False
         self._cycles += 4
 
-        self._log_1b_instruction("DI")
+        if logger.level <= logging.DEBUG:
+            self._log_1b_instruction("DI")
 
 
     def _im(self):
@@ -719,7 +722,8 @@ class CPU:
 
         self._cycles += 8
 
-        self._log_1b_instruction(f"IM {self._interrupt_mode}")
+        if logger.level <= logging.DEBUG:
+            self._log_1b_instruction(f"IM {self._interrupt_mode}")
 
 
     def _in(self):
@@ -729,13 +733,16 @@ class CPU:
         self._a = self._machine.read_io(addr)
         self._cycles += 11
 
-        self._log_2b_instruction(f"IN A, {addr:02x}")
+        if logger.level <= logging.DEBUG:
+            self._log_2b_instruction(f"IN A, {addr:02x}")
 
 
     def _out(self):
         """ IO Output """
         addr = self._fetch_next_byte()
-        self._log_2b_instruction(f"OUT {addr:02x}, A")
+
+        if logger.level <= logging.DEBUG:
+            self._log_2b_instruction(f"OUT {addr:02x}, A")
 
         self._machine.write_io(addr, self._a)
         self._cycles += 11
@@ -755,7 +762,8 @@ class CPU:
         if src == 6 or dst == 6:
             self._cycles += 3
 
-        self._log_1b_instruction(f"LD {self._reg_symb(dst)}, {self._reg_symb(src)}")
+        if logger.level <= logging.DEBUG:
+            self._log_1b_instruction(f"LD {self._reg_symb(dst)}, {self._reg_symb(src)}")
 
 
     def _load_reg8_immediate(self):
@@ -765,7 +773,8 @@ class CPU:
         self._set_register(reg, value)
         self._cycles += (7 if reg != 6 else 10)
 
-        self._log_2b_instruction(f"LD {self._reg_symb(reg)}, {value:02x}")
+        if logger.level <= logging.DEBUG:
+            self._log_2b_instruction(f"LD {self._reg_symb(reg)}, {value:02x}")
 
 
     def _load_a_from_i_r_registers(self):
@@ -773,8 +782,10 @@ class CPU:
         self._a = self._r if (self._current_inst & 0x08) else self._i
 
         self._cycles += 9
-        reg_symb = "R" if (self._current_inst & 0x08) else "I"
-        self._log_1b_instruction(f"LD A, {reg_symb}")
+
+        if logger.level <= logging.DEBUG:
+            reg_symb = "R" if (self._current_inst & 0x08) else "I"
+            self._log_1b_instruction(f"LD A, {reg_symb}")
 
 
     def _load_i_r_register_from_a(self):
@@ -785,8 +796,11 @@ class CPU:
             self._i = self._a
 
         self._cycles += 9
-        reg_symb = "R" if (self._current_inst & 0x08) else "I"
-        self._log_1b_instruction(f"LD {reg_symb}, A")
+
+        if logger.level <= logging.DEBUG:
+            reg_symb = "R" if (self._current_inst & 0x08) else "I"
+            self._log_1b_instruction(f"LD {reg_symb}, A")
+
 
     def _store_a_to_mem(self):
         """ Store accumulator to memory pointed by immediate argument """
@@ -794,7 +808,8 @@ class CPU:
         self._machine.write_memory_byte(addr, self._a)
         self._cycles += 13
 
-        self._log_3b_instruction(f"LD ({addr:04x}), A")
+        if logger.level <= logging.DEBUG:
+            self._log_3b_instruction(f"LD ({addr:04x}), A")
 
 
     def _load_a_from_mem(self):
@@ -803,7 +818,8 @@ class CPU:
         self._a = self._machine.read_memory_byte(addr)
         self._cycles += 13
 
-        self._log_3b_instruction(f"LD A, ({addr:04x})")
+        if logger.level <= logging.DEBUG:
+            self._log_3b_instruction(f"LD A, ({addr:04x})")
 
 
     def _store_reg_to_indexed_mem(self):
@@ -816,7 +832,8 @@ class CPU:
 
         self._cycles += 19
 
-        self._log_2b_instruction(f"LD ({self._get_index_reg_symb()}{displacement:+03x}), {self._reg_symb(src)}")
+        if logger.level <= logging.DEBUG:
+            self._log_2b_instruction(f"LD ({self._get_index_reg_symb()}{displacement:+03x}), {self._reg_symb(src)}")
 
 
     def _load_reg_from_indexed_mem(self):
@@ -829,7 +846,9 @@ class CPU:
 
         self._cycles += 19
 
-        self._log_2b_instruction(f"LD {self._reg_symb(dst)}, ({self._get_index_reg_symb()}{displacement:+03x})")
+        if logger.level <= logging.DEBUG:
+            self._log_2b_instruction(f"LD {self._reg_symb(dst)}, ({self._get_index_reg_symb()}{displacement:+03x})")
+
 
     def _store_value_to_indexed_mem(self):
         """ Store immediate 8-bit value to memory indexed by IX/IY registers """
@@ -841,7 +860,8 @@ class CPU:
 
         self._cycles += 19
 
-        self._log_3b_instruction(f"LD ({self._get_index_reg_symb()}{displacement:+03x}), {value:02x}")
+        if logger.level <= logging.DEBUG:
+            self._log_3b_instruction(f"LD ({self._get_index_reg_symb()}{displacement:+03x}), {value:02x}")
 
 
 
@@ -854,7 +874,8 @@ class CPU:
         self._a = self._machine.read_memory_byte(addr)
         self._cycles += 7
 
-        self._log_1b_instruction(f"LD A, ({self._reg_pair_symb(reg_pair)})")
+        if logger.level <= logging.DEBUG:
+            self._log_1b_instruction(f"LD A, ({self._reg_pair_symb(reg_pair)})")
 
 
     def _ld_mem_regpair_a(self):
@@ -864,7 +885,8 @@ class CPU:
         self._machine.write_memory_byte(addr, self._a)
         self._cycles += 7
 
-        self._log_1b_instruction(f"LD ({self._reg_pair_symb(reg_pair)}), A")
+        if logger.level <= logging.DEBUG:
+            self._log_1b_instruction(f"LD ({self._reg_pair_symb(reg_pair)}), A")
 
 
     def _load_immediate_16b(self):
@@ -877,7 +899,8 @@ class CPU:
             self._set_register_pair(reg_pair, value)
         self._cycles += 10
 
-        self._log_3b_instruction(f"LD {self._reg_pair_symb(reg_pair)}, {value:04x}")
+        if logger.level <= logging.DEBUG:
+            self._log_3b_instruction(f"LD {self._reg_pair_symb(reg_pair)}, {value:04x}")
 
 
     def _load_iy_immediate(self):
@@ -886,7 +909,8 @@ class CPU:
         self._iy = value
         self._cycles += 14
 
-        self._log_3b_instruction(f"LD IY, {value:04x}")
+        if logger.level <= logging.DEBUG:
+            self._log_3b_instruction(f"LD IY, {value:04x}")
 
 
     def _store_hl_to_memory(self):
@@ -895,7 +919,8 @@ class CPU:
         self._machine.write_memory_word(addr, self.hl)
         self._cycles += 16
 
-        self._log_3b_instruction(f"LD ({addr:04x}), HL")
+        if logger.level <= logging.DEBUG:
+            self._log_3b_instruction(f"LD ({addr:04x}), HL")
 
 
     def _store_reg16_to_memory(self):
@@ -905,7 +930,8 @@ class CPU:
         self._machine.write_memory_word(addr, self._get_register_pair(reg_pair))
         self._cycles += 20
 
-        self._log_3b_instruction(f"LD ({addr:04x}), {self._reg_pair_symb(reg_pair)}")
+        if logger.level <= logging.DEBUG:
+            self._log_3b_instruction(f"LD ({addr:04x}), {self._reg_pair_symb(reg_pair)}")
 
 
     def _load_hl_from_memory(self):
@@ -914,7 +940,8 @@ class CPU:
         self.hl = self._machine.read_memory_word(addr)
         self._cycles += 16
 
-        self._log_3b_instruction(f"LD HL, ({addr:04x})")
+        if logger.level <= logging.DEBUG:
+            self._log_3b_instruction(f"LD HL, ({addr:04x})")
 
 
     def _load_reg16_from_memory(self):
@@ -925,14 +952,17 @@ class CPU:
         self._set_register_pair(reg_pair, value)
         self._cycles += 20
 
-        self._log_3b_instruction(f"LD {self._reg_pair_symb(reg_pair)}, ({addr:04x})")
+        if logger.level <= logging.DEBUG:
+            self._log_3b_instruction(f"LD {self._reg_pair_symb(reg_pair)}, ({addr:04x})")
 
 
     def _ld_sp_hl(self):
         """ Load HL value to SP register """
         self._sp = self.hl
         self._cycles += 6
-        self._log_1b_instruction(f"LD SP, HL")
+
+        if logger.level <= logging.DEBUG:
+            self._log_1b_instruction(f"LD SP, HL")
 
 
     def _push(self):
@@ -949,7 +979,8 @@ class CPU:
         self._push_to_stack(value)
         self._cycles += 11
 
-        self._log_1b_instruction(f"PUSH {reg_pair_name}")
+        if logger.level <= logging.DEBUG:
+            self._log_1b_instruction(f"PUSH {reg_pair_name}")
 
 
     def _pop(self):
@@ -967,7 +998,8 @@ class CPU:
 
         self._cycles += 10
 
-        self._log_1b_instruction(f"POP {reg_pair_name}")
+        if logger.level <= logging.DEBUG:
+            self._log_1b_instruction(f"POP {reg_pair_name}")
 
 
     # Exchange instructions
@@ -979,7 +1011,9 @@ class CPU:
         self.hl = tmp
 
         self._cycles += 4
-        self._log_1b_instruction(f"EX DE, HL")
+
+        if logger.level <= logging.DEBUG:
+            self._log_1b_instruction(f"EX DE, HL")
 
 
     def _exchange_hl_stack(self):
@@ -989,7 +1023,8 @@ class CPU:
         self._machine.write_memory_word(self._sp, value)
         self._cycles += 19
 
-        self._log_1b_instruction(f"EX (SP), HL")
+        if logger.level <= logging.DEBUG:
+            self._log_1b_instruction(f"EX (SP), HL")
 
 
     def _exchange_af_afx(self):
@@ -999,7 +1034,9 @@ class CPU:
         self.af = tmp
 
         self._cycles += 4
-        self._log_1b_instruction(f"EX AF, AF'")
+
+        if logger.level <= logging.DEBUG:
+            self._log_1b_instruction(f"EX AF, AF'")
 
 
     def _exchange_register_set(self):
@@ -1017,7 +1054,9 @@ class CPU:
         self.hl = tmp
 
         self._cycles += 4
-        self._log_1b_instruction(f"EXX")
+
+        if logger.level <= logging.DEBUG:
+            self._log_1b_instruction(f"EXX")
 
     # Block transfer instructions
 
@@ -1034,7 +1073,10 @@ class CPU:
         self._add_subtract = False
 
         self._cycles += 16
-        self._log_1b_instruction("LDD")
+
+        if logger.level <= logging.DEBUG:
+            self._log_1b_instruction("LDD")
+
 
     def _lddr(self):
         """ Copy byte from (HL) to (DE) and decrement HL and DE. Repeat until BC is zero"""
@@ -1048,7 +1090,8 @@ class CPU:
         self._parity_overflow = self.bc != 0x0000
         self._add_subtract = False
 
-        self._log_1b_instruction("LDDR")
+        if logger.level <= logging.DEBUG:
+            self._log_1b_instruction("LDDR")
 
         if self.bc != 0:
             self._pc -= 2
@@ -1070,7 +1113,10 @@ class CPU:
         self._add_subtract = False
 
         self._cycles += 16
-        self._log_1b_instruction("LDI")
+
+        if logger.level <= logging.DEBUG:
+            self._log_1b_instruction("LDI")
+
 
     def _ldir(self):
         """ Copy byte from (HL) to (DE) and increment HL and DE. Repeat until BC is zero"""
@@ -1084,7 +1130,8 @@ class CPU:
         self._parity_overflow = self.bc != 0x0000
         self._add_subtract = False
 
-        self._log_1b_instruction("LDIR")
+        if logger.level <= logging.DEBUG:
+            self._log_1b_instruction("LDIR")
 
         if self.bc != 0:
             self._pc -= 2
@@ -1093,13 +1140,15 @@ class CPU:
             self._cycles += 16
 
 
+
     # Execution flow instructions
 
     def _jp(self):
         """ Unconditional jump to an absolute address """
         addr = self._fetch_next_word()
 
-        self._log_3b_instruction(f"JP {addr:04x}")
+        if logger.level <= logging.DEBUG:
+            self._log_3b_instruction(f"JP {addr:04x}")
 
         self._pc = addr
         self._cycles += 10
@@ -1107,7 +1156,8 @@ class CPU:
 
     def _jp_hl(self):
         """ Jump to address in HL """
-        self._log_3b_instruction(f"JP (HL)")
+        if logger.level <= logging.DEBUG:
+            self._log_3b_instruction(f"JP (HL)")
 
         self._pc = self.hl
         self._cycles += 4
@@ -1117,9 +1167,10 @@ class CPU:
         """ Unconditional relative jump """
         displacement = self._fetch_displacement()
 
-        self._log_2b_instruction(f"JR {displacement + 2:+03x} ({self._pc + displacement:04x})")
-        self._pc += displacement
+        if logger.level <= logging.DEBUG:
+            self._log_2b_instruction(f"JR {displacement + 2:+03x} ({self._pc + displacement:04x})")
 
+        self._pc += displacement
         self._cycles += 12
 
 
@@ -1141,7 +1192,8 @@ class CPU:
             condition = self._carry
             condition_code = "C"
 
-        self._log_2b_instruction(f"JR {condition_code}, {displacement + 2:+03x} ({(self._pc + displacement):04x})")
+        if logger.level <= logging.DEBUG:
+            self._log_2b_instruction(f"JR {condition_code}, {displacement + 2:+03x} ({(self._pc + displacement):04x})")
 
         if condition:
             self._pc += displacement
@@ -1156,7 +1208,8 @@ class CPU:
 
         displacement = self._fetch_displacement()
 
-        self._log_2b_instruction(f"DJNZ {displacement + 2:+03x} ({self._pc + displacement:04x})")
+        if logger.level <= logging.DEBUG:
+            self._log_2b_instruction(f"DJNZ {displacement + 2:+03x} ({self._pc + displacement:04x})")
 
         if self._b != 0:
             self._pc += displacement
@@ -1169,7 +1222,8 @@ class CPU:
         """ Call a subroutine """
         addr = self._fetch_next_word()
 
-        self._log_3b_instruction(f"CALL {addr:04x}")
+        if logger.level <= logging.DEBUG:
+            self._log_3b_instruction(f"CALL {addr:04x}")
 
         self._push_to_stack(self._pc)
         self._pc = addr
@@ -1179,7 +1233,8 @@ class CPU:
     def _ret(self):
         """ Return from a subroutine """
 
-        self._log_1b_instruction(f"RET")
+        if logger.level <= logging.DEBUG:
+            self._log_1b_instruction(f"RET")
 
         self._pc = self._pop_from_stack()
         self._cycles += 10
@@ -1209,9 +1264,10 @@ class CPU:
         """ Conditional jump """
         addr = self._fetch_next_word()
         op = (self._current_inst & 0x38) >> 3
-        op_symb = ["JP NZ", "JP Z", "JP NC", "JP C", "JP PO", "JP PE", "JP P", "JP M"][op]
 
-        self._log_3b_instruction(f"{op_symb}, {addr:04x}")
+        if logger.level <= logging.DEBUG:
+            op_symb = ["JP NZ", "JP Z", "JP NC", "JP C", "JP PO", "JP PE", "JP P", "JP M"][op]
+            self._log_3b_instruction(f"{op_symb}, {addr:04x}")
 
         if self._check_condition(op):
             self._pc = addr
@@ -1223,9 +1279,10 @@ class CPU:
         """ Conditional call """
         addr = self._fetch_next_word()
         op = (self._current_inst & 0x38) >> 3
-        op_symb = ["CALL NZ", "CALL Z", "CALL NC", "CALL C", "CALL PO", "CALL PE", "CALL P", "CALL M"][op]
 
-        self._log_3b_instruction(f"{op_symb}, {addr:04x}")
+        if logger.level <= logging.DEBUG:
+            op_symb = ["CALL NZ", "CALL Z", "CALL NC", "CALL C", "CALL PO", "CALL PE", "CALL P", "CALL M"][op]
+            self._log_3b_instruction(f"{op_symb}, {addr:04x}")
 
         if self._check_condition(op):
             self._push_to_stack(self._pc)
@@ -1238,9 +1295,10 @@ class CPU:
     def _ret_cond(self):
         """ Conditional return """
         op = (self._current_inst & 0x38) >> 3
-        op_symb = ["RET NZ", "RET Z", "RET NC", "RET C", "RET PO", "RET PE", "RET P", "RET M"][op]
 
-        self._log_1b_instruction(f"{op_symb}")
+        if logger.level <= logging.DEBUG:
+            op_symb = ["RET NZ", "RET Z", "RET NC", "RET C", "RET PO", "RET PE", "RET P", "RET M"][op]
+            self._log_1b_instruction(f"{op_symb}")
 
         if self._check_condition(op):
             self._pc = self._pop_from_stack()
@@ -1252,7 +1310,9 @@ class CPU:
     def _rst(self):
         """ Restart (special subroutine call) """
         rst_addr = self._current_inst & 0x38
-        self._log_1b_instruction(f"RST {rst_addr:02x}")
+        
+        if logger.level <= logging.DEBUG:
+            self._log_1b_instruction(f"RST {rst_addr:02x}")
 
         self._push_to_stack(self._pc)
         self._pc = rst_addr
@@ -1267,6 +1327,7 @@ class CPU:
             return 0
         else:
             return 1 + self._count_bits(n & (n - 1))
+
 
     def _alu_op(self, op, value):
         """ Internal implementation of an ALU operation between the accumulator and value.
@@ -1337,14 +1398,15 @@ class CPU:
             - CP  - compare a register with the accumulator (set flags, but not change accumulator)
         """
         op = (self._current_inst & 0x38) >> 3
-        op_name = ["ADD", "ADC", "SUB", "SBC", "AND", "XOR", "OR ", "CP "][op]
         reg = self._current_inst & 0x07
         value = self._get_register(reg)
 
         self._alu_op(op, value)
         self._cycles += 4 if reg != 6 else 7
 
-        self._log_1b_instruction(f"{op_name} {self._reg_symb(reg)}")
+        if logger.level <= logging.DEBUG:
+            op_name = ["ADD", "ADC", "SUB", "SBC", "AND", "XOR", "OR ", "CP "][op]
+            self._log_1b_instruction(f"{op_name} {self._reg_symb(reg)}")
 
 
     def _alu_immediate(self):
@@ -1361,13 +1423,14 @@ class CPU:
             - CP  - compare the operand with the accumulator (set flags, but not change accumulator)
         """
         op = (self._current_inst & 0x38) >> 3
-        op_name = ["ADD", "ADC", "SUB", "SBC", "AND", "XOR", "OR ", "CP "][op]
         value = self._fetch_next_byte()
 
         self._alu_op(op, value)
         self._cycles += 7
 
-        self._log_2b_instruction(f"{op_name} {value:02x}")
+        if logger.level <= logging.DEBUG:
+            op_name = ["ADD", "ADC", "SUB", "SBC", "AND", "XOR", "OR ", "CP "][op]
+            self._log_2b_instruction(f"{op_name} {value:02x}")
 
 
     def _alu_mem_indexed(self):
@@ -1382,14 +1445,15 @@ class CPU:
             - CP  - compare a memory value with the accumulator (set flags, but not change accumulator)
         """
         op = (self._current_inst & 0x38) >> 3
-        op_name = ["ADD A,", "ADC A,", "SUB", "SBC A,", "AND", "XOR", "OR", "CP"][op]
         addr = self._get_index_reg() + self._fetch_displacement()
         value = self._machine.read_memory_byte(addr)
 
         self._alu_op(op, value)
         self._cycles += 19
 
-        self._log_2b_instruction(f"{op_name} ({self._get_index_reg_symb()}{self._displacement:+03x})")
+        if logger.level <= logging.DEBUG:
+            op_name = ["ADD A,", "ADC A,", "SUB", "SBC A,", "AND", "XOR", "OR", "CP"][op]
+            self._log_2b_instruction(f"{op_name} ({self._get_index_reg_symb()}{self._displacement:+03x})")
         
 
     def _inc_8bit_value(self, value):
@@ -1426,7 +1490,9 @@ class CPU:
         value = self._inc_8bit_value(self._get_register(reg))
         self._set_register(reg, value)
 
-        self._log_1b_instruction(f"INC {self._reg_symb(reg)}")
+        if logger.level <= logging.DEBUG:
+            self._log_1b_instruction(f"INC {self._reg_symb(reg)}")
+
         self._cycles += 11 if reg == 6 else 4
 
     
@@ -1436,33 +1502,37 @@ class CPU:
         value = self._dec_8bit_value(self._get_register(reg))
         self._set_register(reg, value)
 
-        self._log_1b_instruction(f"DEC {self._reg_symb(reg)}")
+        if logger.level <= logging.DEBUG:
+            self._log_1b_instruction(f"DEC {self._reg_symb(reg)}")
+
         self._cycles += 11 if reg == 6 else 4
 
 
     def _inc_mem_indexed(self):
         """ Increment 8-bit value pointed by IX/IY-based index """
         displacement = self._fetch_displacement()
-
         addr = self._get_index_reg() + displacement
         value = self._machine.read_memory_byte(addr)
         value = self._inc_8bit_value(value)
         self._machine.write_memory_byte(addr, value)
 
-        self._log_2b_instruction(f"INC ({self._get_index_reg_symb()}{displacement:+03x})")
+        if logger.level <= logging.DEBUG:
+            self._log_2b_instruction(f"INC ({self._get_index_reg_symb()}{displacement:+03x})")
+
         self._cycles += 23
 
 
     def _dec_mem_indexed(self):
         """ Deccrement 8-bit value pointed by IX/IY-based index """
         displacement = self._fetch_displacement()
-
         addr = self._get_index_reg() + displacement
         value = self._machine.read_memory_byte(addr)
         value = self._dec_8bit_value(value)
         self._machine.write_memory_byte(addr, value)
 
-        self._log_2b_instruction(f"DEC ({self._get_index_reg_symb()}{displacement:+03x})")
+        if logger.level <= logging.DEBUG:
+            self._log_2b_instruction(f"DEC ({self._get_index_reg_symb()}{displacement:+03x})")
+
         self._cycles += 23
 
 
@@ -1473,7 +1543,8 @@ class CPU:
         self._set_register_pair(reg_pair, (value - 1) & 0xffff)
         self._cycles += 6
 
-        self._log_1b_instruction(f"DEC {self._reg_pair_symb(reg_pair)}")
+        if logger.level <= logging.DEBUG:
+            self._log_1b_instruction(f"DEC {self._reg_pair_symb(reg_pair)}")
 
 
     def _inc16(self):
@@ -1483,7 +1554,8 @@ class CPU:
         self._set_register_pair(reg_pair, (value + 1) & 0xffff)
         self._cycles += 6
 
-        self._log_1b_instruction(f"INC {self._reg_pair_symb(reg_pair)}")
+        if logger.level <= logging.DEBUG:
+            self._log_1b_instruction(f"INC {self._reg_pair_symb(reg_pair)}")
 
 
     def _add_hl(self):
@@ -1498,7 +1570,8 @@ class CPU:
 
         self._cycles += 11
 
-        self._log_1b_instruction(f"ADD HL, {self._reg_pair_symb(reg_pair)}")
+        if logger.level <= logging.DEBUG:
+            self._log_1b_instruction(f"ADD HL, {self._reg_pair_symb(reg_pair)}")
 
 
     def _adc_hl(self):
@@ -1518,7 +1591,8 @@ class CPU:
 
         self._cycles += 15
 
-        self._log_1b_instruction(f"ADC HL, {self._reg_pair_symb(reg_pair)}")
+        if logger.level <= logging.DEBUG:
+            self._log_1b_instruction(f"ADC HL, {self._reg_pair_symb(reg_pair)}")
 
 
     def _sbc_hl(self):
@@ -1539,7 +1613,10 @@ class CPU:
 
         self._cycles += 15
 
-        self._log_1b_instruction(f"SBC HL, {self._reg_pair_symb(reg_pair)}")
+        if logger.level <= logging.DEBUG:
+            self._log_1b_instruction(f"SBC HL, {self._reg_pair_symb(reg_pair)}")
+
+
 
     # Rotate and shift instructions
 
@@ -1552,7 +1629,8 @@ class CPU:
 
         self._cycles += 4
 
-        self._log_1b_instruction(f"RLCA")
+        if logger.level <= logging.DEBUG:
+            self._log_1b_instruction(f"RLCA")
 
 
     def _rrca(self):
@@ -1564,7 +1642,8 @@ class CPU:
 
         self._cycles += 4
 
-        self._log_1b_instruction(f"RRCA")
+        if logger.level <= logging.DEBUG:
+            self._log_1b_instruction(f"RRCA")
 
 
     def _rla(self):
@@ -1575,7 +1654,8 @@ class CPU:
         self._carry = is_bit_set(temp, 7)
         self._cycles += 4
 
-        self._log_1b_instruction(f"RLA")
+        if logger.level <= logging.DEBUG:
+            self._log_1b_instruction(f"RLA")
 
 
     def _rra(self):
@@ -1586,7 +1666,8 @@ class CPU:
         self._carry = is_bit_set(temp, 0)
         self._cycles += 4
 
-        self._log_1b_instruction(f"RRA")
+        if logger.level <= logging.DEBUG:
+            self._log_1b_instruction(f"RRA")
     
 
 
@@ -1599,14 +1680,17 @@ class CPU:
         self._half_carry = True
         self._add_subtract = True
 
-        self._log_1b_instruction(f"CPL")
+        if logger.level <= logging.DEBUG:
+            self._log_1b_instruction(f"CPL")
+
 
     def _scf(self):
         """ Set carry flag """
         self._carry = True
         self._cycles += 4
 
-        self._log_1b_instruction(f"SCF")
+        if logger.level <= logging.DEBUG:
+            self._log_1b_instruction(f"SCF")
         
 
     def _ccf(self):
@@ -1615,7 +1699,8 @@ class CPU:
         self._carry = not self._carry
         self._cycles += 4
 
-        self._log_1b_instruction(f"CCF")
+        if logger.level <= logging.DEBUG:
+            self._log_1b_instruction(f"CCF")
 
 
     def _get_bit(self):
@@ -1629,7 +1714,8 @@ class CPU:
 
         self._cycles += 12 if reg == 6 else 8
         
-        self._log_3b_bit_instruction(f"BIT {bit}, {self._reg_symb(reg)}")
+        if logger.level <= logging.DEBUG:
+            self._log_3b_bit_instruction(f"BIT {bit}, {self._reg_symb(reg)}")
 
 
     def _get_bit_indexed(self):
@@ -1643,7 +1729,8 @@ class CPU:
 
         self._cycles += 20
         
-        self._log_3b_bit_instruction(f"BIT {bit}, ({self._get_index_reg_symb()}{self._displacement:+03x})")
+        if logger.level <= logging.DEBUG:
+            self._log_3b_bit_instruction(f"BIT {bit}, ({self._get_index_reg_symb()}{self._displacement:+03x})")
 
 
     def _set_bit(self):
@@ -1656,7 +1743,8 @@ class CPU:
 
         self._cycles += 15 if reg == 6 else 8
         
-        self._log_3b_bit_instruction(f"SET {bit}, {self._reg_symb(reg)}")
+        if logger.level <= logging.DEBUG:
+            self._log_3b_bit_instruction(f"SET {bit}, {self._reg_symb(reg)}")
 
 
     def _set_bit_indexed(self):
@@ -1670,7 +1758,8 @@ class CPU:
 
         self._cycles += 23
         
-        self._log_3b_bit_instruction(f"SET {bit}, ({self._get_index_reg_symb()}{self._displacement:+03x})")
+        if logger.level <= logging.DEBUG:
+            self._log_3b_bit_instruction(f"SET {bit}, ({self._get_index_reg_symb()}{self._displacement:+03x})")
 
 
     def _reset_bit(self):
@@ -1683,7 +1772,8 @@ class CPU:
 
         self._cycles += 15 if reg == 6 else 8
         
-        self._log_3b_bit_instruction(f"RES {bit}, {self._reg_symb(reg)}")
+        if logger.level <= logging.DEBUG:
+            self._log_3b_bit_instruction(f"RES {bit}, {self._reg_symb(reg)}")
 
 
     def _reset_bit_indexed(self):
@@ -1698,7 +1788,8 @@ class CPU:
 
         self._cycles += 23
         
-        self._log_3b_bit_instruction(f"RES {bit}, ({self._get_index_reg_symb()}{self._displacement:+03x})")
+        if logger.level <= logging.DEBUG:
+            self._log_3b_bit_instruction(f"RES {bit}, ({self._get_index_reg_symb()}{self._displacement:+03x})")
 
 
     # Instruction tables
