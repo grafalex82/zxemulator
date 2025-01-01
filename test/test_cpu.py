@@ -2696,6 +2696,47 @@ def test_ccf_1(cpu):
     assert cpu.half_carry == True
     assert cpu._cycles == 4
 
+def test_get_bit_a(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xcb)    # BIT 3, A  Instruction Opcode
+    cpu._machine.write_memory_byte(0x0001, 0x5f)
+
+    cpu.a = 0x08
+    cpu.step()
+
+    assert cpu._cycles == 8
+    assert cpu.zero == False                        # Bit is set (non-zero)
+
+def test_get_bit_h(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xcb)    # BIT 5, H  Instruction Opcode
+    cpu._machine.write_memory_byte(0x0001, 0x6c)
+
+    cpu.h = 0x42
+    cpu.step()
+
+    assert cpu._cycles == 8
+    assert cpu.zero == True                         # Bit is not set (zero)
+
+def test_get_bit_mem_1(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xcb)    # BIT 7, (HL)  Instruction Opcode
+    cpu._machine.write_memory_byte(0x0001, 0x7e)
+    cpu._machine.write_memory_byte(0x1234, 0x42)    # Bit 7 is not set
+    cpu.hl = 0x1234
+    cpu.step()
+
+    assert cpu._cycles == 12
+    assert cpu.zero == True                         # Bit is not set (zero)
+
+def test_get_bit_mem_2(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xcb)    # BIT 7, (HL)  Instruction Opcode
+    cpu._machine.write_memory_byte(0x0001, 0x7e)
+    cpu._machine.write_memory_byte(0x1234, 0x80)    # Bit 7 is set
+    cpu.hl = 0x1234
+    cpu.step()
+
+    assert cpu._cycles == 12
+    assert cpu.zero == False                         # Bit is set (non-zero)
+
+
 def test_get_bit_ix_1(cpu):
     cpu._machine.write_memory_byte(0x0000, 0xdd)    # BIT 3, (IX+42) Instruction Opcode
     cpu._machine.write_memory_byte(0x0001, 0xcb)

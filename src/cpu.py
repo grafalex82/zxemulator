@@ -1618,14 +1618,28 @@ class CPU:
         self._log_1b_instruction(f"CCF")
 
 
+    def _get_bit(self):
+        """ Get bit from a register """
+        bit = (self._current_inst & 0x38) >> 3
+        mask = 1 << bit
+        reg = self._current_inst & 0x07
+        value = self._get_register(reg)
+
+        self._zero = (value & mask == 0)
+
+        self._cycles += 12 if reg == 6 else 8
+        
+        self._log_3b_bit_instruction(f"BIT {bit}, ({self._reg_symb(reg)})")
+
+
     def _get_bit_indexed(self):
         """ Get bit from a memory byte addressed via IX/IY index registers """
         bit = (self._current_inst & 0x38) >> 3
-        value = 1 << bit
+        mask = 1 << bit
         addr = self._get_index_reg() + self._displacement
 
-        byte = self._machine.read_memory_byte(addr)
-        self._zero = (byte & value == 0)
+        value = self._machine.read_memory_byte(addr)
+        self._zero = (value & mask == 0)
 
         self._cycles += 20
         
@@ -1635,11 +1649,11 @@ class CPU:
     def _set_bit_indexed(self):
         """ Set bit on a memory byte addressed via IX/IY index registers """
         bit = (self._current_inst & 0x38) >> 3
-        value = 1 << bit
+        mask = 1 << bit
         addr = self._get_index_reg() + self._displacement
 
-        byte = self._machine.read_memory_byte(addr)
-        self._machine.write_memory_byte(addr, byte | value)
+        value = self._machine.read_memory_byte(addr)
+        self._machine.write_memory_byte(addr, value | mask)
 
         self._cycles += 23
         
@@ -1650,11 +1664,11 @@ class CPU:
         """ Reset bit on a memory byte addressed via IX/IY index registers """
 
         bit = (self._current_inst & 0x38) >> 3
-        value = 1 << bit
+        mask = 1 << bit
         addr = self._get_index_reg() + self._displacement
 
-        byte = self._machine.read_memory_byte(addr)
-        self._machine.write_memory_byte(addr, byte & ~value)
+        value = self._machine.read_memory_byte(addr)
+        self._machine.write_memory_byte(addr, value & ~mask)
 
         self._cycles += 23
         
@@ -2292,73 +2306,73 @@ class CPU:
         self._instructions_0xcb[0x3e] = None        # SRL (HL)
         self._instructions_0xcb[0x3f] = None        # SRL A
 
-        self._instructions_0xcb[0x40] = None        # BIT 0, B
-        self._instructions_0xcb[0x41] = None        # BIT 0, C
-        self._instructions_0xcb[0x42] = None        # BIT 0, D
-        self._instructions_0xcb[0x43] = None        # BIT 0, E
-        self._instructions_0xcb[0x44] = None        # BIT 0, H
-        self._instructions_0xcb[0x45] = None        # BIT 0, L
-        self._instructions_0xcb[0x46] = None        # BIT 0, (HL)
-        self._instructions_0xcb[0x47] = None        # BIT 0, A
-        self._instructions_0xcb[0x48] = None        # BIT 1, B
-        self._instructions_0xcb[0x49] = None        # BIT 1, C
-        self._instructions_0xcb[0x4a] = None        # BIT 1, D
-        self._instructions_0xcb[0x4b] = None        # BIT 1, E
-        self._instructions_0xcb[0x4c] = None        # BIT 1, H
-        self._instructions_0xcb[0x4d] = None        # BIT 1, L
-        self._instructions_0xcb[0x4e] = None        # BIT 1, (HL)
-        self._instructions_0xcb[0x4f] = None        # BIT 1, A
+        self._instructions_0xcb[0x40] = self._get_bit       # BIT 0, B
+        self._instructions_0xcb[0x41] = self._get_bit       # BIT 0, C
+        self._instructions_0xcb[0x42] = self._get_bit       # BIT 0, D
+        self._instructions_0xcb[0x43] = self._get_bit       # BIT 0, E
+        self._instructions_0xcb[0x44] = self._get_bit       # BIT 0, H
+        self._instructions_0xcb[0x45] = self._get_bit       # BIT 0, L
+        self._instructions_0xcb[0x46] = self._get_bit       # BIT 0, (HL)
+        self._instructions_0xcb[0x47] = self._get_bit       # BIT 0, A
+        self._instructions_0xcb[0x48] = self._get_bit       # BIT 1, B
+        self._instructions_0xcb[0x49] = self._get_bit       # BIT 1, C
+        self._instructions_0xcb[0x4a] = self._get_bit       # BIT 1, D
+        self._instructions_0xcb[0x4b] = self._get_bit       # BIT 1, E
+        self._instructions_0xcb[0x4c] = self._get_bit       # BIT 1, H
+        self._instructions_0xcb[0x4d] = self._get_bit       # BIT 1, L
+        self._instructions_0xcb[0x4e] = self._get_bit       # BIT 1, (HL)
+        self._instructions_0xcb[0x4f] = self._get_bit       # BIT 1, A
 
-        self._instructions_0xcb[0x50] = None        # BIT 2, B
-        self._instructions_0xcb[0x51] = None        # BIT 2, C
-        self._instructions_0xcb[0x52] = None        # BIT 2, D
-        self._instructions_0xcb[0x53] = None        # BIT 2, E
-        self._instructions_0xcb[0x54] = None        # BIT 2, H
-        self._instructions_0xcb[0x55] = None        # BIT 2, L
-        self._instructions_0xcb[0x56] = None        # BIT 2, (HL)
-        self._instructions_0xcb[0x57] = None        # BIT 2, A
-        self._instructions_0xcb[0x58] = None        # BIT 3, B
-        self._instructions_0xcb[0x59] = None        # BIT 3, C
-        self._instructions_0xcb[0x5a] = None        # BIT 3, D
-        self._instructions_0xcb[0x5b] = None        # BIT 3, E
-        self._instructions_0xcb[0x5c] = None        # BIT 3, H
-        self._instructions_0xcb[0x5d] = None        # BIT 3, L
-        self._instructions_0xcb[0x5e] = None        # BIT 3, (HL)
-        self._instructions_0xcb[0x5f] = None        # BIT 3, A
+        self._instructions_0xcb[0x50] = self._get_bit       # BIT 2, B
+        self._instructions_0xcb[0x51] = self._get_bit       # BIT 2, C
+        self._instructions_0xcb[0x52] = self._get_bit       # BIT 2, D
+        self._instructions_0xcb[0x53] = self._get_bit       # BIT 2, E
+        self._instructions_0xcb[0x54] = self._get_bit       # BIT 2, H
+        self._instructions_0xcb[0x55] = self._get_bit       # BIT 2, L
+        self._instructions_0xcb[0x56] = self._get_bit       # BIT 2, (HL)
+        self._instructions_0xcb[0x57] = self._get_bit       # BIT 2, A
+        self._instructions_0xcb[0x58] = self._get_bit       # BIT 3, B
+        self._instructions_0xcb[0x59] = self._get_bit       # BIT 3, C
+        self._instructions_0xcb[0x5a] = self._get_bit       # BIT 3, D
+        self._instructions_0xcb[0x5b] = self._get_bit       # BIT 3, E
+        self._instructions_0xcb[0x5c] = self._get_bit       # BIT 3, H
+        self._instructions_0xcb[0x5d] = self._get_bit       # BIT 3, L
+        self._instructions_0xcb[0x5e] = self._get_bit       # BIT 3, (HL)
+        self._instructions_0xcb[0x5f] = self._get_bit       # BIT 3, A
 
-        self._instructions_0xcb[0x60] = None        # BIT 4, B
-        self._instructions_0xcb[0x61] = None        # BIT 4, C
-        self._instructions_0xcb[0x62] = None        # BIT 4, D
-        self._instructions_0xcb[0x63] = None        # BIT 4, E
-        self._instructions_0xcb[0x64] = None        # BIT 4, H
-        self._instructions_0xcb[0x65] = None        # BIT 4, L
-        self._instructions_0xcb[0x66] = None        # BIT 4, (HL)
-        self._instructions_0xcb[0x67] = None        # BIT 4, A
-        self._instructions_0xcb[0x68] = None        # BIT 5, B
-        self._instructions_0xcb[0x69] = None        # BIT 5, C
-        self._instructions_0xcb[0x6a] = None        # BIT 5, D
-        self._instructions_0xcb[0x6b] = None        # BIT 5, E
-        self._instructions_0xcb[0x6c] = None        # BIT 5, H
-        self._instructions_0xcb[0x6d] = None        # BIT 5, L
-        self._instructions_0xcb[0x6e] = None        # BIT 5, (HL)
-        self._instructions_0xcb[0x6f] = None        # BIT 5, A
+        self._instructions_0xcb[0x60] = self._get_bit       # BIT 4, B
+        self._instructions_0xcb[0x61] = self._get_bit       # BIT 4, C
+        self._instructions_0xcb[0x62] = self._get_bit       # BIT 4, D
+        self._instructions_0xcb[0x63] = self._get_bit       # BIT 4, E
+        self._instructions_0xcb[0x64] = self._get_bit       # BIT 4, H
+        self._instructions_0xcb[0x65] = self._get_bit       # BIT 4, L
+        self._instructions_0xcb[0x66] = self._get_bit       # BIT 4, (HL)
+        self._instructions_0xcb[0x67] = self._get_bit       # BIT 4, A
+        self._instructions_0xcb[0x68] = self._get_bit       # BIT 5, B
+        self._instructions_0xcb[0x69] = self._get_bit       # BIT 5, C
+        self._instructions_0xcb[0x6a] = self._get_bit       # BIT 5, D
+        self._instructions_0xcb[0x6b] = self._get_bit       # BIT 5, E
+        self._instructions_0xcb[0x6c] = self._get_bit       # BIT 5, H
+        self._instructions_0xcb[0x6d] = self._get_bit       # BIT 5, L
+        self._instructions_0xcb[0x6e] = self._get_bit       # BIT 5, (HL)
+        self._instructions_0xcb[0x6f] = self._get_bit       # BIT 5, A
 
-        self._instructions_0xcb[0x70] = None        # BIT 6, B
-        self._instructions_0xcb[0x71] = None        # BIT 6, C
-        self._instructions_0xcb[0x72] = None        # BIT 6, D
-        self._instructions_0xcb[0x73] = None        # BIT 6, E
-        self._instructions_0xcb[0x74] = None        # BIT 6, H
-        self._instructions_0xcb[0x75] = None        # BIT 6, L
-        self._instructions_0xcb[0x76] = None        # BIT 6, (HL)
-        self._instructions_0xcb[0x77] = None        # BIT 6, A
-        self._instructions_0xcb[0x78] = None        # BIT 7, B
-        self._instructions_0xcb[0x79] = None        # BIT 7, C
-        self._instructions_0xcb[0x7a] = None        # BIT 7, D
-        self._instructions_0xcb[0x7b] = None        # BIT 7, E
-        self._instructions_0xcb[0x7c] = None        # BIT 7, H
-        self._instructions_0xcb[0x7d] = None        # BIT 7, L
-        self._instructions_0xcb[0x7e] = None        # BIT 7, (HL)
-        self._instructions_0xcb[0x7f] = None        # BIT 7, A
+        self._instructions_0xcb[0x70] = self._get_bit       # BIT 6, B
+        self._instructions_0xcb[0x71] = self._get_bit       # BIT 6, C
+        self._instructions_0xcb[0x72] = self._get_bit       # BIT 6, D
+        self._instructions_0xcb[0x73] = self._get_bit       # BIT 6, E
+        self._instructions_0xcb[0x74] = self._get_bit       # BIT 6, H
+        self._instructions_0xcb[0x75] = self._get_bit       # BIT 6, L
+        self._instructions_0xcb[0x76] = self._get_bit       # BIT 6, (HL)
+        self._instructions_0xcb[0x77] = self._get_bit       # BIT 6, A
+        self._instructions_0xcb[0x78] = self._get_bit       # BIT 7, B
+        self._instructions_0xcb[0x79] = self._get_bit       # BIT 7, C
+        self._instructions_0xcb[0x7a] = self._get_bit       # BIT 7, D
+        self._instructions_0xcb[0x7b] = self._get_bit       # BIT 7, E
+        self._instructions_0xcb[0x7c] = self._get_bit       # BIT 7, H
+        self._instructions_0xcb[0x7d] = self._get_bit       # BIT 7, L
+        self._instructions_0xcb[0x7e] = self._get_bit       # BIT 7, (HL)
+        self._instructions_0xcb[0x7f] = self._get_bit       # BIT 7, A
 
         self._instructions_0xcb[0x80] = None        # RES 0, B
         self._instructions_0xcb[0x81] = None        # RES 0, C
