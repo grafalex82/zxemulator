@@ -1,6 +1,10 @@
 import logging
 from utils import *
 
+CPU_FREQ = 3500000  # 3.5 MHz
+FRAME_FREQ = 50     # 50 Hz
+TICKS_PER_FRAME = CPU_FREQ // FRAME_FREQ
+
 logger = logging.getLogger('machine')
 
 class MemoryMgr:

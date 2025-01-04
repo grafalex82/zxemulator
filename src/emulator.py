@@ -1,5 +1,5 @@
 import logging
-from machine import Machine
+from machine import Machine, TICKS_PER_FRAME
 from cpu import CPU
 
 class Emulator:
@@ -42,6 +42,11 @@ class Emulator:
         stop_at = self._cpu._cycles + num_cycles
         while num_cycles == 0 or self._cpu._cycles <= stop_at:
             self.step()
+
+    def run1frame(self):
+        # TODO: scheduling an interrupt each 50ms shall be a Machine's responsibility, not Emulator
+        self._machine.schedule_interrupt()
+        self.run(TICKS_PER_FRAME)
 
     def reset(self):
         self._machine.reset()

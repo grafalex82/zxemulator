@@ -77,7 +77,7 @@ class Configuration:
 
             #     self.handle_event(event)
             
-            self._emulator.run(20000)
+            self._emulator.run1frame()
 
             # if pygame.key.get_pressed()[pygame.K_ESCAPE]:
             #     self._emulator.reset()
