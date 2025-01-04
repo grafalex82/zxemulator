@@ -530,6 +530,15 @@ def test_ld_sp(cpu):
     assert cpu.sp == 0xbeef
     assert cpu._cycles == 10
 
+def test_ld_ix(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xdd)    # LD IX, #dead
+    cpu._machine.write_memory_byte(0x0001, 0x21)
+    cpu._machine.write_memory_word(0x0002, 0xdead)  # Immediate argument
+    cpu.step() 
+    assert cpu.pc == 0x0004
+    assert cpu.ix == 0xdead
+    assert cpu._cycles == 14
+
 def test_ld_iy(cpu):
     cpu._machine.write_memory_byte(0x0000, 0xfd)    # LD IY, #beef
     cpu._machine.write_memory_byte(0x0001, 0x21)

@@ -476,6 +476,13 @@ class CPU:
         prefix = self._instruction_prefix if self._instruction_prefix < 0x100 else self._instruction_prefix >> 8
         return self._ix if prefix == 0xdd else self._iy
 
+    def _set_index_reg(self, value):
+        prefix = self._instruction_prefix if self._instruction_prefix < 0x100 else self._instruction_prefix >> 8
+        if prefix == 0xdd:
+            self._ix = value
+        else:
+            self._iy = value
+
     def _get_index_reg_symb(self):
         prefix = self._instruction_prefix if self._instruction_prefix < 0x100 else self._instruction_prefix >> 8
         return "IX" if prefix == 0xdd else "IY"
@@ -988,14 +995,14 @@ class CPU:
             self._log_3b_instruction(f"LD {self._reg_pair_symb(reg_pair)}, {value:04x}")
 
 
-    def _load_iy_immediate(self):
-        """ Load IY register with immediate value"""
+    def _load_idx_immediate(self):
+        """ Load IX/IY index register with immediate value"""
         value = self._fetch_next_word()
-        self._iy = value
+        self._set_index_reg(value)
         self._cycles += 14
 
         if logger.level <= logging.DEBUG:
-            self._log_3b_instruction(f"LD IY, {value:04x}")
+            self._log_3b_instruction(f"LD {self._get_index_reg_symb()}, {value:04x}")
 
 
     def _store_hl_to_memory(self):
@@ -2848,7 +2855,7 @@ class CPU:
         self._instructions_0xdd[0x1f] = None
 
         self._instructions_0xdd[0x20] = None
-        self._instructions_0xdd[0x21] = None
+        self._instructions_0xdd[0x21] = self._load_idx_immediate
         self._instructions_0xdd[0x22] = None
         self._instructions_0xdd[0x23] = None
         self._instructions_0xdd[0x24] = None
@@ -3404,7 +3411,7 @@ class CPU:
         self._instructions_0xfd[0x1f] = None
 
         self._instructions_0xfd[0x20] = None
-        self._instructions_0xfd[0x21] = self._load_iy_immediate
+        self._instructions_0xfd[0x21] = self._load_idx_immediate
         self._instructions_0xfd[0x22] = None
         self._instructions_0xfd[0x23] = None
         self._instructions_0xfd[0x24] = None
