@@ -2755,6 +2755,42 @@ def test_sbc_hl_sp_zero(cpu):
     assert cpu.overflow == False
     assert cpu.zero == True
 
+def test_add_ix_bc(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xdd)    # ADD IX, BC
+    cpu._machine.write_memory_byte(0x0001, 0x09)
+    cpu.ix = 0x1234
+    cpu.bc = 0x4567
+    cpu.step()
+    assert cpu.ix == 0x579B
+    assert cpu._cycles == 15
+    assert cpu.carry == False
+    assert cpu.half_carry == False
+    assert cpu.add_subtract == False
+
+def test_add_ix_ix(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xdd)    # ADD IX, IX
+    cpu._machine.write_memory_byte(0x0001, 0x29)
+    cpu.ix = 0xabcd
+    cpu.step()
+    assert cpu.ix == 0x579a
+    assert cpu._cycles == 15
+    assert cpu.carry == True
+    assert cpu.half_carry == True
+    assert cpu.add_subtract == False
+
+def test_add_iy_sp(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xfd)    # ADD IY, SP
+    cpu._machine.write_memory_byte(0x0001, 0x39)
+    cpu.iy = 0x5432
+    cpu.sp = 0xabce
+    cpu.step()
+    assert cpu.iy == 0x0000
+    assert cpu._cycles == 15
+    assert cpu.carry == True
+    assert cpu.half_carry == True
+    assert cpu.add_subtract == False
+
+
 
 # Rotate and shift instructions tests
 

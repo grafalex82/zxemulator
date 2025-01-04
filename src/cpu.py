@@ -1709,6 +1709,24 @@ class CPU:
             self._log_1b_instruction(f"SBC HL, {self._reg_pair_symb(reg_pair)}")
 
 
+    def _add_idx_reg16(self):
+        """ Add a 16-bit register value to the IX/IY register """
+        reg_pair = (self._current_inst & 0x30) >> 4
+        a = self._get_index_reg()
+        b = a if reg_pair == 2 else self._get_register_pair(reg_pair)
+        res = a + b
+
+        self._carry = (res >= 0x10000)
+        self._half_carry = ((a & 0x0fff) + (b & 0x0fff)) >= 0x1000
+        self._add_subtract = False
+        self._set_index_reg(res & 0xffff)
+
+        self._cycles += 15
+
+        if logger.level <= logging.DEBUG:
+            reg_symb = self._reg_pair_symb(reg_pair) if reg_pair != 2 else self._get_index_reg_symb()
+            self._log_1b_instruction(f"ADD {self._get_index_reg_symb()}, {reg_symb}")
+
 
     # Rotate and shift instructions
 
@@ -2829,7 +2847,7 @@ class CPU:
         self._instructions_0xdd[0x06] = None
         self._instructions_0xdd[0x07] = None
         self._instructions_0xdd[0x08] = None
-        self._instructions_0xdd[0x09] = None
+        self._instructions_0xdd[0x09] = self._add_idx_reg16
         self._instructions_0xdd[0x0a] = None
         self._instructions_0xdd[0x0b] = None
         self._instructions_0xdd[0x0c] = None
@@ -2846,7 +2864,7 @@ class CPU:
         self._instructions_0xdd[0x16] = None
         self._instructions_0xdd[0x17] = None
         self._instructions_0xdd[0x18] = None
-        self._instructions_0xdd[0x19] = None
+        self._instructions_0xdd[0x19] = self._add_idx_reg16
         self._instructions_0xdd[0x1a] = None
         self._instructions_0xdd[0x1b] = None
         self._instructions_0xdd[0x1c] = None
@@ -2863,7 +2881,7 @@ class CPU:
         self._instructions_0xdd[0x26] = None
         self._instructions_0xdd[0x27] = None
         self._instructions_0xdd[0x28] = None
-        self._instructions_0xdd[0x29] = None
+        self._instructions_0xdd[0x29] = self._add_idx_reg16
         self._instructions_0xdd[0x2a] = None
         self._instructions_0xdd[0x2b] = None
         self._instructions_0xdd[0x2c] = None
@@ -2880,7 +2898,7 @@ class CPU:
         self._instructions_0xdd[0x36] = self._store_value_to_indexed_mem
         self._instructions_0xdd[0x37] = None
         self._instructions_0xdd[0x38] = None
-        self._instructions_0xdd[0x39] = None
+        self._instructions_0xdd[0x39] = self._add_idx_reg16
         self._instructions_0xdd[0x3a] = None
         self._instructions_0xdd[0x3b] = None
         self._instructions_0xdd[0x3c] = None
@@ -3385,7 +3403,7 @@ class CPU:
         self._instructions_0xfd[0x06] = None
         self._instructions_0xfd[0x07] = None
         self._instructions_0xfd[0x08] = None
-        self._instructions_0xfd[0x09] = None
+        self._instructions_0xfd[0x09] = self._add_idx_reg16
         self._instructions_0xfd[0x0a] = None
         self._instructions_0xfd[0x0b] = None
         self._instructions_0xfd[0x0c] = None
@@ -3402,7 +3420,7 @@ class CPU:
         self._instructions_0xfd[0x16] = None
         self._instructions_0xfd[0x17] = None
         self._instructions_0xfd[0x18] = None
-        self._instructions_0xfd[0x19] = None
+        self._instructions_0xfd[0x19] = self._add_idx_reg16
         self._instructions_0xfd[0x1a] = None
         self._instructions_0xfd[0x1b] = None
         self._instructions_0xfd[0x1c] = None
@@ -3419,7 +3437,7 @@ class CPU:
         self._instructions_0xfd[0x26] = None
         self._instructions_0xfd[0x27] = None
         self._instructions_0xfd[0x28] = None
-        self._instructions_0xfd[0x29] = None
+        self._instructions_0xfd[0x29] = self._add_idx_reg16
         self._instructions_0xfd[0x2a] = None
         self._instructions_0xfd[0x2b] = None
         self._instructions_0xfd[0x2c] = None
@@ -3436,7 +3454,7 @@ class CPU:
         self._instructions_0xfd[0x36] = self._store_value_to_indexed_mem
         self._instructions_0xfd[0x37] = None
         self._instructions_0xfd[0x38] = None
-        self._instructions_0xfd[0x39] = None
+        self._instructions_0xfd[0x39] = self._add_idx_reg16
         self._instructions_0xfd[0x3a] = None
         self._instructions_0xfd[0x3b] = None
         self._instructions_0xfd[0x3c] = None
