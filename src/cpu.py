@@ -821,6 +821,18 @@ class CPU:
         self._cycles += 11
 
 
+    def _out_reg(self):
+        """ I/O Output from a register. I/O address in C register """
+        reg = (self._current_inst & 0x38) >> 3
+        value = self._get_register(reg)
+        self._machine.write_io(self._c, self._b, value) # C - IO address, B - extra address data
+
+        self._cycles += 12
+
+        if logger.level <= logging.DEBUG:
+            self._log_1b_instruction(f"OUT (C), {self._reg_symb(reg)}")
+
+
 
     # 8-bit data transfer instructions
 
@@ -2219,7 +2231,7 @@ class CPU:
         self._instructions_0xed[0x3f] = None
 
         self._instructions_0xed[0x40] = self._in_reg    # IN B, (C)
-        self._instructions_0xed[0x41] = None            # OUT (C), B
+        self._instructions_0xed[0x41] = self._out_reg   # OUT (C), B
         self._instructions_0xed[0x42] = self._sbc_hl
         self._instructions_0xed[0x43] = self._store_reg16_to_memory
         self._instructions_0xed[0x44] = None            # NEG
@@ -2227,7 +2239,7 @@ class CPU:
         self._instructions_0xed[0x46] = self._im
         self._instructions_0xed[0x47] = self._load_i_r_register_from_a
         self._instructions_0xed[0x48] = self._in_reg    # IN C, (C)
-        self._instructions_0xed[0x49] = None            # OUT (C), C
+        self._instructions_0xed[0x49] = self._out_reg   # OUT (C), C
         self._instructions_0xed[0x4a] = self._adc_hl
         self._instructions_0xed[0x4b] = self._load_reg16_from_memory
         self._instructions_0xed[0x4c] = None            # MLT BC
@@ -2236,7 +2248,7 @@ class CPU:
         self._instructions_0xed[0x4f] = self._load_i_r_register_from_a
 
         self._instructions_0xed[0x50] = self._in_reg    # IN D, (C)
-        self._instructions_0xed[0x51] = None            # OUT (C), D
+        self._instructions_0xed[0x51] = self._out_reg   # OUT (C), D
         self._instructions_0xed[0x52] = self._sbc_hl
         self._instructions_0xed[0x53] = self._store_reg16_to_memory
         self._instructions_0xed[0x54] = None
@@ -2253,7 +2265,7 @@ class CPU:
         self._instructions_0xed[0x5f] = self._load_a_from_i_r_registers
 
         self._instructions_0xed[0x60] = self._in_reg    # IN H, (C)
-        self._instructions_0xed[0x61] = None            # OUT (C), H
+        self._instructions_0xed[0x61] = self._out_reg   # OUT (C), H
         self._instructions_0xed[0x62] = self._sbc_hl
         self._instructions_0xed[0x63] = self._store_reg16_to_memory
         self._instructions_0xed[0x64] = None            # TST n
@@ -2278,7 +2290,7 @@ class CPU:
         self._instructions_0xed[0x76] = None            # SLP
         self._instructions_0xed[0x77] = None
         self._instructions_0xed[0x78] = self._in_reg    # IN A, (C)
-        self._instructions_0xed[0x79] = None            # OUT (C), A
+        self._instructions_0xed[0x79] = self._out_reg   # OUT (C), A
         self._instructions_0xed[0x7a] = self._adc_hl
         self._instructions_0xed[0x7b] = self._load_reg16_from_memory
         self._instructions_0xed[0x7c] = None            # MLT SP

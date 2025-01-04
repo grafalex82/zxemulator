@@ -202,11 +202,14 @@ def test_im_2(cpu):
     assert cpu._cycles == 8
     assert cpu._interrupt_mode == 2
 
+
+# I/O Input and Output instructions tests
+
 def test_in(cpu):
     mock = MockIO()
     mock.read_byte = MagicMock(return_value=0x55)
 
-    cpu._machine.add_io(IODevice(mock, 0x42))
+    cpu._machine.add_io(IODevice(mock, 0x42))       # Device assigned to a port
     cpu._machine.write_memory_byte(0x0000, 0xdb)    # IN A, $42
     cpu._machine.write_memory_byte(0x0001, 0x42)    # Operand (IO port address)
     cpu.a = 0x34   # Extra address data
@@ -219,7 +222,7 @@ def test_in_d(cpu):
     mock = MockIO()
     mock.read_byte = MagicMock(return_value=0x55)   # Data to read
 
-    cpu._machine.add_io(IODevice(mock, 0x42))
+    cpu._machine.add_io(IODevice(mock, 0x42))       # Device assigned to a port
     cpu._machine.write_memory_byte(0x0000, 0xed)    # IN D, (C)
     cpu._machine.write_memory_byte(0x0001, 0x50)
     cpu.c = 0x42    # IO port address
@@ -236,7 +239,7 @@ def test_in_e_zero(cpu):
     mock = MockIO()
     mock.read_byte = MagicMock(return_value=0x00)   # Data to read
 
-    cpu._machine.add_io(IODevice(mock, 0x42))
+    cpu._machine.add_io(IODevice(mock, 0x42))       # Device assigned to a port
     cpu._machine.write_memory_byte(0x0000, 0xed)    # IN E, (C)
     cpu._machine.write_memory_byte(0x0001, 0x58)
     cpu.c = 0x42    # IO port address
@@ -253,7 +256,7 @@ def test_in_flags(cpu):
     mock = MockIO()
     mock.read_byte = MagicMock(return_value=0xab)   # Data to read
 
-    cpu._machine.add_io(IODevice(mock, 0x42))
+    cpu._machine.add_io(IODevice(mock, 0x42))       # Device assigned to a port
     cpu._machine.write_memory_byte(0x0000, 0xed)    # IN (C)
     cpu._machine.write_memory_byte(0x0001, 0x58)    # No target register, only flags
     cpu.c = 0x42    # IO port address
@@ -269,7 +272,7 @@ def test_out(cpu):
     mock = MockIO()
     mock.write_byte = MagicMock()
 
-    cpu._machine.add_io(IODevice(mock, 0x42))
+    cpu._machine.add_io(IODevice(mock, 0x42))       # Device assigned to a port
     cpu._machine.write_memory_byte(0x0000, 0xd3)    # OUT #42, A
     cpu._machine.write_memory_byte(0x0001, 0x42)    # Operand (IO port address)
     cpu.a = 0x55
@@ -277,6 +280,21 @@ def test_out(cpu):
 
     mock.write_byte.assert_called_once_with(0, 0x55, 0x55)  # external device gets extra address data and the value on the data bus
     assert cpu._cycles == 11
+
+def test_out_d(cpu):
+    mock = MockIO()
+    mock.write_byte = MagicMock()
+
+    cpu._machine.add_io(IODevice(mock, 0x42))       # Device assigned to a port
+    cpu._machine.write_memory_byte(0x0000, 0xed)    # OUT (C), D
+    cpu._machine.write_memory_byte(0x0001, 0x51)
+    cpu.c = 0x42    # IO port address
+    cpu.b = 0x34    # Extra address data
+    cpu.d = 0x55    # Value to out
+    cpu.step()
+
+    mock.write_byte.assert_called_once_with(0, 0x34, 0x55)  # external device gets extra address data and the value on the data bus
+    assert cpu._cycles == 12
 
 
 # 8-bit data transfer instructions tests
