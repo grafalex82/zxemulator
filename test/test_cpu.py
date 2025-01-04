@@ -215,6 +215,56 @@ def test_in(cpu):
     assert cpu._cycles == 11
     mock.read_byte.assert_called_once_with(0, 0x34) # Verify that extra address data is also delivered
 
+def test_in_d(cpu):
+    mock = MockIO()
+    mock.read_byte = MagicMock(return_value=0x55)   # Data to read
+
+    cpu._machine.add_io(IODevice(mock, 0x42))
+    cpu._machine.write_memory_byte(0x0000, 0xed)    # IN D, (C)
+    cpu._machine.write_memory_byte(0x0001, 0x50)
+    cpu.c = 0x42    # IO port address
+    cpu.b = 0x34    # Extra address data
+    cpu.step()
+    assert cpu.d == 0x55
+    assert cpu._cycles == 12
+    assert cpu.sign == False
+    assert cpu.zero == False
+    assert cpu.parity == True
+    mock.read_byte.assert_called_once_with(0, 0x34) # Verify that extra address data is also delivered
+
+def test_in_e_zero(cpu):
+    mock = MockIO()
+    mock.read_byte = MagicMock(return_value=0x00)   # Data to read
+
+    cpu._machine.add_io(IODevice(mock, 0x42))
+    cpu._machine.write_memory_byte(0x0000, 0xed)    # IN E, (C)
+    cpu._machine.write_memory_byte(0x0001, 0x58)
+    cpu.c = 0x42    # IO port address
+    cpu.b = 0x34    # Extra address data
+    cpu.step()
+    assert cpu.e == 0x00
+    assert cpu._cycles == 12
+    assert cpu.sign == False
+    assert cpu.zero == True
+    assert cpu.parity == True
+    mock.read_byte.assert_called_once_with(0, 0x34) # Verify that extra address data is also delivered
+
+def test_in_flags(cpu):
+    mock = MockIO()
+    mock.read_byte = MagicMock(return_value=0xab)   # Data to read
+
+    cpu._machine.add_io(IODevice(mock, 0x42))
+    cpu._machine.write_memory_byte(0x0000, 0xed)    # IN (C)
+    cpu._machine.write_memory_byte(0x0001, 0x58)    # No target register, only flags
+    cpu.c = 0x42    # IO port address
+    cpu.b = 0x34    # Extra address data
+    cpu.step()
+    assert cpu._cycles == 12
+    assert cpu.sign == True
+    assert cpu.zero == False
+    assert cpu.parity == False
+    mock.read_byte.assert_called_once_with(0, 0x34) # Verify that extra address data is also delivered
+
 def test_out(cpu):
     mock = MockIO()
     mock.write_byte = MagicMock()
