@@ -2747,7 +2747,7 @@ def test_sbc_hl_sp_zero(cpu):
     assert cpu.zero == True
 
 
-# Rotate instructions tests
+# Rotate and shift instructions tests
 
 def test_rlca_1(cpu):
     cpu._machine.write_memory_byte(0x0000, 0x07)    # RLCA
@@ -2920,6 +2920,45 @@ def test_rr_mem(cpu):
     assert cpu.zero == False
     assert cpu.sign == False
     assert cpu.parity == False
+
+def test_srl_b(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xcb)    # SRL B
+    cpu._machine.write_memory_byte(0x0001, 0x38)
+    cpu.b = 0xaa
+    cpu.carry = True
+    cpu.step()
+    assert cpu.b == 0x55
+    assert cpu._cycles == 8
+    assert cpu.carry == False
+    assert cpu.zero == False
+    assert cpu.sign == False
+    assert cpu.parity == True
+
+def test_srl_c_zero(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xcb)    # SRL C
+    cpu._machine.write_memory_byte(0x0001, 0x39)
+    cpu.c = 0x01
+    cpu.carry = True
+    cpu.step()
+    assert cpu.c == 0x00
+    assert cpu._cycles == 8
+    assert cpu.carry == True
+    assert cpu.zero == True
+    assert cpu.sign == False
+    assert cpu.parity == True
+
+def test_srl_mem(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xcb)    # SRL (HL)
+    cpu._machine.write_memory_byte(0x0001, 0x3e)
+    cpu._machine.write_memory_byte(0xbeef, 0x42)    # Data byte
+    cpu.hl = 0xbeef
+    cpu.step()
+    assert cpu._machine.read_memory_byte(0xbeef) == 0x21
+    assert cpu._cycles == 15
+    assert cpu.carry == False
+    assert cpu.zero == False
+    assert cpu.sign == False
+    assert cpu.parity == True
 
 
 # Bit instructions tests

@@ -1834,6 +1834,22 @@ class CPU:
             self._log_1b_instruction(f"RR {self._reg_symb(reg)}")
 
 
+    def _srl(self):
+        """ Shift Right Logical """
+        reg = self._current_inst & 0x07
+        value = self._get_register(reg)
+        self._carry = is_bit_set(value, 0)
+        value >>= 1
+        self._set_register(reg, value)
+
+        self._sign = False
+        self._zero = value == 0
+        self._parity_overflow = self._count_bits(value) % 2 == 0
+        self._half_carry = False
+        self._add_subtract = False
+
+        self._cycles += 8 if reg != 6 else 15
+
 
     # Bit instructions
 
@@ -2578,14 +2594,14 @@ class CPU:
         self._instructions_0xcb[0x35] = None        # SLL L
         self._instructions_0xcb[0x36] = None        # SLL (HL)
         self._instructions_0xcb[0x37] = None        # SLL A
-        self._instructions_0xcb[0x38] = None        # SRL B
-        self._instructions_0xcb[0x39] = None        # SRL C
-        self._instructions_0xcb[0x3a] = None        # SRL D
-        self._instructions_0xcb[0x3b] = None        # SRL E
-        self._instructions_0xcb[0x3c] = None        # SRL H
-        self._instructions_0xcb[0x3d] = None        # SRL L
-        self._instructions_0xcb[0x3e] = None        # SRL (HL)
-        self._instructions_0xcb[0x3f] = None        # SRL A
+        self._instructions_0xcb[0x38] = self._srl           # SRL B
+        self._instructions_0xcb[0x39] = self._srl           # SRL C
+        self._instructions_0xcb[0x3a] = self._srl           # SRL D
+        self._instructions_0xcb[0x3b] = self._srl           # SRL E
+        self._instructions_0xcb[0x3c] = self._srl           # SRL H
+        self._instructions_0xcb[0x3d] = self._srl           # SRL L
+        self._instructions_0xcb[0x3e] = self._srl           # SRL (HL)
+        self._instructions_0xcb[0x3f] = self._srl           # SRL A
 
         self._instructions_0xcb[0x40] = self._get_bit       # BIT 0, B
         self._instructions_0xcb[0x41] = self._get_bit       # BIT 0, C
