@@ -71,16 +71,16 @@ class Configuration:
         self._emulator.reset()
 
         while True:
-            # for event in pygame.event.get():
-            #     if event.type == pygame.QUIT:
-            #         exit()
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    exit()
 
-            #     self.handle_event(event)
+                self.handle_event(event)
             
             self._emulator.run1frame()
 
-            # if pygame.key.get_pressed()[pygame.K_ESCAPE]:
-            #     self._emulator.reset()
+            if pygame.key.get_pressed()[pygame.K_ESCAPE]:
+                self._emulator.reset()
 
             self._machine.update()
 
