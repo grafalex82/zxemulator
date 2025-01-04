@@ -1,6 +1,8 @@
 import logging
-from machine import Machine, TICKS_PER_FRAME
+from machine import Machine, TICKS_PER_FRAME, CPU_FREQ
 from cpu import CPU
+
+logger = logging.getLogger('emulator')
 
 class Emulator:
     """
@@ -40,6 +42,7 @@ class Emulator:
 
     def run(self, num_cycles=0):
         stop_at = self._cpu._cycles + num_cycles
+        logger.debug(f"Running for {num_cycles} cycles. Current cycles: {self._cpu._cycles} (Time: {self._cpu._cycles / CPU_FREQ:.3}), stop at: {stop_at}")
         while num_cycles == 0 or self._cpu._cycles <= stop_at:
             self.step()
 
