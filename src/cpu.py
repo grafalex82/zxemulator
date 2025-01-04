@@ -1750,6 +1750,26 @@ class CPU:
             self._log_1b_instruction(f"RRCA")
 
 
+    def _rrc_reg(self):
+        """ Rotate register right """
+        reg = self._current_inst & 0x07
+        value = self._get_register(reg)
+        self._carry = is_bit_set(value, 0)
+        value = ((value >> 1) & 0xff) | ((value << 7) & 0xff)
+        self._set_register(reg, value)
+
+        self._sign = (value & 0x80) != 0        # RLC r instruction sets more flags than RLCA
+        self._zero = value == 0
+        self._parity = self._count_bits(value) % 2 == 0
+        self._half_carry = False
+        self._add_subtract = False
+
+        self._cycles += 8 if reg != 6 else 15
+
+        if logger.level <= logging.DEBUG:
+            self._log_1b_instruction(f"RRC {self._reg_symb(reg)}")
+
+
     def _rla(self):
         """ Rotate accumulator left through carry """
         temp = self._a
@@ -2467,14 +2487,14 @@ class CPU:
         self._instructions_0xcb[0x05] = self._rlc_reg       # RLC L
         self._instructions_0xcb[0x06] = self._rlc_reg       # RLC (HL)
         self._instructions_0xcb[0x07] = self._rlc_reg       # RLC A
-        self._instructions_0xcb[0x08] = None        # RRC B
-        self._instructions_0xcb[0x09] = None        # RRC C
-        self._instructions_0xcb[0x0a] = None        # RRC D
-        self._instructions_0xcb[0x0b] = None        # RRC E
-        self._instructions_0xcb[0x0c] = None        # RRC H
-        self._instructions_0xcb[0x0d] = None        # RRC L
-        self._instructions_0xcb[0x0e] = None        # RRC (HL)
-        self._instructions_0xcb[0x0f] = None        # RRC A
+        self._instructions_0xcb[0x08] = self._rrc_reg       # RRC B
+        self._instructions_0xcb[0x09] = self._rrc_reg       # RRC C
+        self._instructions_0xcb[0x0a] = self._rrc_reg       # RRC D
+        self._instructions_0xcb[0x0b] = self._rrc_reg       # RRC E
+        self._instructions_0xcb[0x0c] = self._rrc_reg       # RRC H
+        self._instructions_0xcb[0x0d] = self._rrc_reg       # RRC L
+        self._instructions_0xcb[0x0e] = self._rrc_reg       # RRC (HL)
+        self._instructions_0xcb[0x0f] = self._rrc_reg       # RRC A
 
         self._instructions_0xcb[0x10] = None        # RL B
         self._instructions_0xcb[0x11] = None        # RL C
