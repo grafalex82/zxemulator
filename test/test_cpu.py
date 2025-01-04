@@ -2879,20 +2879,47 @@ def test_rla_mem(cpu):
 def test_rra_1(cpu):
     cpu._machine.write_memory_byte(0x0000, 0x1f)    # RRA
     cpu.a = 0x5a
-    cpu._carry = True
+    cpu.carry = True
     cpu.step()
     assert cpu.a == 0xad
     assert cpu._cycles == 4
-    assert cpu._carry == False
+    assert cpu.carry == False
 
 def test_rra_2(cpu):
     cpu._machine.write_memory_byte(0x0000, 0x1f)    # RRA
     cpu.a = 0xa5
-    cpu._carry = False
+    cpu.carry = False
     cpu.step()
     assert cpu.a == 0x52
     assert cpu._cycles == 4
-    assert cpu._carry == True
+    assert cpu.carry == True
+
+def test_rr_l(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xcb)    # RR L
+    cpu._machine.write_memory_byte(0x0001, 0x1d)
+    cpu.l = 0x5a
+    cpu.carry = True
+    cpu.step()
+    assert cpu.l == 0xad
+    assert cpu._cycles == 8
+    assert cpu.carry == False
+    assert cpu.zero == False
+    assert cpu.sign == True
+    assert cpu.parity == False
+
+def test_rr_mem(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xcb)    # RR (HL)
+    cpu._machine.write_memory_byte(0x0001, 0x1e)
+    cpu._machine.write_memory_byte(0xbeef, 0xa5)    # Data byte
+    cpu.hl = 0xbeef
+    cpu.carry = False
+    cpu.step()
+    assert cpu._machine.read_memory_byte(0xbeef) == 0x52
+    assert cpu._cycles == 15
+    assert cpu.carry == True
+    assert cpu.zero == False
+    assert cpu.sign == False
+    assert cpu.parity == False
 
 
 # Bit instructions tests
