@@ -2765,6 +2765,31 @@ def test_rlca_2(cpu):
     assert cpu._cycles == 4
     assert cpu._carry == True
 
+def test_rlc_d(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xcb)    # RLC D
+    cpu._machine.write_memory_byte(0x0001, 0x02)
+    cpu.d = 0x5a
+    cpu.step()
+    assert cpu.d == 0xb4
+    assert cpu._cycles == 8
+    assert cpu.carry == False
+    assert cpu.zero == False
+    assert cpu.sign == True
+    assert cpu.parity == False
+
+def test_rlc_mem(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xcb)    # RLC (HL)
+    cpu._machine.write_memory_byte(0x0001, 0x06)
+    cpu._machine.write_memory_byte(0xbeef, 0xa5)    # Data byte
+    cpu.hl = 0xbeef
+    cpu.step()
+    assert cpu._machine.read_memory_byte(0xbeef) == 0x4b
+    assert cpu._cycles == 15
+    assert cpu.carry == True
+    assert cpu.zero == False
+    assert cpu.sign == False
+    assert cpu.parity == False
+
 def test_rrca_1(cpu):
     cpu._machine.write_memory_byte(0x0000, 0x0f)    # RRCA
     cpu.a = 0x5a
