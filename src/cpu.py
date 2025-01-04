@@ -1782,6 +1782,26 @@ class CPU:
             self._log_1b_instruction(f"RLA")
 
 
+    def _rl_reg(self):
+        """ Rotate register left through carry """
+        reg = self._current_inst & 0x07
+        value = self._get_register(reg)
+
+        temp = value
+        value = (value << 1) & 0xff
+        if self._carry: value = set_bit(value, 0)
+        self._set_register(reg, value)
+        self._carry = is_bit_set(temp, 7)
+        self._sign = (value & 0x80) != 0
+        self._zero = value == 0
+        self._parity = self._count_bits(value) % 2 == 0
+
+        self._cycles += 8 if reg != 6 else 15
+
+        if logger.level <= logging.DEBUG:
+            self._log_1b_instruction(f"RL {self._reg_symb(reg)}")
+
+
     def _rra(self):
         """ Rotate accumulator right through carry """
         temp = self._a
@@ -2496,14 +2516,14 @@ class CPU:
         self._instructions_0xcb[0x0e] = self._rrc_reg       # RRC (HL)
         self._instructions_0xcb[0x0f] = self._rrc_reg       # RRC A
 
-        self._instructions_0xcb[0x10] = None        # RL B
-        self._instructions_0xcb[0x11] = None        # RL C
-        self._instructions_0xcb[0x12] = None        # RL D
-        self._instructions_0xcb[0x13] = None        # RL E
-        self._instructions_0xcb[0x14] = None        # RL H
-        self._instructions_0xcb[0x15] = None        # RL L
-        self._instructions_0xcb[0x16] = None        # RL (HL)
-        self._instructions_0xcb[0x17] = None        # RL A
+        self._instructions_0xcb[0x10] = self._rl_reg        # RL B
+        self._instructions_0xcb[0x11] = self._rl_reg        # RL C
+        self._instructions_0xcb[0x12] = self._rl_reg        # RL D
+        self._instructions_0xcb[0x13] = self._rl_reg        # RL E
+        self._instructions_0xcb[0x14] = self._rl_reg        # RL H
+        self._instructions_0xcb[0x15] = self._rl_reg        # RL L
+        self._instructions_0xcb[0x16] = self._rl_reg        # RL (HL)
+        self._instructions_0xcb[0x17] = self._rl_reg        # RL A
         self._instructions_0xcb[0x18] = None        # RR B
         self._instructions_0xcb[0x19] = None        # RR C
         self._instructions_0xcb[0x1a] = None        # RR D
