@@ -23,6 +23,11 @@ class IODevice:
         IODevice class binds a device with a particular I/O port. This class is responsible to
         translate I/O port read and write requests to the provided device object. The device class
         must expose read_byte() and/or write_byte() function.
+
+        When accessing an I/O Port, the Z80 CPU will issue a 8-bit I/O device address on the a0-a7
+        lines. At the same time Z80 CPU also expose some data on the a8-a15 lines, which can be used
+        by the device to provide additional information. The extra_addr parameter is used to pass
+        this extra data to the device.
     """
     def __init__(self, device, startaddr, endaddr=None, invertaddr=False):
         self._device = device
@@ -54,12 +59,12 @@ class IODevice:
         else:
             return self._ioendaddr - addr
 
-    def read_io(self, addr):
-        return self._device.read_byte(self._get_offset(addr))
+    def read_io(self, addr, extra_addr):
+        return self._device.read_byte(self._get_offset(addr), extra_addr)
 
 
-    def write_io(self, addr, value):
-        self._device.write_byte(self._get_offset(addr), value)
+    def write_io(self, addr, extra_addr, value):
+        self._device.write_byte(self._get_offset(addr), extra_addr, value)
 
 
     def update(self):

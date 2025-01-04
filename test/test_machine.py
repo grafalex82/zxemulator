@@ -40,21 +40,26 @@ def test_memory_addr_validation(machine):
         machine.read_memory_byte(0x1234)
     assert "No memory registered for address 0x1234" in str(e.value)
 
-def test_io_read_write(machine):
+def test_io_read(machine):
+    mock_io = MockIO()
+    machine.add_io(IODevice(mock_io, 0x42))
+
+    mock_io.read_byte = MagicMock(return_value=0x12)
+    assert machine.read_io(0x42, 0x34) == 0x12      # 0x42 is the IO address, 0x34 is the extra address data
+    mock_io.read_byte.assert_called_once_with(0, 0x34)
+
+def test_io_write(machine):
     mock_io = MockIO()
     machine.add_io(IODevice(mock_io, 0x42))
 
     mock_io.write_byte = MagicMock()
-    machine.write_io(0x42, 0x12)
-    mock_io.write_byte.assert_called_once_with(0, 0x12)
-
-    mock_io.read_byte = MagicMock(return_value=0x12)
-    assert machine.read_io(0x42) == 0x12
+    machine.write_io(0x42, 0x34, 0x12)  # 0x42 is the IO address, 0x34 is the extra address data, 0x12 is the value
+    mock_io.write_byte.assert_called_once_with(0, 0x34, 0x12)
 
 def test_io_addr_validation(machine):
     machine.set_strict_validation(True)
     with pytest.raises(IOError) as e:
-        machine.read_io(0x24)
+        machine.read_io(0x24, 0xff)
     assert "No IO registered for address 0x24" in str(e.value)
 
 def test_read_no_memory(machine):
@@ -68,9 +73,9 @@ def test_write_no_memory(machine):
     machine.write_memory_word(0x1234, 0x1234)
 
 def test_read_no_io(machine):
-    assert machine.read_io(0x42) == 0xff
+    assert machine.read_io(0x42, 0xff) == 0xff
 
 def test_write_no_io(machine):
     # Just check it does not throw the error
     machine.set_strict_validation(False)
-    machine.write_io(0x12, 0x42)
+    machine.write_io(0x12, 0x34, 0x42)

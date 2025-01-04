@@ -209,9 +209,11 @@ def test_in(cpu):
     cpu._machine.add_io(IODevice(mock, 0x42))
     cpu._machine.write_memory_byte(0x0000, 0xdb)    # IN A, $42
     cpu._machine.write_memory_byte(0x0001, 0x42)    # Operand (IO port address)
+    cpu.a = 0x34   # Extra address data
     cpu.step()
     assert cpu.a == 0x55
     assert cpu._cycles == 11
+    mock.read_byte.assert_called_once_with(0, 0x34) # Verify that extra address data is also delivered
 
 def test_out(cpu):
     mock = MockIO()
@@ -223,7 +225,7 @@ def test_out(cpu):
     cpu.a = 0x55
     cpu.step()
 
-    mock.write_byte.assert_called_once_with(0, 0x55)
+    mock.write_byte.assert_called_once_with(0, 0x55, 0x55)  # external device gets extra address data and the value on the data bus
     assert cpu._cycles == 11
 
 

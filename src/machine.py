@@ -118,16 +118,16 @@ class Machine:
         if mem:
             mem.write_word(addr, value)
 
-    def read_io(self, addr):
+    def read_io(self, addr, extra_addr):
         io = self._get_io(addr)
         if not io:
             return 0xff
-        return io.read_io(addr)
+        return io.read_io(addr, extra_addr)
         
-    def write_io(self, addr, value):
+    def write_io(self, addr, extra_addr, value):
         io = self._get_io(addr)
         if io:
-            io.write_io(addr, value)
+            io.write_io(addr, extra_addr, value)
 
     def schedule_interrupt(self):
         # Typically external devices may request an interrupt by asserting the INT line of the CPU.

@@ -784,7 +784,8 @@ class CPU:
         """ IO Input """
         addr = self._fetch_next_byte()
 
-        self._a = self._machine.read_io(addr)
+        # The IN A, (n) instruction also exposes accumulator value on the a8-a15 lines
+        self._a = self._machine.read_io(addr, self._a)
         self._cycles += 11
 
         if logger.level <= logging.DEBUG:
@@ -798,7 +799,8 @@ class CPU:
         if logger.level <= logging.DEBUG:
             self._log_2b_instruction(f"OUT {addr:02x}, A")
 
-        self._machine.write_io(addr, self._a)
+        # The OUT (n), A instruction also exposes accumulator value on the a8-a15 lines
+        self._machine.write_io(addr, self._a, self._a)
         self._cycles += 11
 
 
