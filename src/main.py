@@ -12,6 +12,7 @@ from rom import ROM
 from utils import NestedLogger
 from display import *
 from ula import ULA
+from keyboard import Keyboard
 
 resources_dir = os.path.join(os.path.dirname(__file__), "..", "resources")
 tapes_dir = os.path.join(os.path.dirname(__file__), "..", "tapes")
@@ -147,6 +148,9 @@ class Spectrum48K(Configuration):
         self._ula = ULA()
         self._machine.add_io(IODevice(self._ula, 0xfe))
 
+        self._keyboard = Keyboard()
+        self._ula.set_keyboard(self._keyboard)
+
 
     def configure_logging(self):
         self.suppress_logging(0x11db, 0x11f0, "Init RAM cleanup")
@@ -158,6 +162,10 @@ class Spectrum48K(Configuration):
 
     def update(self, screen):
         self._display.update(screen)
+
+
+    def handle_event(self, event):
+        self._keyboard.handle_event(event)
 
 
     def setup_special_breakpoints(self):
