@@ -876,6 +876,22 @@ def test_jp_hl(cpu):
     assert cpu.pc == 0x1234
     assert cpu._cycles == 4
 
+def test_jp_ix(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xdd)    # JP (IX)
+    cpu._machine.write_memory_byte(0x0001, 0xe9)
+    cpu.ix = 0x1234
+    cpu.step()
+    assert cpu.pc == 0x1234
+    assert cpu._cycles == 8
+
+def test_jp_iy(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xfd)    # JP (IY)
+    cpu._machine.write_memory_byte(0x0001, 0xe9)
+    cpu.iy = 0x1234
+    cpu.step()
+    assert cpu.pc == 0x1234
+    assert cpu._cycles == 8
+
 def test_jr(cpu):
     cpu._machine.write_memory_byte(0x0000, 0x18)    # JR $+5
     cpu._machine.write_memory_byte(0x0001, 0x03)    # relative offset

@@ -1255,6 +1255,15 @@ class CPU:
         self._cycles += 4
 
 
+    def _jp_idx_reg(self):
+        """ Jump to address in IX or IY register """
+        if logger.level <= logging.DEBUG:
+            self._log_3b_instruction(f"JP ({self._get_index_reg_symb()})")
+
+        self._pc = self._get_index_reg()
+        self._cycles += 8
+
+
     def _jr(self):
         """ Unconditional relative jump """
         displacement = self._fetch_displacement()
@@ -3085,7 +3094,7 @@ class CPU:
         self._instructions_0xdd[0xe6] = None
         self._instructions_0xdd[0xe7] = None
         self._instructions_0xdd[0xe8] = None
-        self._instructions_0xdd[0xe9] = None
+        self._instructions_0xdd[0xe9] = self._jp_idx_reg
         self._instructions_0xdd[0xea] = None
         self._instructions_0xdd[0xeb] = None
         self._instructions_0xdd[0xec] = None
@@ -3641,7 +3650,7 @@ class CPU:
         self._instructions_0xfd[0xe6] = None
         self._instructions_0xfd[0xe7] = None
         self._instructions_0xfd[0xe8] = None
-        self._instructions_0xfd[0xe9] = None
+        self._instructions_0xfd[0xe9] = self._jp_idx_reg
         self._instructions_0xfd[0xea] = None
         self._instructions_0xfd[0xeb] = None
         self._instructions_0xfd[0xec] = None
