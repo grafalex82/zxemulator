@@ -2881,7 +2881,7 @@ class CPU:
         self._instructions_0xdd[0x3e] = None
         self._instructions_0xdd[0x3f] = None
 
-        self._instructions_0xcb[0x40] = None
+        self._instructions_0xdd[0x40] = None
         self._instructions_0xdd[0x41] = None
         self._instructions_0xdd[0x42] = None
         self._instructions_0xdd[0x43] = None
