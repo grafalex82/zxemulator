@@ -11,6 +11,7 @@ from ram import RAM
 from rom import ROM
 from utils import NestedLogger
 from display import *
+from ula import ULA
 
 resources_dir = os.path.join(os.path.dirname(__file__), "..", "resources")
 tapes_dir = os.path.join(os.path.dirname(__file__), "..", "tapes")
@@ -142,6 +143,9 @@ class Spectrum48K(Configuration):
     def create_peripherals(self):
         self._display = Display()
         self._machine.add_memory(MemoryDevice(self._display, 0x4000))
+
+        self._ula = ULA()
+        self._machine.add_io(IODevice(self._ula, 0xfe))
 
 
     def configure_logging(self):
