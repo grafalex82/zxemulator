@@ -73,6 +73,7 @@ def test_machine_reset(cpu):
 
 
 # Interrupts processing
+
 def test_interrupt_disabled(cpu):
     cpu._interrupt_mode = 0
     cpu._iff1 = False
@@ -84,9 +85,9 @@ def test_interrupt_disabled(cpu):
 
 def test_interrupt_mode0_1byte(cpu):
     cpu._interrupt_mode = 0
+    cpu._iff1 = True
     cpu.schedule_interrupt([0xdf])                  # Schedule RST 18 as interrupt instruction
     cpu._machine.write_memory_byte(0x0000, 0x00)    # Instruction Opcode
-    cpu._iff1 = True
     cpu.sp = 0x1234
     cpu.step()
     assert cpu.pc == 0x0018                        # expecting RST 18 executed
@@ -94,9 +95,9 @@ def test_interrupt_mode0_1byte(cpu):
 
 def test_interrupt_mode0_3byte(cpu):
     cpu._interrupt_mode = 0
+    cpu._iff1 = True
     cpu.schedule_interrupt([0xcd, 0xef, 0xbe])      # Schedule CALL 0xbeef as interrupt instructions
     cpu._machine.write_memory_byte(0x0000, 0x00)    # Instruction Opcode
-    cpu._iff1 = True
     cpu.sp = 0x1234
     cpu.step()
     assert cpu.pc == 0xbeef                        # expecting CALL executed
@@ -104,19 +105,19 @@ def test_interrupt_mode0_3byte(cpu):
 
 def test_interrupt_mode0_insufficient_instructions(cpu):
     cpu._interrupt_mode = 0
+    cpu._iff1 = True
     cpu.schedule_interrupt([0xcd, 0xef])            # Schedule malformed interrupt instruction
     cpu._machine.write_memory_byte(0x0000, 0x00)    # Instruction Opcode
-    cpu._iff1 = True
     cpu.sp = 0x1234
     with pytest.raises(InvalidInstruction):
         cpu.step()
 
 def test_interrupt_mode1(cpu):
     cpu._interrupt_mode = 1
-    cpu.schedule_interrupt([0x42])                  # Dummy value, expect RSt 38 to be executed
-    cpu._machine.write_memory_byte(0x0000, 0x00)    # Instruction Opcode
     cpu._iff1 = True
     cpu._iff2 = True
+    cpu.schedule_interrupt([0x42])                  # Dummy value, expect RSt 38 to be executed
+    cpu._machine.write_memory_byte(0x0000, 0x00)    # Instruction Opcode
     cpu.sp = 0x1234
     cpu.step()
     assert cpu.pc == 0x0038                        # expecting RST 18 executed
@@ -137,9 +138,9 @@ def test_interrupt_mode2(cpu):
 def test_machine_interrupt_mode0(cpu):
     # This is another Machine class test, that is more convenient to test via CPU
     cpu._interrupt_mode = 0
+    cpu._iff1 = True
     cpu._machine.schedule_interrupt()               # Machine will schedule RST 38 as interrupt instruction
     cpu._machine.write_memory_byte(0x0000, 0x00)    # Instruction Opcode
-    cpu._iff1 = True
     cpu.sp = 0x1234
     cpu.step()
     assert cpu.pc == 0x0038                        # expecting RST7 executed
@@ -148,9 +149,9 @@ def test_machine_interrupt_mode0(cpu):
 def test_machine_interrupt_mode1(cpu):
     # This is another Machine class test, that is more convenient to test via CPU
     cpu._interrupt_mode = 1
+    cpu._iff1 = True
     cpu._machine.schedule_interrupt()               # Machine will schedule RST 38 as interrupt instruction
     cpu._machine.write_memory_byte(0x0000, 0x00)    # Instruction Opcode
-    cpu._iff1 = True
     cpu.sp = 0x1234
     cpu.step()
     assert cpu.pc == 0x0038                        # expecting RST7 executed

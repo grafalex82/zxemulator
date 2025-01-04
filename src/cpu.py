@@ -109,10 +109,14 @@ class CPU:
         Processor will fetch an interrupt ID from the bus. This function will save interrupt ID to be processed
         by the step() function
         """
-        logger.debug("Scheduling an interrupt in mode {self._interrupt_mode}")
+        # do not even schedule an interrupt if interrupts are disabled
+        if not self._iff1:
+            return
+
+        logger.debug(f"Scheduling an interrupt in mode {self._interrupt_mode}")
         match self._interrupt_mode:
             case 0:
-                logger.debug("Scheduling instructions {instructions}")
+                logger.debug(f"Scheduling instructions {instructions}")
                 self._interrupt_instructions = instructions
             case 1:
                 logger.debug("Simulating RST 38 instruction")
@@ -120,10 +124,10 @@ class CPU:
             case 2:
                 vector_addr = self._i << 8 | (instructions[0] & 0xfe)
                 handler_addr = self._machine.read_memory_word(vector_addr)
-                logger.debug("Interrupt vector addr {vector_addr:04x}. Simulating CALL {handler_addr:04x} instruction")
+                logger.debug(f"Interrupt vector addr {vector_addr:04x}. Simulating CALL {handler_addr:04x} instruction")
                 self._interrupt_instructions = [0xcd, handler_addr & 0xff, handler_addr >> 8]
             case _:
-                raise InvalidInstruction("Invalid interrupt mode: {self._interrupt_mode}")
+                raise InvalidInstruction(f"Invalid interrupt mode: {self._interrupt_mode}")
 
 
     # Registers
@@ -744,6 +748,9 @@ class CPU:
 
     def _ei(self):
         """ Enable interrupts """
+        # TODO: As per the datasheet, the EI instruction is delayed by one instruction to let the interrupt
+        # routine execute RET instruction before the next interrupt
+
         self._iff1 = True
         self._iff2 = True
         self._cycles += 4
