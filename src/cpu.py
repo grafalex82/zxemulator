@@ -78,6 +78,7 @@ class CPU:
         self._iff1 = False
         self._iff2 = False
         self._interrupt_mode = 0    # Not really a register, but rather a selected interrupt mode
+        self._interrupt_instructions = []
 
         # ALU Flags
         self._sign = False                      # Bit 7
@@ -87,6 +88,42 @@ class CPU:
         self._add_subtract = False              # Bit 1
         self._carry = False                     # Bit 0
 
+
+    def schedule_interrupt(self, instructions):
+        """
+        Trigger the interrupt execution.
+        
+        For Mode 0 (aka Intel 8080 mode):
+        Typically an interrupt controller will aquire the data bus, and feed the
+        CPU up to 3 instructions. This function allows emulating this behavior by
+        adding passed instructions to the instruction fetch queue.
+
+        this function will simply remember data bytes that would be requested by the 
+        processor during the interrupt handling. these instructions will be fetched by the CPU during the next
+        instruction fetch cycle via _fetch* functions.
+
+        For Modes 1:
+        Processor will generate an RST 38 instruction
+
+        For Mode 2:
+        Processor will fetch an interrupt ID from the bus. This function will save interrupt ID to be processed
+        by the step() function
+        """
+        logger.debug("Scheduling an interrupt in mode {self._interrupt_mode}")
+        match self._interrupt_mode:
+            case 0:
+                logger.debug("Scheduling instructions {instructions}")
+                self._interrupt_instructions = instructions
+            case 1:
+                logger.debug("Simulating RST 38 instruction")
+                self._interrupt_instructions = [0xff]  # RST 38
+            case 2:
+                vector_addr = self._i << 8 | (instructions[0] & 0xfe)
+                handler_addr = self._machine.read_memory_word(vector_addr)
+                logger.debug("Interrupt vector addr {vector_addr:04x}. Simulating CALL {handler_addr:04x} instruction")
+                self._interrupt_instructions = [0xcd, handler_addr & 0xff, handler_addr >> 8]
+            case _:
+                raise InvalidInstruction("Invalid interrupt mode: {self._interrupt_mode}")
 
 
     # Registers
@@ -507,14 +544,25 @@ class CPU:
     # CPU Memory functions
 
     def _fetch_next_byte(self):
-        data = self._machine.read_memory_byte(self._pc)
-        self._pc += 1
+        if self._iff1 and self._interrupt_instructions:
+            data = self._interrupt_instructions[0]
+            del self._interrupt_instructions[0]
+        else:
+            data = self._machine.read_memory_byte(self._pc)
+            self._pc += 1
         return data
 
 
     def _fetch_next_word(self):
-        data = self._machine.read_memory_word(self._pc)
-        self._pc += 2
+        if self._iff1 and self._interrupt_instructions:
+            if len(self._interrupt_instructions) < 2:
+                raise InvalidInstruction(f"Insufficient interrupt instructions (expecting 2, only 1 given)")            
+            data = self._interrupt_instructions[0] | (self._interrupt_instructions[1] << 8)
+            del self._interrupt_instructions[0]
+            del self._interrupt_instructions[0]
+        else:
+            data = self._machine.read_memory_word(self._pc)
+            self._pc += 2
         return data
 
 
@@ -538,7 +586,6 @@ class CPU:
 
 
     # Emulation
-
     def step(self):
         """
         Executes an instruction and updates processor state

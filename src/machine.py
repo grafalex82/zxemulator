@@ -124,3 +124,14 @@ class Machine:
         io = self._get_io(addr)
         if io:
             io.write_io(addr, value)
+
+    def schedule_interrupt(self):
+        # Typically external devices may request an interrupt by asserting the INT line of the CPU.
+        # Depending on the interrupt mode, the CPU may request additional data from the external device:
+        # - In Mode 0, the CPU expects the device to provide a CPU instruction on the data bus
+        # - In Mode 2, the CPU expects the device to provide a vector number on the data bus
+        # 
+        # In the Mode 1, though, the CPU does not request additional data, and execute a RST 38 instruction.
+        # 
+        # Regardless of the mode this function schedules a CPU interrupt, and supply it with interrupt data.
+        self._cpu.schedule_interrupt([0xff])

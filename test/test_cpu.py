@@ -72,6 +72,90 @@ def test_machine_reset(cpu):
     assert cpu.pc == 0x0000
 
 
+# Interrupts processing
+def test_interrupt_disabled(cpu):
+    cpu._interrupt_mode = 0
+    cpu._iff1 = False
+    cpu.schedule_interrupt([0xff])                  # Schedule RST 38 as interrupt instruction
+    cpu._machine.write_memory_byte(0x0000, 0x00)    # Instruction Opcode
+    cpu.step()
+    assert cpu.pc == 0x0001                        # Interrupts are disabled, so normal NOP is executed
+    assert cpu._cycles == 4
+
+def test_interrupt_mode0_1byte(cpu):
+    cpu._interrupt_mode = 0
+    cpu.schedule_interrupt([0xdf])                  # Schedule RST 18 as interrupt instruction
+    cpu._machine.write_memory_byte(0x0000, 0x00)    # Instruction Opcode
+    cpu._iff1 = True
+    cpu.sp = 0x1234
+    cpu.step()
+    assert cpu.pc == 0x0018                        # expecting RST 18 executed
+    assert cpu._machine.read_memory_word(0x1232) == 0x0000  # Current instruction address
+
+def test_interrupt_mode0_3byte(cpu):
+    cpu._interrupt_mode = 0
+    cpu.schedule_interrupt([0xcd, 0xef, 0xbe])      # Schedule CALL 0xbeef as interrupt instructions
+    cpu._machine.write_memory_byte(0x0000, 0x00)    # Instruction Opcode
+    cpu._iff1 = True
+    cpu.sp = 0x1234
+    cpu.step()
+    assert cpu.pc == 0xbeef                        # expecting CALL executed
+    assert cpu._machine.read_memory_word(0x1232) == 0x0000  # Current instruction address
+
+def test_interrupt_mode0_insufficient_instructions(cpu):
+    cpu._interrupt_mode = 0
+    cpu.schedule_interrupt([0xcd, 0xef])            # Schedule malformed interrupt instruction
+    cpu._machine.write_memory_byte(0x0000, 0x00)    # Instruction Opcode
+    cpu._iff1 = True
+    cpu.sp = 0x1234
+    with pytest.raises(InvalidInstruction):
+        cpu.step()
+
+def test_interrupt_mode1(cpu):
+    cpu._interrupt_mode = 1
+    cpu.schedule_interrupt([0x42])                  # Dummy value, expect RSt 38 to be executed
+    cpu._machine.write_memory_byte(0x0000, 0x00)    # Instruction Opcode
+    cpu._iff1 = True
+    cpu._iff2 = True
+    cpu.sp = 0x1234
+    cpu.step()
+    assert cpu.pc == 0x0038                        # expecting RST 18 executed
+    assert cpu._machine.read_memory_word(0x1232) == 0x0000  # Current instruction address
+
+def test_interrupt_mode2(cpu):
+    cpu._interrupt_mode = 2
+    cpu._iff1 = True
+    cpu._i = 0xbe       # Interrupt vector will be taken from I register(0xbe) and interrupt ID (0x42)
+    cpu._machine.write_memory_byte(0x0000, 0x00)    # Instruction Opcode
+    cpu._machine.write_memory_word(0xbe42, 0xbeef)  # Interrupt vector
+    cpu.schedule_interrupt([0x42])                  # Scheduling an interrupt #42
+    cpu.sp = 0x1234
+    cpu.step()
+    assert cpu.pc == 0xbeef                        # Expecting interrupt vector executed
+    assert cpu._machine.read_memory_word(0x1232) == 0x0000  # Current instruction address
+
+def test_machine_interrupt_mode0(cpu):
+    # This is another Machine class test, that is more convenient to test via CPU
+    cpu._interrupt_mode = 0
+    cpu._machine.schedule_interrupt()               # Machine will schedule RST 38 as interrupt instruction
+    cpu._machine.write_memory_byte(0x0000, 0x00)    # Instruction Opcode
+    cpu._iff1 = True
+    cpu.sp = 0x1234
+    cpu.step()
+    assert cpu.pc == 0x0038                        # expecting RST7 executed
+    assert cpu._machine.read_memory_word(0x1232) == 0x0000  # Current instruction address
+
+def test_machine_interrupt_mode1(cpu):
+    # This is another Machine class test, that is more convenient to test via CPU
+    cpu._interrupt_mode = 1
+    cpu._machine.schedule_interrupt()               # Machine will schedule RST 38 as interrupt instruction
+    cpu._machine.write_memory_byte(0x0000, 0x00)    # Instruction Opcode
+    cpu._iff1 = True
+    cpu.sp = 0x1234
+    cpu.step()
+    assert cpu.pc == 0x0038                        # expecting RST7 executed
+    assert cpu._machine.read_memory_word(0x1232) == 0x0000  # Current instruction address
+
 
 # CPU Control instructions tests
 
