@@ -1884,6 +1884,9 @@ class CPU:
 
         self._cycles += 8 if reg != 6 else 15
 
+        if logger.level <= logging.DEBUG:
+            self._log_1b_instruction(f"SRL {self._reg_symb(reg)}")
+
 
     # Bit instructions
 
@@ -1929,7 +1932,7 @@ class CPU:
         self._cycles += 12 if reg == 6 else 8
         
         if logger.level <= logging.DEBUG:
-            self._log_3b_bit_instruction(f"BIT {bit}, {self._reg_symb(reg)}")
+            self._log_1b_instruction(f"BIT {bit}, {self._reg_symb(reg)}")
 
 
     def _get_bit_indexed(self):
