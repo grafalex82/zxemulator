@@ -1707,9 +1707,9 @@ class CPU:
         self._sign = (res & 0x8000) != 0
         self._zero = (res & 0xffff) == 0
         self._parity_overflow = ((hl ^ neg_value) < 0x8000) and ((hl ^ res) > 0x7fff) and (hl != 0) and (neg_value != 0)
-        self._carry = (res >= 0x10000)
+        self._carry = res < 0
         self._half_carry = ((self.hl & 0x0fff) + (neg_value & 0x0fff) + carry) >= 0x1000
-        self._add_subtract = False
+        self._add_subtract = True
         self.hl = res & 0xffff
 
         self._cycles += 15

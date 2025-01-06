@@ -2694,7 +2694,7 @@ def test_sbc_hl_bc(cpu):
     assert cpu._cycles == 15
     assert cpu.carry == False
     assert cpu.half_carry == False
-    assert cpu.add_subtract == False
+    assert cpu.add_subtract == True
     assert cpu.overflow == True
     assert cpu.zero == False
 
@@ -2707,9 +2707,9 @@ def test_sbc_hl_de(cpu):
     cpu.step()
     assert cpu.hl == 0xbcba
     assert cpu._cycles == 15
-    assert cpu.carry == False
+    assert cpu.carry == True
     assert cpu.half_carry == False
-    assert cpu.add_subtract == False
+    assert cpu.add_subtract == True
     assert cpu.overflow == False
     assert cpu.zero == False
 
@@ -2721,9 +2721,9 @@ def test_sbc_hl_hl(cpu):
     cpu.step()
     assert cpu.hl == 0xffff
     assert cpu._cycles == 15
-    assert cpu.carry == False
+    assert cpu.carry == True
     assert cpu.half_carry == True
-    assert cpu.add_subtract == False
+    assert cpu.add_subtract == True
     assert cpu.overflow == False
     assert cpu.zero == False
 
@@ -2737,7 +2737,7 @@ def test_sbc_hl_hl_zero(cpu):
     assert cpu._cycles == 15
     assert cpu.carry == False
     assert cpu.half_carry == False
-    assert cpu.add_subtract == False
+    assert cpu.add_subtract == True
     assert cpu.overflow == False
     assert cpu.zero == True
 
@@ -2750,9 +2750,9 @@ def test_sbc_hl_sp(cpu):
     cpu.step()
     assert cpu.hl == 0xbbbb
     assert cpu._cycles == 15
-    assert cpu.carry == False
+    assert cpu.carry == True
     assert cpu.half_carry == False
-    assert cpu.add_subtract == False
+    assert cpu.add_subtract == True
     assert cpu.overflow == False
     assert cpu.zero == False
 
@@ -2767,7 +2767,7 @@ def test_sbc_hl_sp_zero(cpu):
     assert cpu._cycles == 15
     assert cpu.carry == False
     assert cpu.half_carry == True
-    assert cpu.add_subtract == False
+    assert cpu.add_subtract == True
     assert cpu.overflow == False
     assert cpu.zero == True
 
