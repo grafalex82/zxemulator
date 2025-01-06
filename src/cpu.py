@@ -88,6 +88,9 @@ class CPU:
         self._add_subtract = False              # Bit 1
         self._carry = False                     # Bit 0
 
+        # Other
+        self._cycles = 0
+
 
     def schedule_interrupt(self, instructions):
         """
