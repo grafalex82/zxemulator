@@ -92,7 +92,7 @@ class Configuration:
 
             pygame.display.flip()
             self._clock.tick(60)
-            pygame.display.set_caption(f"ZX Spectrum Emulator (FPS={self._clock.get_fps()})")
+            pygame.display.set_caption(f"ZX Spectrum Emulator (FPS: {self._clock.get_fps():.3}, CPU time: {self._machine.get_time():.3})")
 
 
     def suppress_logging(self, startaddr, endaddr, msg):

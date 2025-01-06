@@ -139,3 +139,8 @@ class Machine:
         # 
         # Regardless of the mode this function schedules a CPU interrupt, and supply it with interrupt data.
         self._cpu.schedule_interrupt([0xff])
+
+
+    def get_time(self):
+        return self._cpu._cycles / CPU_FREQ
+

@@ -42,7 +42,7 @@ class Emulator:
 
     def run(self, num_cycles=0):
         stop_at = self._cpu._cycles + num_cycles
-        logger.debug(f"Running for {num_cycles} cycles. Current cycles: {self._cpu._cycles} (Time: {self._cpu._cycles / CPU_FREQ:.3}), stop at: {stop_at}")
+        logger.debug(f"Running for {num_cycles} cycles. Current cycles: {self._cpu._cycles} (Time: {self._machine.get_time():.3}), stop at: {stop_at}")
         while num_cycles == 0 or self._cpu._cycles <= stop_at:
             self.step()
 
