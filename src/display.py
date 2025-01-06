@@ -16,6 +16,8 @@ class Display(RAM):
 
         # Pixmap
         self._pixmap = [0] * (DISPLAY_WIDTH * DISPLAY_HEIGHT)
+        self._invert_frames = 0
+        self._invert = False
 
         # ZX spectrum color palete is using GRB colors order, and the 4th bit is used for brightness
         self._colors = [
@@ -63,6 +65,7 @@ class Display(RAM):
         bg_color = self._colors[bg]
         fg = attr & 0x7 | ((attr & 0x40) >> 3)
         fg_color = self._colors[fg]
+        invert = (attr & 0x80 != 0) and self._invert
 
         # Update pixels in the corresponding block
         for bit in range(8):
@@ -71,7 +74,7 @@ class Display(RAM):
             pixel = value & mask != 0
 
             self._pixmap[y * DISPLAY_WIDTH + x] = pixel
-            self._set_pixel(x, y, fg_color if pixel else bg_color)
+            self._set_pixel(x, y, fg_color if pixel ^ invert else bg_color)
 
 
     def _update_colors(self, attr_offset, value):
@@ -84,6 +87,7 @@ class Display(RAM):
         bg_color = self._colors[bg]
         fg = value & 0x7 | ((value & 0x40) >> 3)
         fg_color = self._colors[fg]
+        invert = (value & 0x80 != 0) and self._invert
 
         # Update pixel colors in the corresponding block
         for x_bit in range(8):
@@ -91,7 +95,32 @@ class Display(RAM):
             for y_bit in range(8):
                 y = y_block * 8 + y_bit
                 pixel = self._pixmap[y * DISPLAY_WIDTH + x]
-                self._set_pixel(x, y, fg_color if pixel else bg_color)
+                self._set_pixel(x, y, fg_color if pixel ^ invert else bg_color)
+
+
+    def invert_colors(self):
+        attr_ptr = 0x1800
+        for y_block in range(24):
+            for x_block in range(32):
+                attr = self.read_byte(attr_ptr)
+                attr_ptr += 1
+
+                if attr & 0x80 == 0: # Nothing to do for blocks with no FLASH bit set
+                    continue
+
+                bg = (attr & 0x78) >> 3
+                bg_color = self._colors[bg]
+                fg = attr & 0x7 | ((attr & 0x40) >> 3)
+                fg_color = self._colors[fg]
+                invert = (attr & 0x80 != 0) and self._invert
+
+                # Swap pixel colors in the corresponding block
+                for x_bit in range(8):
+                    x = x_block * 8 + x_bit
+                    for y_bit in range(8):
+                        y = y_block * 8 + y_bit
+                        pixel = self._pixmap[y * DISPLAY_WIDTH + x]
+                        self._set_pixel(x, y, fg_color if pixel ^ invert else bg_color)
 
 
     def write_byte(self, offset, value):
@@ -107,4 +136,11 @@ class Display(RAM):
 
 
     def update(self, screen):
+        # Swap background and foreground colors each 32 frames (0.64s)
+        self._invert_frames += 1
+        if self._invert_frames == 32:
+            self._invert_frames = 0
+            self._invert ^= True
+            self.invert_colors()
+
         screen.blit(self._display, (0, 0))
