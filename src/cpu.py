@@ -1097,6 +1097,27 @@ class CPU:
             self._log_1b_instruction(f"POP {reg_pair_name}")
 
 
+    def _push_idx(self):
+        """ Push IX/IY index register to stack """
+        value = self._get_index_reg()
+        self._push_to_stack(value)
+        self._cycles += 15
+
+        if logger.level <= logging.DEBUG:
+            self._log_1b_instruction(f"PUSH {self._get_index_reg_symb()}")
+
+
+    def _pop_idx(self):
+        """ Pop IXIY index register from stack """
+        value = self._pop_from_stack()
+        self._set_index_reg(value)
+
+        self._cycles += 14
+
+        if logger.level <= logging.DEBUG:
+            self._log_1b_instruction(f"POP {self._get_index_reg_symb()}")
+
+
     # Exchange instructions
 
     def _exchange_de_hl(self):
@@ -3092,11 +3113,11 @@ class CPU:
         self._instructions_0xdd[0xdf] = None
 
         self._instructions_0xdd[0xe0] = None
-        self._instructions_0xdd[0xe1] = None
+        self._instructions_0xdd[0xe1] = self._pop_idx
         self._instructions_0xdd[0xe2] = None
         self._instructions_0xdd[0xe3] = None
         self._instructions_0xdd[0xe4] = None
-        self._instructions_0xdd[0xe5] = None
+        self._instructions_0xdd[0xe5] = self._push_idx
         self._instructions_0xdd[0xe6] = None
         self._instructions_0xdd[0xe7] = None
         self._instructions_0xdd[0xe8] = None
@@ -3648,11 +3669,11 @@ class CPU:
         self._instructions_0xfd[0xdf] = None
 
         self._instructions_0xfd[0xe0] = None
-        self._instructions_0xfd[0xe1] = None
+        self._instructions_0xfd[0xe1] = self._pop_idx
         self._instructions_0xfd[0xe2] = None
         self._instructions_0xfd[0xe3] = None
         self._instructions_0xfd[0xe4] = None
-        self._instructions_0xfd[0xe5] = None
+        self._instructions_0xfd[0xe5] = self._push_idx
         self._instructions_0xfd[0xe6] = None
         self._instructions_0xfd[0xe7] = None
         self._instructions_0xfd[0xe8] = None

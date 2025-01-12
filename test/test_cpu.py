@@ -640,6 +640,26 @@ def test_push_af_2(cpu):
     assert cpu.sp == 0x1232
     assert cpu._machine.read_memory_word(0x1232) == 0x42d7 # bit1 of the PSW is always 1
 
+def test_push_ix(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xdd)    # PUSH IX
+    cpu._machine.write_memory_byte(0x0001, 0xe5)
+    cpu.sp = 0x1234
+    cpu.ix = 0xbeef
+    cpu.step()
+    assert cpu._cycles == 15
+    assert cpu.sp == 0x1232
+    assert cpu._machine.read_memory_word(0x1232) == 0xbeef
+
+def test_push_iy(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xfd)    # PUSH IY
+    cpu._machine.write_memory_byte(0x0001, 0xe5)
+    cpu.sp = 0x1234
+    cpu.iy = 0xbeef
+    cpu.step()
+    assert cpu._cycles == 15
+    assert cpu.sp == 0x1232
+    assert cpu._machine.read_memory_word(0x1232) == 0xbeef
+
 def test_pop_bc(cpu):
     cpu._machine.write_memory_byte(0x0000, 0xc1)    # POP BC
     cpu._machine.write_memory_word(0x1234, 0xbeef)  # Data to pop
@@ -696,6 +716,26 @@ def test_pop_af_2(cpu):
     assert cpu.sign == True
     assert cpu.parity == True
     assert cpu.add_subtract == True
+
+def test_pop_ix(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xdd)    # POP IX
+    cpu._machine.write_memory_byte(0x0001, 0xe1)
+    cpu._machine.write_memory_word(0x1234, 0xbeef)  # Data to pop
+    cpu.sp = 0x1234
+    cpu.step()
+    assert cpu._cycles == 14
+    assert cpu.sp == 0x1236
+    assert cpu.ix == 0xbeef
+
+def test_pop_iy(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xfd)    # POP IY
+    cpu._machine.write_memory_byte(0x0001, 0xe1)
+    cpu._machine.write_memory_word(0x1234, 0xbeef)  # Data to pop
+    cpu.sp = 0x1234
+    cpu.step()
+    assert cpu._cycles == 14
+    assert cpu.sp == 0x1236
+    assert cpu.iy == 0xbeef
 
 
 # Exchange instructions tests
