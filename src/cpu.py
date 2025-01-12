@@ -1925,6 +1925,22 @@ class CPU:
             self._log_1b_instruction(f"CPL")
 
 
+    def _neg(self):
+        """ Negate accumulator """
+        self._carry = self._a == 0x00
+        self._parity_overflow = self._a == 0x80
+        res = (0 - self._a)
+        self._cycles += 8
+        self._sign = (self._a & 0x80) != 0
+        self._zero = self._a == 0
+        self._half_carry = ((self._a & 0x0f) + (res & 0x0f)) > 0x0f
+        self._add_subtract = True
+        self._a = res & 0xff
+
+        if logger.level <= logging.DEBUG:
+            self._log_1b_instruction(f"NEG")
+
+
     def _scf(self):
         """ Set carry flag """
         self._carry = True
@@ -2390,7 +2406,7 @@ class CPU:
         self._instructions_0xed[0x41] = self._out_reg   # OUT (C), B
         self._instructions_0xed[0x42] = self._sbc_hl
         self._instructions_0xed[0x43] = self._store_reg16_to_memory
-        self._instructions_0xed[0x44] = None            # NEG
+        self._instructions_0xed[0x44] = self._neg       # NEG
         self._instructions_0xed[0x45] = None            # RETN
         self._instructions_0xed[0x46] = self._im
         self._instructions_0xed[0x47] = self._load_i_r_register_from_a

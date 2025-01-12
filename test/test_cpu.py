@@ -3073,6 +3073,54 @@ def test_cpl(cpu):
     assert cpu.add_subtract == True
     assert cpu.half_carry == True
 
+def test_cpl_2(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0x2f)    # CPL
+    cpu.a = 0x51
+    cpu.step()
+    assert cpu.a == 0xae
+    assert cpu._cycles == 4
+    assert cpu.add_subtract == True
+    assert cpu.half_carry == True
+
+def test_neg_1(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xed)    # NEG
+    cpu._machine.write_memory_byte(0x0001, 0x44)
+    cpu.a = 0x51
+    cpu.step()
+    assert cpu.a == 0xaf
+    assert cpu._cycles == 8
+    assert cpu.carry == False
+    assert cpu.zero == False
+    assert cpu.overflow == False
+    assert cpu.add_subtract == True
+    assert cpu.half_carry == True
+
+def test_neg_2(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xed)    # NEG
+    cpu._machine.write_memory_byte(0x0001, 0x44)
+    cpu.a = 0x00
+    cpu.step()
+    assert cpu.a == 0x00
+    assert cpu._cycles == 8
+    assert cpu.carry == True
+    assert cpu.zero == True
+    assert cpu.overflow == False
+    assert cpu.add_subtract == True
+    assert cpu.half_carry == False
+
+def test_neg_3(cpu):
+    cpu._machine.write_memory_byte(0x0000, 0xed)    # NEG
+    cpu._machine.write_memory_byte(0x0001, 0x44)
+    cpu.a = 0x80
+    cpu.step()
+    assert cpu.a == 0x80
+    assert cpu._cycles == 8
+    assert cpu.carry == False
+    assert cpu.zero == False
+    assert cpu.overflow == True
+    assert cpu.add_subtract == True
+    assert cpu.half_carry == False
+
 def test_scf(cpu):
     cpu._machine.write_memory_byte(0x0000, 0x37)    # SCF
     cpu.step()
@@ -3087,7 +3135,7 @@ def test_ccf_1(cpu):
     assert cpu.half_carry == False
     assert cpu._cycles == 4
 
-def test_ccf_1(cpu):
+def test_ccf_2(cpu):
     cpu._machine.write_memory_byte(0x0000, 0x3f)    # CCF
     cpu._carry = True
     cpu.step()
