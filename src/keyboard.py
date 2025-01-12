@@ -12,6 +12,7 @@ class Keyboard:
         # - Ctrl to emulate SYMBOL SHIFT
 
         self._key_map = {}
+        self._special_key_map = {}
         self._ctrl_key_map = {}
 
         # Small letters
@@ -161,13 +162,13 @@ class Keyboard:
 
 
         # Symbols and host keys to ZX key mapping
-        self._ctrl_key_map[pygame.K_BACKSPACE]  = (0xef, 0xfe, 0xfe, 0xfe)
-        self._ctrl_key_map[pygame.K_LEFT]       = (0xf7, 0xef, 0xfe, 0xfe)
-        self._ctrl_key_map[pygame.K_RIGHT]      = (0xef, 0xfb, 0xfe, 0xfe)
-        self._ctrl_key_map[pygame.K_UP]         = (0xef, 0xf7, 0xfe, 0xfe)
-        self._ctrl_key_map[pygame.K_DOWN]       = (0xef, 0xef, 0xfe, 0xfe)
-        self._ctrl_key_map[pygame.K_RETURN]     = (0xbf, 0xfe, 0x7f, 0xfd)
-        self._ctrl_key_map[pygame.K_SPACE]      = (0x7f, 0xfe, 0x7f, 0xfd)
+        self._special_key_map[pygame.K_BACKSPACE]  = (0xef, 0xfe, 0xfe, 0xfe)  # Same as Ctrl-0
+        self._special_key_map[pygame.K_LEFT]       = (0xf7, 0xef, 0xfe, 0xfe)  # Same as Ctrl-5
+        self._special_key_map[pygame.K_RIGHT]      = (0xef, 0xfb, 0xfe, 0xfe)  # Same as Ctrl-8
+        self._special_key_map[pygame.K_UP]         = (0xef, 0xf7, 0xfe, 0xfe)  # Same as Ctrl-6
+        self._special_key_map[pygame.K_DOWN]       = (0xef, 0xef, 0xfe, 0xfe)  # Same as Ctrl-7
+        self._special_key_map[pygame.K_RETURN]     = (0xbf, 0xfe, 0xff, 0xff)
+        self._special_key_map[pygame.K_SPACE]      = (0x7f, 0xfe, 0xff, 0xff)
 
         self._key_map[';']              = (0xdf, 0xfd, 0x7f, 0xfd)  # Same as Ctrl-O
         self._key_map[':']              = (0xfe, 0xfd, 0x7f, 0xfd)  # Same as Ctrl-Z
@@ -188,10 +189,12 @@ class Keyboard:
 
     def handle_event(self, event):
         if event.type == pygame.KEYDOWN:
-            print(f"Keydown event: UNICODE={event.unicode} KEY_CODE={event.key}")
-
             if event.key in self._ctrl_key_map and (pygame.key.get_mods() & pygame.KMOD_CTRL) != 0:
                 self._pressed_key = self._ctrl_key_map[event.key]
+                return
+
+            if event.key in self._special_key_map:
+                self._pressed_key = self._special_key_map[event.key]
                 return
 
             if event.unicode in self._key_map:
